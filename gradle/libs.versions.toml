@@ -1,0 +1,25 @@
+[versions]
+java = "17"
+spring-boot = "3.3.5"
+spring-dependency-management = "1.1.6"
+mybatis-spring-boot = "3.0.3"
+postgresql = "42.7.4"
+lombok = "1.18.34"
+jjwt = "0.12.6"
+
+[libraries]
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+mybatis-spring-boot-starter = { module = "org.mybatis.spring.boot:mybatis-spring-boot-starter", version.ref = "mybatis-spring-boot" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }

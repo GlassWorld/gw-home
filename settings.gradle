@@ -1,0 +1,3 @@
+rootProject.name = 'gw-home'
+
+include 'share', 'api', 'infra-db'
