@@ -7,19 +7,20 @@ Gradle 멀티모듈 구조 초기화 + 공통 설정 파일 생성
 
 ```
 gw-home/
+├── gradle.properties              (projectName 정의)
 ├── settings.gradle
 ├── build.gradle                  (root)
 ├── gradle/
 │   └── libs.versions.toml
-├── share/
+├── gw-home-share/
 │   └── build.gradle
-├── api/
+├── gw-home-api/
 │   ├── build.gradle
 │   └── src/main/resources/
 │       ├── application.yml
 │       ├── application-local.yml
 │       └── application-prod.yml
-└── infra-db/
+└── gw-home-infra-db/
     └── build.gradle
 ```
 
@@ -27,8 +28,14 @@ gw-home/
 
 ### settings.gradle
 ```groovy
-rootProject.name = 'gw-home'
-include 'share', 'api', 'infra-db'
+def projectName = providers.gradleProperty("projectName").getOrElse("gw-home")
+rootProject.name = projectName
+include "${projectName}-share", "${projectName}-api", "${projectName}-infra-db"
+```
+
+### gradle.properties
+```properties
+projectName=gw-home
 ```
 
 ### libs.versions.toml (주요 의존성)
@@ -45,33 +52,33 @@ lombok = "latest"
 - Spring Boot 플러그인 공통 적용
 - 공통 의존성: lombok, spring-boot-test
 
-### share/build.gradle
+### `{project}-share/build.gradle`
 ```
 dependencies:
   - spring-boot-starter
   - lombok
 ```
 
-### api/build.gradle
+### `{project}-api/build.gradle`
 ```
 dependencies:
   - spring-boot-starter-web
   - spring-boot-starter-security
   - spring-boot-starter-validation
   - jjwt (JWT)
-  - project(':share')
-  - project(':infra-db')
+  - project(':{project}-share')
+  - project(':{project}-infra-db')
 ```
 
-### infra-db/build.gradle
+### `{project}-infra-db/build.gradle`
 ```
 dependencies:
   - mybatis-spring-boot-starter
   - postgresql
-  - project(':api')
+  - project(':{project}-share')
 ```
 
-### application.yml (api)
+### application.yml (`{project}-api`)
 ```yaml
 spring:
   profiles:
@@ -99,11 +106,13 @@ mybatis:
 ## 완료 체크
 
 - [x] settings.gradle 생성
+- [x] gradle.properties 생성
 - [x] root build.gradle 생성
 - [x] libs.versions.toml 생성
-- [x] share/build.gradle 생성
-- [x] api/build.gradle 생성
-- [x] infra-db/build.gradle 생성
+- [x] `{project}-share/build.gradle` 생성
+- [x] `{project}-api/build.gradle` 생성
+- [x] `{project}-infra-db/build.gradle` 생성
 - [x] application.yml 생성
 - [x] application-local.yml 생성
 - [x] `./gradlew build` 성공
+- [x] `./gradlew :{project}-api:bootRun` 명령 형식 반영

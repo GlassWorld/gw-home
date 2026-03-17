@@ -16,9 +16,18 @@ These rules are absolute. Never violate them.
 
 ## Code Structure
 
-- Follow domain-based package structure: `com.gw.{module}.{domain}.{layer}`
-- Mapper interface goes in `api` module
-- Mapper XML goes in `infra-db` module
+- Follow domain-based package structure: `com.gw.{module}.{layer}.{domain}`
+- Mapper interface goes in `{project}-infra-db` module
+- Mapper XML goes in `{project}-infra-db` module
+- Use `resultType` by default in Mapper XML
+- Use `{Domain}Vo` for single-table models and `{Domain}Jvo` for join/expanded query models
+- Manage shared `VO` / `JVO` classes in `{project}-share`
+- Omit package names in `resultType` by relying on MyBatis type alias configuration
+- Use abbreviated names across DDL, `VO`, and `JVO`, except audit fields
+- Put shared PK/UUID/audit fields in `BaseVo`
+- Alias primary table PK/UUID columns to `idx` / `uuid` in Mapper XML when mapping to `BaseVo`
+- Keep `VO` fields aligned to table columns in camelCase, including names like `mbrAcctIdx`, `createdAt`
+- Prefer Lombok `@SuperBuilder` for `VO` / `JVO` boilerplate and keep DB column comments as field comments when practical
 
 ## Database
 
@@ -26,7 +35,7 @@ These rules are absolute. Never violate them.
 - PK column: `{table}_idx` (BIGSERIAL)
 - External ID column: `{table}_uuid` (UUID) — only this is exposed in API
 - `created_by` = login ID (not internal index)
-- Soft delete via `deleted_at TIMESTAMPTZ`
+- Soft delete via `del_at TIMESTAMPTZ`
 
 ## API
 

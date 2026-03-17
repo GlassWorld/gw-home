@@ -39,11 +39,11 @@
 - [x] 02 share-module
 - [x] 03 infra-db-module
 - [x] 04 domain-account
-- [ ] 05 domain-auth
-- [ ] 06 domain-profile
-- [ ] 07 domain-board
-- [ ] 08 domain-comment
-- [ ] 09 domain-file
-- [ ] 10 domain-tag
-- [ ] 11 domain-favorite
-- [ ] 12 domain-admin
+- [x] 05 domain-auth
+- [x] 06 domain-profile
+- [x] 07 domain-board
+- [x] 08 domain-comment
+- [x] 09 domain-file
+- [x] 10 domain-tag
+- [x] 11 domain-favorite
+- [x] 12 domain-admin

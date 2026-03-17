@@ -11,9 +11,11 @@
 
 | 모듈 | 역할 |
 |------|------|
-| `share` | 공통 DTO, 예외, 유틸 (의존 없음) |
-| `api` | Controller, Service, Mapper interface |
-| `infra-db` | Mapper XML, DB 설정, DDL 스크립트 |
+| `{project}-share` | 공통 DTO, 예외, 유틸 (디렉토리: `{project}-share/`) |
+| `{project}-api` | Controller, Service, Request/Response DTO (디렉토리: `{project}-api/`) |
+| `{project}-infra-db` | Mapper interface, Mapper XML, DB 설정, DDL 스크립트 (디렉토리: `{project}-infra-db/`) |
+
+`projectName`은 `gradle.properties`에서 관리한다.
 
 ## 도메인
 
@@ -36,7 +38,7 @@ PK:       {table}_idx  BIGSERIAL
 UUID:     {table}_uuid UUID (외부 노출 전용)
 Time:     TIMESTAMPTZ (NOT TIMESTAMP)
 Audit:    created_by = 로그인 ID
-Delete:   deleted_at TIMESTAMPTZ (소프트 삭제)
+Delete:   del_at TIMESTAMPTZ (소프트 삭제)
 ```
 
 ## 핵심 설계 철학
@@ -50,8 +52,21 @@ Delete:   deleted_at TIMESTAMPTZ (소프트 삭제)
 ## 패키지 규칙
 
 ```
-com.gw.{module}.{domain}.{layer}
+com.gw.{module}.{layer}.{domain}
 ```
+
+## MyBatis 모델 규칙
+
+- 기본 조회/저장 모델: `{Domain}Vo` (단일 테이블 컬럼 그대로)
+- 조인 조회 모델: `{Domain}Jvo` (조인/확장 결과)
+- `VO` / `JVO`는 `share` 모듈에서 관리
+- DDL, `VO`, `JVO` 이름과 필드는 감사 컬럼을 제외하고 축약형으로 통일
+- 공통 PK/UUID/감사 컬럼은 `BaseVo`로 관리
+- Mapper XML은 기본적으로 `resultType` 사용
+- `resultType`에는 패키지명을 쓰지 않음
+- `BaseVo` 매핑 시 대표 PK/UUID 컬럼은 `AS idx`, `AS uuid` alias 사용
+- `VO` / `JVO`는 테이블 컬럼 기준 camelCase를 사용한다 (`mbrAcctIdx`, `createdAt`)
+- `VO` / `JVO`는 Lombok `@SuperBuilder` 기반으로 작성
 
 ## 네이밍
 

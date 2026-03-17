@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.account.AccountMapper">
+
+    <insert id="insertAccount" parameterType="AcctVo">
+        INSERT INTO tb_mbr_acct (
+            lgn_id,
+            pwd,
+            email,
+            role,
+            created_by
+        ) VALUES (
+            #{lgnId},
+            #{pwd},
+            #{email},
+            #{role},
+            #{createdBy}
+        )
+    </insert>
+
+    <select id="selectAccountByLoginId" resultType="AcctVo">
+        SELECT
+            mbr_acct_idx AS idx,
+            mbr_acct_uuid AS uuid,
+            lgn_id,
+            pwd,
+            email,
+            role,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_mbr_acct
+        WHERE lgn_id = #{lgnId}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectAccountByUuid" resultType="AcctVo">
+        SELECT
+            mbr_acct_idx AS idx,
+            mbr_acct_uuid AS uuid,
+            lgn_id,
+            pwd,
+            email,
+            role,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_mbr_acct
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectAccountByIdx" resultType="AcctVo">
+        SELECT
+            mbr_acct_idx AS idx,
+            mbr_acct_uuid AS uuid,
+            lgn_id,
+            pwd,
+            email,
+            role,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_mbr_acct
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </select>
+
+    <update id="updateAccount" parameterType="AcctVo">
+        UPDATE tb_mbr_acct
+        SET
+            email = #{email},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteAccount">
+        UPDATE tb_mbr_acct
+        SET
+            del_at = now(),
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <select id="existsByLoginId" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM tb_mbr_acct
+            WHERE lgn_id = #{lgnId}
+              AND del_at IS NULL
+        )
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM tb_mbr_acct
+            WHERE email = #{email}
+              AND del_at IS NULL
+        )
+    </select>
+
+</mapper>

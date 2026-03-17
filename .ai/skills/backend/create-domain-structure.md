@@ -9,15 +9,19 @@ DOMAIN: {도메인명}
 ## 출력 (생성 파일 목록)
 
 ```
-api/src/main/java/com/gw/api/{domain}/
-├── controller/   {Domain}Controller.java
-├── service/      {Domain}Service.java
-├── mapper/       {Domain}Mapper.java
-└── dto/
+{project}-api/src/main/java/com/gw/api/
+├── controller/{domain}/   {Domain}Controller.java
+├── service/{domain}/      {Domain}Service.java
+└── dto/{domain}/
     ├── Create{Domain}Request.java
     └── {Domain}Response.java
+{project}-share/src/main/java/com/gw/share/
+├── vo/{domain}/           {Domain}Vo.java
+└── jvo/{domain}/          {Domain}Jvo.java  # 필요 시 생성
+{project}-infra-db/src/main/java/com/gw/infra/db/
+└── mapper/{domain}/       {Domain}Mapper.java
 
-infra-db/src/main/resources/mapper/{domain}/
+{project}-infra-db/src/main/resources/mapper/{domain}/
 └── {Domain}Mapper.xml
 ```
 
@@ -34,12 +38,12 @@ infra-db/src/main/resources/mapper/{domain}/
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.gw.api.{domain}.mapper.{Domain}Mapper">
+<mapper namespace="com.gw.infra.db.mapper.{domain}.{Domain}Mapper">
 
-    <resultMap id="{domain}ResultMap" type="com.gw.api.{domain}.dto.{Domain}Response">
-        <id property="{domain}Uuid" column="{domain}_uuid"/>
-        <!-- 필드 매핑 -->
-    </resultMap>
+    <select id="select{Domain}" resultType="{Domain}Vo">
+        SELECT {domain}_uuid, created_at
+        FROM tb_{domain}
+    </select>
 
 </mapper>
 ```

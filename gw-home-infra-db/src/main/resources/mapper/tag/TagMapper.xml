@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.tag.TagMapper">
+
+    <select id="selectAllTags" resultType="TagVo">
+        SELECT
+            tag_idx AS idx,
+            tag_uuid AS uuid,
+            nm,
+            created_by,
+            created_at
+        FROM tb_tag
+        ORDER BY nm ASC
+    </select>
+
+    <select id="selectTagsByKeyword" resultType="TagVo">
+        SELECT
+            tag_idx AS idx,
+            tag_uuid AS uuid,
+            nm,
+            created_by,
+            created_at
+        FROM tb_tag
+        WHERE nm LIKE CONCAT('%', #{kwd}, '%')
+        ORDER BY nm ASC
+    </select>
+
+    <select id="selectTagsByBrdPstIdx" resultType="TagVo">
+        SELECT
+            t.tag_idx AS idx,
+            t.tag_uuid AS uuid,
+            t.nm,
+            t.created_by,
+            t.created_at
+        FROM tb_tag t
+        INNER JOIN tb_brd_pst_tag bpt ON bpt.tag_idx = t.tag_idx
+        WHERE bpt.brd_pst_idx = #{brdPstIdx}
+        ORDER BY t.nm ASC
+    </select>
+
+    <select id="selectTagByNm" resultType="TagVo">
+        SELECT
+            tag_idx AS idx,
+            tag_uuid AS uuid,
+            nm,
+            created_by,
+            created_at
+        FROM tb_tag
+        WHERE nm = #{nm}
+    </select>
+
+    <select id="selectTagByUuid" resultType="TagVo">
+        SELECT
+            tag_idx AS idx,
+            tag_uuid AS uuid,
+            nm,
+            created_by,
+            created_at
+        FROM tb_tag
+        WHERE tag_uuid = CAST(#{uuid} AS UUID)
+    </select>
+
+    <select id="selectTagByIdx" resultType="TagVo">
+        SELECT
+            tag_idx AS idx,
+            tag_uuid AS uuid,
+            nm,
+            created_by,
+            created_at
+        FROM tb_tag
+        WHERE tag_idx = #{idx}
+    </select>
+
+    <insert id="insertTag" parameterType="TagVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_tag (
+            nm,
+            created_by
+        ) VALUES (
+            #{nm},
+            #{createdBy}
+        )
+    </insert>
+
+    <insert id="insertBrdPstTag">
+        INSERT INTO tb_brd_pst_tag (
+            brd_pst_idx,
+            tag_idx,
+            created_at
+        ) VALUES (
+            #{brdPstIdx},
+            #{tagIdx},
+            now()
+        )
+        ON CONFLICT (brd_pst_idx, tag_idx) DO NOTHING
+    </insert>
+
+    <delete id="deleteBrdPstTag">
+        DELETE FROM tb_brd_pst_tag
+        WHERE brd_pst_idx = #{brdPstIdx}
+          AND tag_idx = #{tagIdx}
+    </delete>
+
+</mapper>

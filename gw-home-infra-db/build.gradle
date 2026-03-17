@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(":${rootProject.name}-share")
+    implementation libs.mybatis.spring.boot.starter
+    runtimeOnly libs.postgresql
+}

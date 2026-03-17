@@ -1,3 +1,10 @@
-rootProject.name = 'gw-home'
+def configuredProjectName = providers.gradleProperty("projectName").getOrElse("gw-home")
+def moduleName = { suffix -> "${configuredProjectName}-${suffix}" }
 
-include 'share', 'api', 'infra-db'
+rootProject.name = configuredProjectName
+
+include moduleName("share"), moduleName("api"), moduleName("infra-db")
+
+project(":${moduleName('share')}").projectDir = file(moduleName("share"))
+project(":${moduleName('api')}").projectDir = file(moduleName("api"))
+project(":${moduleName('infra-db')}").projectDir = file(moduleName("infra-db"))

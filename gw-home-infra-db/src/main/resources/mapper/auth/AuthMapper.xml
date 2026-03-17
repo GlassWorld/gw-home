@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.auth.AuthMapper">
+
+    <insert id="insertRefreshToken" parameterType="AuthRfshTknVo">
+        INSERT INTO tb_auth_rfsh_tkn (
+            mbr_acct_idx,
+            tkn_hash,
+            expr_at,
+            created_by
+        ) VALUES (
+            #{mbrAcctIdx},
+            #{tknHash},
+            #{exprAt},
+            #{createdBy}
+        )
+    </insert>
+
+    <select id="selectActiveRefreshTokenByTokenHash" resultType="AuthRfshTknVo">
+        SELECT
+            auth_rfsh_tkn_idx AS idx,
+            auth_rfsh_tkn_uuid AS uuid,
+            mbr_acct_idx,
+            tkn_hash,
+            expr_at,
+            created_by,
+            created_at,
+            del_at
+        FROM tb_auth_rfsh_tkn
+        WHERE tkn_hash = #{tknHash}
+          AND del_at IS NULL
+    </select>
+
+    <update id="deleteRefreshToken">
+        UPDATE tb_auth_rfsh_tkn
+        SET del_at = now()
+        WHERE tkn_hash = #{tknHash}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+</mapper>

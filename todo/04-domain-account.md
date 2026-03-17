@@ -6,36 +6,37 @@
 ## DDL
 
 ```sql
--- sql/ddl/account/tb_member_account.sql
-CREATE TABLE tb_member_account (
-    member_account_idx   BIGSERIAL    PRIMARY KEY,
-    member_account_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    login_id             VARCHAR(100) NOT NULL UNIQUE,
-    password             VARCHAR(255) NOT NULL,
+-- sql/ddl/account/tb_mbr_acct.sql
+CREATE TABLE tb_mbr_acct (
+    mbr_acct_idx   BIGSERIAL    PRIMARY KEY,
+    mbr_acct_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    lgn_id         VARCHAR(100) NOT NULL UNIQUE,
+    pwd            VARCHAR(255) NOT NULL,
     email                VARCHAR(255) NOT NULL UNIQUE,
     role                 VARCHAR(20)  NOT NULL DEFAULT 'USER',  -- USER, ADMIN
     created_by           VARCHAR(100) NOT NULL,
     updated_by           VARCHAR(100),
     created_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    deleted_at           TIMESTAMPTZ
+    del_at               TIMESTAMPTZ
 );
 ```
 
 ## 생성 파일
 
 ```
-api/src/main/java/com/gw/api/account/
-├── controller/AccountController.java
-├── service/AccountService.java
-├── mapper/AccountMapper.java
-└── dto/
+{project}-api/src/main/java/com/gw/api/
+├── controller/account/AccountController.java
+├── service/account/AccountService.java
+└── dto/account/
     ├── SignUpRequest.java
     ├── AccountResponse.java
     └── UpdateAccountRequest.java
+{project}-infra-db/src/main/java/com/gw/infra/db/
+└── mapper/account/AccountMapper.java
 
-infra-db/src/main/resources/mapper/account/AccountMapper.xml
-infra-db/src/main/resources/sql/ddl/account/tb_member_account.sql
+{project}-infra-db/src/main/resources/mapper/account/AccountMapper.xml
+{project}-infra-db/src/main/resources/sql/ddl/account/tb_mbr_acct.sql
 ```
 
 ## API 엔드포인트
@@ -50,12 +51,13 @@ infra-db/src/main/resources/sql/ddl/account/tb_member_account.sql
 ## Mapper 메서드
 
 ```java
-void insertAccount(AccountDto account);
-AccountDto selectAccountByLoginId(@Param("loginId") String loginId);
-AccountDto selectAccountByUuid(@Param("uuid") String uuid);
-int updateAccount(AccountDto account);
-int deleteAccount(@Param("uuid") String uuid);  // deleted_at = now()
-boolean existsByLoginId(@Param("loginId") String loginId);
+void insertAccount(AcctVo acct);
+AcctVo selectAccountByLoginId(@Param("lgnId") String lgnId);
+AcctVo selectAccountByUuid(@Param("uuid") String uuid);
+AcctVo selectAccountByIdx(@Param("idx") Long idx);
+int updateAccount(AcctVo acct);
+int deleteAccount(@Param("uuid") String uuid);  // del_at = now()
+boolean existsByLoginId(@Param("lgnId") String lgnId);
 boolean existsByEmail(@Param("email") String email);
 ```
 
@@ -78,7 +80,7 @@ memberAccountUuid, loginId, email, role, createdAt
 
 - 가입 시 `loginId`, `email` 중복 확인
 - 비밀번호 `BCryptPasswordEncoder` 암호화
-- 탈퇴: `deleted_at` = now() (소프트 삭제)
+- 탈퇴: `del_at` = now() (소프트 삭제)
 - `created_by` = 가입 시 `loginId`
 
 ## 완료 체크

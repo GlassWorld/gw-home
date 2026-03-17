@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.favorite.FavoriteMapper">
+
+    <insert id="insertFavorite" parameterType="FavVo">
+        INSERT INTO tb_fav (
+            trgt_type,
+            trgt_idx,
+            mbr_acct_idx,
+            created_by
+        ) VALUES (
+            #{trgtType},
+            #{trgtIdx},
+            #{mbrAcctIdx},
+            #{createdBy}
+        )
+    </insert>
+
+    <delete id="deleteFavorite">
+        DELETE FROM tb_fav
+        WHERE trgt_type = #{trgtType}
+          AND trgt_idx = #{trgtIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+    </delete>
+
+    <select id="existsFavorite" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM tb_fav
+            WHERE trgt_type = #{trgtType}
+              AND trgt_idx = #{trgtIdx}
+              AND mbr_acct_idx = #{mbrAcctIdx}
+        )
+    </select>
+
+    <select id="countFavorite" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_fav
+        WHERE trgt_type = #{trgtType}
+          AND trgt_idx = #{trgtIdx}
+    </select>
+
+</mapper>

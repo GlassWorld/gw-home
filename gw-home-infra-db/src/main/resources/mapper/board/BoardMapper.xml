@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.board.BoardMapper">
+
+    <select id="selectBoardPostByUuid" resultType="BrdPstJvo">
+        SELECT
+            bp.brd_pst_idx AS idx,
+            bp.brd_pst_uuid AS uuid,
+            bp.brd_ctgr_idx,
+            bc.brd_ctgr_uuid,
+            bp.mbr_acct_idx,
+            bc.nm AS ctgr_nm,
+            bp.ttl,
+            bp.cntnt,
+            bp.view_cnt,
+            mp.nick_nm AS athr_nick_nm,
+            (
+                SELECT COUNT(*)
+                FROM tb_fav f
+                WHERE f.trgt_type = 'BOARD_POST'
+                  AND f.trgt_idx = bp.brd_pst_idx
+            ) AS fav_cnt,
+            (
+                SELECT COUNT(*)
+                FROM tb_brd_cmt c
+                WHERE c.brd_pst_idx = bp.brd_pst_idx
+                  AND c.del_at IS NULL
+            ) AS cmt_cnt,
+            bp.created_by,
+            bp.updated_by,
+            bp.created_at,
+            bp.updated_at
+        FROM tb_brd_pst bp
+        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
+        WHERE bp.brd_pst_uuid = CAST(#{uuid} AS UUID)
+          AND bp.del_at IS NULL
+    </select>
+
+    <select id="selectBoardPostByIdx" resultType="BrdPstJvo">
+        SELECT
+            bp.brd_pst_idx AS idx,
+            bp.brd_pst_uuid AS uuid,
+            bp.brd_ctgr_idx,
+            bc.brd_ctgr_uuid,
+            bp.mbr_acct_idx,
+            bc.nm AS ctgr_nm,
+            bp.ttl,
+            bp.cntnt,
+            bp.view_cnt,
+            mp.nick_nm AS athr_nick_nm,
+            (
+                SELECT COUNT(*)
+                FROM tb_fav f
+                WHERE f.trgt_type = 'BOARD_POST'
+                  AND f.trgt_idx = bp.brd_pst_idx
+            ) AS fav_cnt,
+            (
+                SELECT COUNT(*)
+                FROM tb_brd_cmt c
+                WHERE c.brd_pst_idx = bp.brd_pst_idx
+                  AND c.del_at IS NULL
+            ) AS cmt_cnt,
+            bp.created_by,
+            bp.updated_by,
+            bp.created_at,
+            bp.updated_at
+        FROM tb_brd_pst bp
+        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
+        WHERE bp.brd_pst_idx = #{idx}
+          AND bp.del_at IS NULL
+    </select>
+
+    <select id="selectBoardPostList" resultType="BrdPstSmryJvo">
+        SELECT
+            bp.brd_pst_uuid AS uuid,
+            bc.nm AS ctgr_nm,
+            bp.ttl,
+            bp.view_cnt,
+            mp.nick_nm AS athr_nick_nm,
+            (
+                SELECT COUNT(*)
+                FROM tb_fav f
+                WHERE f.trgt_type = 'BOARD_POST'
+                  AND f.trgt_idx = bp.brd_pst_idx
+            ) AS fav_cnt,
+            (
+                SELECT COUNT(*)
+                FROM tb_brd_cmt c
+                WHERE c.brd_pst_idx = bp.brd_pst_idx
+                  AND c.del_at IS NULL
+            ) AS cmt_cnt,
+            bp.created_at
+        FROM tb_brd_pst bp
+        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
+        WHERE bp.del_at IS NULL
+        <if test="req.ctgrUuid != null and req.ctgrUuid != ''">
+            AND bc.brd_ctgr_uuid = CAST(#{req.ctgrUuid} AS UUID)
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+        </if>
+        ORDER BY ${req.orderByClause}
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <select id="countBoardPostList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_brd_pst bp
+        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        WHERE bp.del_at IS NULL
+        <if test="req.ctgrUuid != null and req.ctgrUuid != ''">
+            AND bc.brd_ctgr_uuid = CAST(#{req.ctgrUuid} AS UUID)
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+        </if>
+    </select>
+
+    <insert id="insertBoardPost" parameterType="BrdPstVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_brd_pst (
+            brd_ctgr_idx,
+            mbr_acct_idx,
+            ttl,
+            cntnt,
+            created_by
+        ) VALUES (
+            #{brdCtgrIdx},
+            #{mbrAcctIdx},
+            #{ttl},
+            #{cntnt},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateBoardPost" parameterType="BrdPstVo">
+        UPDATE tb_brd_pst
+        SET
+            brd_ctgr_idx = #{brdCtgrIdx},
+            ttl = #{ttl},
+            cntnt = #{cntnt},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE brd_pst_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteBoardPost">
+        UPDATE tb_brd_pst
+        SET
+            del_at = now(),
+            updated_at = now()
+        WHERE brd_pst_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="incrementViewCount">
+        UPDATE tb_brd_pst
+        SET view_cnt = view_cnt + 1
+        WHERE brd_pst_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <select id="selectAllCategories" resultType="BrdCtgrVo">
+        SELECT
+            brd_ctgr_idx AS idx,
+            brd_ctgr_uuid AS uuid,
+            nm,
+            sort_ord,
+            created_by,
+            created_at
+        FROM tb_brd_ctgr
+        ORDER BY sort_ord ASC, created_at ASC
+    </select>
+
+    <select id="selectBoardCategoryByUuid" resultType="BrdCtgrVo">
+        SELECT
+            brd_ctgr_idx AS idx,
+            brd_ctgr_uuid AS uuid,
+            nm,
+            sort_ord,
+            created_by,
+            created_at
+        FROM tb_brd_ctgr
+        WHERE brd_ctgr_uuid = CAST(#{uuid} AS UUID)
+    </select>
+
+</mapper>

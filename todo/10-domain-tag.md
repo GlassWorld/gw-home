@@ -8,40 +8,40 @@
 ```sql
 -- sql/ddl/tag/tb_tag.sql
 CREATE TABLE tb_tag (
-    tag_idx    BIGSERIAL   PRIMARY KEY,
-    tag_uuid   UUID        NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    name       VARCHAR(50) NOT NULL UNIQUE,
-    created_by VARCHAR(100) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    tag_idx      BIGSERIAL    PRIMARY KEY,
+    tag_uuid     UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    nm           VARCHAR(50)  NOT NULL UNIQUE,
+    created_by   VARCHAR(100) NOT NULL,
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
--- sql/ddl/tag/tb_board_post_tag.sql
-CREATE TABLE tb_board_post_tag (
-    board_post_tag_idx   BIGSERIAL PRIMARY KEY,
-    board_post_idx       BIGINT    NOT NULL,
-    tag_idx              BIGINT    NOT NULL,
-    created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (board_post_idx, tag_idx)
+-- sql/ddl/tag/tb_brd_pst_tag.sql
+CREATE TABLE tb_brd_pst_tag (
+    brd_pst_tag_idx  BIGSERIAL   PRIMARY KEY,
+    brd_pst_idx      BIGINT      NOT NULL,
+    tag_idx          BIGINT      NOT NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (brd_pst_idx, tag_idx)
 );
-CREATE INDEX idx_board_post_tag_post ON tb_board_post_tag (board_post_idx);
-CREATE INDEX idx_board_post_tag_tag ON tb_board_post_tag (tag_idx);
+CREATE INDEX idx_brd_pst_tag_brd_pst ON tb_brd_pst_tag (brd_pst_idx);
+CREATE INDEX idx_brd_pst_tag_tag ON tb_brd_pst_tag (tag_idx);
 ```
 
 ## 생성 파일
 
 ```
-api/src/main/java/com/gw/api/tag/
-├── controller/TagController.java
-├── service/TagService.java
-├── mapper/TagMapper.java
-└── dto/
+{project}-api/src/main/java/com/gw/api/
+├── controller/tag/TagController.java
+├── service/tag/TagService.java
+└── dto/tag/
     ├── TagResponse.java
     └── AttachTagRequest.java
 
-infra-db/src/main/resources/mapper/tag/TagMapper.xml
-infra-db/src/main/resources/sql/ddl/tag/
+{project}-infra-db/src/main/java/com/gw/infra/db/mapper/tag/TagMapper.java
+{project}-infra-db/src/main/resources/mapper/tag/TagMapper.xml
+{project}-infra-db/src/main/resources/sql/ddl/tag/
 ├── tb_tag.sql
-└── tb_board_post_tag.sql
+└── tb_brd_pst_tag.sql
 ```
 
 ## API 엔드포인트
@@ -56,13 +56,13 @@ infra-db/src/main/resources/sql/ddl/tag/
 ## Mapper 메서드
 
 ```java
-List<TagDto> selectAllTags();
-List<TagDto> selectTagsByKeyword(@Param("keyword") String keyword);
-List<TagDto> selectTagsByPostIdx(@Param("boardPostIdx") Long boardPostIdx);
-TagDto selectTagByName(@Param("name") String name);
-void insertTag(TagDto tag);
-void insertBoardPostTag(@Param("boardPostIdx") Long boardPostIdx, @Param("tagIdx") Long tagIdx);
-int deleteBoardPostTag(@Param("boardPostIdx") Long boardPostIdx, @Param("tagIdx") Long tagIdx);
+List<TagVo> selectAllTags();
+List<TagVo> selectTagsByKeyword(@Param("kwd") String kwd);
+List<TagVo> selectTagsByBrdPstIdx(@Param("brdPstIdx") Long brdPstIdx);
+TagVo selectTagByNm(@Param("nm") String nm);
+void insertTag(TagVo tag);
+void insertBrdPstTag(@Param("brdPstIdx") Long brdPstIdx, @Param("tagIdx") Long tagIdx);
+int deleteBrdPstTag(@Param("brdPstIdx") Long brdPstIdx, @Param("tagIdx") Long tagIdx);
 ```
 
 ## TagResponse
@@ -79,8 +79,8 @@ tagUuid, name
 
 ## 완료 체크
 
-- [ ] DDL 생성
-- [ ] TagMapper (interface + XML)
-- [ ] DTO 생성
-- [ ] TagService
-- [ ] TagController
+- [x] DDL 생성
+- [x] TagMapper (interface + XML)
+- [x] DTO 생성
+- [x] TagService
+- [x] TagController

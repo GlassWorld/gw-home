@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.comment.CommentMapper">
+
+    <select id="selectCommentsByBrdPstIdx" resultType="BrdCmtJvo">
+        SELECT
+            c.brd_cmt_idx AS idx,
+            c.brd_cmt_uuid AS uuid,
+            c.brd_pst_idx,
+            c.prnt_brd_cmt_idx,
+            pc.brd_cmt_uuid AS prnt_brd_cmt_uuid,
+            c.mbr_acct_idx,
+            c.cntnt,
+            mp.nick_nm AS athr_nick_nm,
+            c.created_by,
+            c.updated_by,
+            c.created_at,
+            c.updated_at,
+            c.del_at
+        FROM tb_brd_cmt c
+        LEFT JOIN tb_brd_cmt pc ON pc.brd_cmt_idx = c.prnt_brd_cmt_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = c.mbr_acct_idx
+        WHERE c.brd_pst_idx = #{brdPstIdx}
+        ORDER BY c.created_at ASC, c.brd_cmt_idx ASC
+    </select>
+
+    <select id="selectCommentByUuid" resultType="BrdCmtJvo">
+        SELECT
+            c.brd_cmt_idx AS idx,
+            c.brd_cmt_uuid AS uuid,
+            c.brd_pst_idx,
+            c.prnt_brd_cmt_idx,
+            pc.brd_cmt_uuid AS prnt_brd_cmt_uuid,
+            c.mbr_acct_idx,
+            c.cntnt,
+            mp.nick_nm AS athr_nick_nm,
+            c.created_by,
+            c.updated_by,
+            c.created_at,
+            c.updated_at,
+            c.del_at
+        FROM tb_brd_cmt c
+        LEFT JOIN tb_brd_cmt pc ON pc.brd_cmt_idx = c.prnt_brd_cmt_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = c.mbr_acct_idx
+        WHERE c.brd_cmt_uuid = CAST(#{uuid} AS UUID)
+    </select>
+
+    <select id="selectCommentByIdx" resultType="BrdCmtJvo">
+        SELECT
+            c.brd_cmt_idx AS idx,
+            c.brd_cmt_uuid AS uuid,
+            c.brd_pst_idx,
+            c.prnt_brd_cmt_idx,
+            pc.brd_cmt_uuid AS prnt_brd_cmt_uuid,
+            c.mbr_acct_idx,
+            c.cntnt,
+            mp.nick_nm AS athr_nick_nm,
+            c.created_by,
+            c.updated_by,
+            c.created_at,
+            c.updated_at,
+            c.del_at
+        FROM tb_brd_cmt c
+        LEFT JOIN tb_brd_cmt pc ON pc.brd_cmt_idx = c.prnt_brd_cmt_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = c.mbr_acct_idx
+        WHERE c.brd_cmt_idx = #{idx}
+    </select>
+
+    <insert id="insertComment" parameterType="BrdCmtVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_brd_cmt (
+            brd_pst_idx,
+            prnt_brd_cmt_idx,
+            mbr_acct_idx,
+            cntnt,
+            created_by
+        ) VALUES (
+            #{brdPstIdx},
+            #{prntBrdCmtIdx},
+            #{mbrAcctIdx},
+            #{cntnt},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateComment" parameterType="BrdCmtVo">
+        UPDATE tb_brd_cmt
+        SET
+            cntnt = #{cntnt},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE brd_cmt_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteComment">
+        UPDATE tb_brd_cmt
+        SET
+            del_at = now(),
+            updated_at = now()
+        WHERE brd_cmt_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <select id="countCommentsByBrdPstIdx" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_brd_cmt
+        WHERE brd_pst_idx = #{brdPstIdx}
+          AND del_at IS NULL
+    </select>
+
+</mapper>

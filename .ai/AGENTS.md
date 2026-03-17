@@ -15,3 +15,4 @@ Initialize this repository.
 - Load only files relevant to the current task domain
 - When working on `board`: read only `board`-related files
 - Check `docs/rules.md` before generating any code
+- Respect Gradle module naming: `{project}-share`, `{project}-api`, `{project}-infra-db`

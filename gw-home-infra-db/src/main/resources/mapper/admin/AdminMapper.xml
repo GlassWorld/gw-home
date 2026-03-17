@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.admin.AdminMapper">
+
+    <select id="selectMemberList" resultType="AdminMbrJvo">
+        SELECT
+            ma.mbr_acct_idx AS idx,
+            ma.mbr_acct_uuid AS uuid,
+            ma.lgn_id,
+            ma.pwd,
+            ma.email,
+            ma.role,
+            mp.nick_nm,
+            mp.intro,
+            ma.created_by,
+            ma.updated_by,
+            ma.created_at,
+            ma.updated_at,
+            ma.del_at
+        FROM tb_mbr_acct ma
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = ma.mbr_acct_idx
+        WHERE 1 = 1
+        <if test="req.deleted == null or !req.deleted">
+            AND ma.del_at IS NULL
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                ma.lgn_id LIKE CONCAT('%', #{req.kwd}, '%')
+                OR ma.email LIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+        <if test="req.role != null and req.role != ''">
+            AND ma.role = #{req.role}
+        </if>
+        ORDER BY ${req.orderByClause}
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <select id="countMemberList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_mbr_acct ma
+        WHERE 1 = 1
+        <if test="req.deleted == null or !req.deleted">
+            AND ma.del_at IS NULL
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                ma.lgn_id LIKE CONCAT('%', #{req.kwd}, '%')
+                OR ma.email LIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+        <if test="req.role != null and req.role != ''">
+            AND ma.role = #{req.role}
+        </if>
+    </select>
+
+    <select id="selectMemberByUuid" resultType="AdminMbrJvo">
+        SELECT
+            ma.mbr_acct_idx AS idx,
+            ma.mbr_acct_uuid AS uuid,
+            ma.lgn_id,
+            ma.pwd,
+            ma.email,
+            ma.role,
+            mp.nick_nm,
+            mp.intro,
+            ma.created_by,
+            ma.updated_by,
+            ma.created_at,
+            ma.updated_at,
+            ma.del_at
+        FROM tb_mbr_acct ma
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = ma.mbr_acct_idx
+        WHERE ma.mbr_acct_uuid = CAST(#{uuid} AS UUID)
+    </select>
+
+    <update id="forceDeleteMember">
+        UPDATE tb_mbr_acct
+        SET
+            del_at = now(),
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <select id="selectBoardPostList" resultType="AdminBrdPstJvo">
+        SELECT
+            bp.brd_pst_idx AS idx,
+            bp.brd_pst_uuid AS uuid,
+            bp.brd_ctgr_idx,
+            bc.brd_ctgr_uuid,
+            bp.mbr_acct_idx,
+            ma.lgn_id,
+            bc.nm AS ctgr_nm,
+            bp.ttl,
+            bp.cntnt,
+            bp.view_cnt,
+            mp.nick_nm AS athr_nick_nm,
+            (
+                SELECT COUNT(*)
+                FROM tb_fav f
+                WHERE f.trgt_type = 'BOARD_POST'
+                  AND f.trgt_idx = bp.brd_pst_idx
+            ) AS fav_cnt,
+            (
+                SELECT COUNT(*)
+                FROM tb_brd_cmt c
+                WHERE c.brd_pst_idx = bp.brd_pst_idx
+                  AND c.del_at IS NULL
+            ) AS cmt_cnt,
+            bp.created_by,
+            bp.updated_by,
+            bp.created_at,
+            bp.updated_at,
+            bp.del_at
+        FROM tb_brd_pst bp
+        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = bp.mbr_acct_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
+        WHERE 1 = 1
+        <if test="req.deleted == null or !req.deleted">
+            AND bp.del_at IS NULL
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+        ORDER BY ${req.orderByClause}
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <select id="countBoardPostList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_brd_pst bp
+        WHERE 1 = 1
+        <if test="req.deleted == null or !req.deleted">
+            AND bp.del_at IS NULL
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+    </select>
+
+    <update id="forceDeleteBoardPost">
+        UPDATE tb_brd_pst
+        SET
+            del_at = now(),
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE brd_pst_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <select id="selectSummary" resultType="AdminSmryJvo">
+        SELECT
+            (SELECT COUNT(*) FROM tb_mbr_acct) AS total_mbr_cnt,
+            (SELECT COUNT(*) FROM tb_mbr_acct WHERE del_at IS NULL) AS actv_mbr_cnt,
+            (SELECT COUNT(*) FROM tb_brd_pst) AS total_brd_pst_cnt,
+            (SELECT COUNT(*) FROM tb_brd_cmt) AS total_brd_cmt_cnt,
+            (SELECT COUNT(*) FROM tb_file) AS total_file_cnt
+    </select>
+
+</mapper>

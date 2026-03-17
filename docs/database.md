@@ -2,6 +2,9 @@
 
 ## DDL 규칙
 
+전체 스키마를 한 번에 재생성하려면 [all-ddl.sql](/home/glassworld/workspace/gw-home/docs/all-ddl.sql)을 사용한다.
+이 파일은 `DROP TABLE IF EXISTS ... CASCADE` + `CREATE TABLE` + `COMMENT ON COLUMN`까지 포함하고 있어 재실행이 가능하다.
+
 ### PK / UUID
 ```sql
 {table}_idx    BIGSERIAL PRIMARY KEY          -- 내부 PK (조인, 외래키 전용)
@@ -26,7 +29,7 @@ updated_by  VARCHAR(100)
 
 ### 소프트 삭제
 ```sql
-deleted_at  TIMESTAMPTZ    -- NULL이면 정상, 값 있으면 삭제
+del_at  TIMESTAMPTZ    -- NULL이면 정상, 값 있으면 삭제
 ```
 
 ## 파일 관리
@@ -39,22 +42,22 @@ deleted_at  TIMESTAMPTZ    -- NULL이면 정상, 값 있으면 삭제
 ## 테이블 네이밍
 
 ```
-tb_{도메인}_{대상}
-예: tb_board_post, tb_board_comment, tb_member_account
+tb_{축약도메인}_{축약대상}
+예: tb_brd_pst, tb_brd_cmt, tb_mbr_acct
 ```
 
 ## 예시 DDL
 
 ```sql
-CREATE TABLE tb_board_post (
-    board_post_idx   BIGSERIAL PRIMARY KEY,
-    board_post_uuid  UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+CREATE TABLE tb_brd_pst (
+    brd_pst_idx   BIGSERIAL PRIMARY KEY,
+    brd_pst_uuid  UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     title            VARCHAR(300) NOT NULL,
-    content          TEXT NOT NULL,
+    cntnt            TEXT NOT NULL,
     created_by       VARCHAR(100) NOT NULL,
     updated_by       VARCHAR(100),
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deleted_at       TIMESTAMPTZ
+    del_at           TIMESTAMPTZ
 );
 ```

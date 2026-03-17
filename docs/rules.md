@@ -10,14 +10,26 @@
 
 ## Mapper 규칙
 
-- Mapper 인터페이스: `api` 모듈 `{domain}.mapper` 패키지
-- Mapper XML: `infra-db` 모듈 `resources/mapper/{domain}/`
+- Mapper 인터페이스: `{project}-infra-db` 모듈 `mapper.{domain}` 패키지
+- Mapper XML: `{project}-infra-db` 모듈 `resources/mapper/{domain}/`
 - XML namespace = Mapper 인터페이스 fully qualified name
 - 동적 쿼리는 XML `<if>`, `<choose>`, `<foreach>` 사용
+- 조회 결과는 기본적으로 `resultMap` 대신 `resultType` 사용
+- 단일 테이블/기본 조회 모델은 `{Domain}Vo`, 조인 조회 모델은 `{Domain}Jvo` 사용
+- `resultType`에는 패키지명을 쓰지 않고 별칭만 사용한다
+- `mapUnderscoreToCamelCase=true`를 기본 적용하여 `snake_case -> camelCase` 매핑을 사용한다
+- `VO`는 단일 테이블 컬럼을 그대로 가져야 한다
+- `JVO`는 조인 등으로 인해 원본 테이블 컬럼에서 확장되거나 변경된 조회 결과에만 사용한다
+- DDL, `VO`, `JVO`는 감사 컬럼(`created_by`, `updated_by`, `created_at`, `updated_at`)을 제외하고 축약형 네이밍을 사용한다
+- 공통 PK/UUID/감사 컬럼(`idx`, `uuid`, `createdBy`, `updatedBy`, `createdAt`, `updatedAt`, `delAt`)은 `BaseVo`로 관리한다
+- 기본 PK/UUID 컬럼은 `resultType` 매핑 시 `AS idx`, `AS uuid` alias를 우선 사용한다
+- `VO` / `JVO` 필드명은 테이블 컬럼 기준 camelCase를 사용하므로 `idx`, `uuid` 같은 축약어를 허용한다
+- `VO` / `JVO`는 Lombok(`@Getter`, `@Setter`, `@SuperBuilder`, `@NoArgsConstructor`, `@AllArgsConstructor`) 사용을 기본으로 한다
+- `VO` / `JVO` 필드에는 가능한 한 DB 컬럼 코멘트를 주석으로 남긴다
 
 ```
-✅ api/src/.../board/mapper/BoardMapper.java
-✅ infra-db/src/resources/mapper/board/BoardMapper.xml
+✅ `infra-db/src/main/java/com/gw/infra/db/mapper/board/BoardMapper.java` (`{project}-infra-db`)
+✅ `infra-db/src/resources/mapper/board/BoardMapper.xml` (`{project}-infra-db`)
 ```
 
 ## Service 규칙
@@ -30,12 +42,16 @@
 ## 패키지 규칙
 
 ```
-com.gw.api.{domain}.controller   # @RestController
-com.gw.api.{domain}.service      # @Service
-com.gw.api.{domain}.mapper       # MyBatis Mapper interface
-com.gw.api.{domain}.dto          # Request/Response DTO
+com.gw.api.controller.{domain}   # @RestController
+com.gw.api.service.{domain}      # @Service
+com.gw.infra.db.mapper.{domain}  # MyBatis Mapper interface
+com.gw.api.dto.{domain}          # Request/Response DTO
 com.gw.share.common.{category}   # 공통
+com.gw.share.vo.{domain}         # 기본 조회/저장 VO
+com.gw.share.jvo.{domain}        # 조인 조회 JVO
 ```
+
+도메인 기반 패키지는 모든 모듈에서 `com.gw.{module}.{layer}.{domain}` 순서를 기본 규칙으로 사용한다.
 
 ## 네이밍 규칙
 
@@ -46,9 +62,11 @@ com.gw.share.common.{category}   # 공통
 | Mapper 메서드 | `select` / `insert` / `update` / `delete` + 명사 | `selectBoardByUuid` |
 | DTO (Request) | `{동사}{명사}Request` | `CreateBoardRequest` |
 | DTO (Response) | `{명사}Response` | `BoardResponse` |
+| VO / JVO 공통 필드 | `BaseVo` 상속 | `idx`, `uuid`, `createdAt` |
+| VO / JVO 도메인 필드 | 테이블 컬럼 camelCase | `mbrAcctIdx`, `brdCtgrIdx` |
 | XML id | Mapper 메서드명과 동일 | `selectBoardByUuid` |
-| DB 컬럼 | snake_case | `board_post_idx` |
-| Java 필드 | camelCase | `boardPostIdx` |
+| DB 컬럼 | 혼합 snake_case | `brd_pst_idx`, `created_at` |
+| Java 필드 | 혼합 camelCase | `brdPstIdx`, `createdAt` |
 
 ## Frontend 규칙
 

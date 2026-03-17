@@ -10,7 +10,7 @@ METHODS: {메서드 목록}
 
 ## 출력
 
-- `com.gw.api.{domain}.service.{Domain}Service.java`
+- `com.gw.api.service.{domain}.{Domain}Service.java`
 
 ## 규칙
 

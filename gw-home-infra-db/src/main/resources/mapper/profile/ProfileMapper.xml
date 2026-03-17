@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.profile.ProfileMapper">
+
+    <select id="selectProfileByUuid" resultType="PrflVo">
+        SELECT
+            mbr_prfl_idx AS idx,
+            mbr_prfl_uuid AS uuid,
+            mbr_acct_idx,
+            nick_nm,
+            intro,
+            prfl_img_url,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at
+        FROM tb_mbr_prfl
+        WHERE mbr_prfl_uuid = CAST(#{uuid} AS UUID)
+    </select>
+
+    <select id="selectProfileByAccountIdx" resultType="PrflVo">
+        SELECT
+            mbr_prfl_idx AS idx,
+            mbr_prfl_uuid AS uuid,
+            mbr_acct_idx,
+            nick_nm,
+            intro,
+            prfl_img_url,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at
+        FROM tb_mbr_prfl
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+    </select>
+
+    <update id="updateProfile" parameterType="PrflVo">
+        UPDATE tb_mbr_prfl
+        SET
+            nick_nm = #{nickNm},
+            intro = #{intro},
+            prfl_img_url = #{prflImgUrl},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_prfl_uuid = CAST(#{uuid} AS UUID)
+    </update>
+
+    <insert id="insertProfile" parameterType="PrflVo">
+        INSERT INTO tb_mbr_prfl (
+            mbr_acct_idx,
+            nick_nm,
+            intro,
+            prfl_img_url,
+            created_by
+        ) VALUES (
+            #{mbrAcctIdx},
+            #{nickNm},
+            #{intro},
+            #{prflImgUrl},
+            #{createdBy}
+        )
+    </insert>
+
+</mapper>

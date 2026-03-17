@@ -6,38 +6,38 @@
 ## DDL
 
 ```sql
--- sql/ddl/comment/tb_board_comment.sql
-CREATE TABLE tb_board_comment (
-    board_comment_idx    BIGSERIAL    PRIMARY KEY,
-    board_comment_uuid   UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    board_post_idx       BIGINT       NOT NULL,
-    parent_comment_idx   BIGINT,                      -- NULL이면 최상위 댓글
-    member_account_idx   BIGINT       NOT NULL,
-    content              VARCHAR(2000) NOT NULL,
+-- sql/ddl/comment/tb_brd_cmt.sql
+CREATE TABLE tb_brd_cmt (
+    brd_cmt_idx         BIGSERIAL    PRIMARY KEY,
+    brd_cmt_uuid        UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    brd_pst_idx         BIGINT       NOT NULL,
+    prnt_brd_cmt_idx    BIGINT,                      -- NULL이면 최상위 댓글
+    mbr_acct_idx        BIGINT       NOT NULL,
+    cntnt               VARCHAR(2000) NOT NULL,
     created_by           VARCHAR(100) NOT NULL,
     updated_by           VARCHAR(100),
     created_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    deleted_at           TIMESTAMPTZ
+    del_at               TIMESTAMPTZ
 );
-CREATE INDEX idx_board_comment_post ON tb_board_comment (board_post_idx);
-CREATE INDEX idx_board_comment_parent ON tb_board_comment (parent_comment_idx);
+CREATE INDEX idx_brd_cmt_brd_pst ON tb_brd_cmt (brd_pst_idx);
+CREATE INDEX idx_brd_cmt_prnt ON tb_brd_cmt (prnt_brd_cmt_idx);
 ```
 
 ## 생성 파일
 
 ```
-api/src/main/java/com/gw/api/comment/
-├── controller/CommentController.java
-├── service/CommentService.java
-├── mapper/CommentMapper.java
-└── dto/
+{project}-api/src/main/java/com/gw/api/
+├── controller/comment/CommentController.java
+├── service/comment/CommentService.java
+└── dto/comment/
     ├── CreateCommentRequest.java
     ├── UpdateCommentRequest.java
     └── CommentResponse.java
 
-infra-db/src/main/resources/mapper/comment/CommentMapper.xml
-infra-db/src/main/resources/sql/ddl/comment/tb_board_comment.sql
+{project}-infra-db/src/main/java/com/gw/infra/db/mapper/comment/CommentMapper.java
+{project}-infra-db/src/main/resources/mapper/comment/CommentMapper.xml
+{project}-infra-db/src/main/resources/sql/ddl/comment/tb_brd_cmt.sql
 ```
 
 ## API 엔드포인트
@@ -52,11 +52,11 @@ infra-db/src/main/resources/sql/ddl/comment/tb_board_comment.sql
 ## Mapper 메서드
 
 ```java
-List<CommentDto> selectCommentsByPostIdx(@Param("boardPostIdx") Long boardPostIdx);
-void insertComment(CommentDto comment);
-int updateComment(CommentDto comment);
+List<BrdCmtJvo> selectCommentsByBrdPstIdx(@Param("brdPstIdx") Long brdPstIdx);
+void insertComment(BrdCmtVo cmt);
+int updateComment(BrdCmtVo cmt);
 int deleteComment(@Param("uuid") String uuid);
-long countCommentsByPostIdx(@Param("boardPostIdx") Long boardPostIdx);
+long countCommentsByBrdPstIdx(@Param("brdPstIdx") Long brdPstIdx);
 ```
 
 ## CreateCommentRequest
@@ -77,13 +77,13 @@ createdAt, updatedAt
 ## 서비스 규칙
 
 - 목록 조회: 최상위 댓글 + 대댓글 트리 구조로 반환
-- 삭제: `deleted_at` = now(), 대댓글은 유지 (부모만 삭제 표시)
+- 삭제: `del_at` = now(), 대댓글은 유지 (부모만 삭제 표시)
 - 삭제된 댓글 content = "삭제된 댓글입니다" 표시
 
 ## 완료 체크
 
-- [ ] DDL 생성
-- [ ] CommentMapper (interface + XML)
-- [ ] DTO 생성
-- [ ] CommentService (트리 구조 조립 포함)
-- [ ] CommentController
+- [x] DDL 생성
+- [x] CommentMapper (interface + XML)
+- [x] DTO 생성
+- [x] CommentService (트리 구조 조립 포함)
+- [x] CommentController

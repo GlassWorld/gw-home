@@ -6,28 +6,27 @@
 ## DDL
 
 ```sql
--- sql/ddl/auth/tb_auth_refresh_token.sql
-CREATE TABLE tb_auth_refresh_token (
-    auth_refresh_token_idx   BIGSERIAL    PRIMARY KEY,
-    auth_refresh_token_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    member_account_idx       BIGINT       NOT NULL,
-    token_hash               VARCHAR(255) NOT NULL,
-    expires_at               TIMESTAMPTZ  NOT NULL,
-    created_by               VARCHAR(100) NOT NULL,
-    created_at               TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    deleted_at               TIMESTAMPTZ
+-- sql/ddl/auth/tb_auth_rfsh_tkn.sql
+CREATE TABLE tb_auth_rfsh_tkn (
+    auth_rfsh_tkn_idx   BIGSERIAL    PRIMARY KEY,
+    auth_rfsh_tkn_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    mbr_acct_idx        BIGINT       NOT NULL,
+    tkn_hash            VARCHAR(255) NOT NULL,
+    expr_at             TIMESTAMPTZ  NOT NULL,
+    created_by          VARCHAR(100) NOT NULL,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    del_at              TIMESTAMPTZ
 );
-CREATE INDEX idx_auth_refresh_token_member ON tb_auth_refresh_token (member_account_idx);
+CREATE INDEX idx_auth_rfsh_tkn_mbr_acct ON tb_auth_rfsh_tkn (mbr_acct_idx);
 ```
 
 ## 생성 파일
 
 ```
-api/src/main/java/com/gw/api/auth/
-├── controller/AuthController.java
-├── service/AuthService.java
-├── mapper/AuthMapper.java
-├── dto/
+{project}-api/src/main/java/com/gw/api/
+├── controller/auth/AuthController.java
+├── service/auth/AuthService.java
+├── dto/auth/
 │   ├── LoginRequest.java
 │   ├── TokenResponse.java
 │   └── RefreshRequest.java
@@ -35,11 +34,12 @@ api/src/main/java/com/gw/api/auth/
     ├── JwtProvider.java
     └── JwtAuthenticationFilter.java
 
-api/src/main/java/com/gw/api/config/
+{project}-api/src/main/java/com/gw/api/config/
 └── SecurityConfig.java
 
-infra-db/src/main/resources/mapper/auth/AuthMapper.xml
-infra-db/src/main/resources/sql/ddl/auth/tb_auth_refresh_token.sql
+{project}-infra-db/src/main/java/com/gw/infra/db/mapper/auth/AuthMapper.java
+{project}-infra-db/src/main/resources/mapper/auth/AuthMapper.xml
+{project}-infra-db/src/main/resources/sql/ddl/auth/tb_auth_rfsh_tkn.sql
 ```
 
 ## API 엔드포인트
@@ -68,7 +68,7 @@ accessToken, refreshToken, tokenType("Bearer"), expiresIn(초)
 ## 서비스 규칙
 
 - 로그인: `loginId` + `password` 검증 → 두 토큰 발급 → refresh token DB 저장
-- 로그아웃: refresh token `deleted_at` = now()
+- 로그아웃: refresh token `del_at` = now()
 - 갱신: refresh token 유효성 검증 → 새 access token 발급
 - refresh token은 해시 저장 (`SHA-256`)
 
@@ -82,12 +82,12 @@ POST /api/v1/auth/refresh
 
 ## 완료 체크
 
-- [ ] DDL 생성
-- [ ] JwtProvider 생성
-- [ ] JwtAuthenticationFilter 생성
-- [ ] SecurityConfig 생성
-- [ ] AuthMapper (interface + XML)
-- [ ] AuthService
-- [ ] AuthController
-- [ ] 로그인 → 토큰 발급 테스트
-- [ ] 토큰으로 인증 API 호출 테스트
+- [x] DDL 생성
+- [x] JwtProvider 생성
+- [x] JwtAuthenticationFilter 생성
+- [x] SecurityConfig 생성
+- [x] AuthMapper (interface + XML)
+- [x] AuthService
+- [x] AuthController
+- [x] 로그인 → 토큰 발급 테스트
+- [x] 토큰으로 인증 API 호출 테스트

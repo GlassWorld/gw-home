@@ -3,10 +3,12 @@
 ## 목표
 MyBatis 설정, DataSource 설정, DDL 초기화 스크립트 구조 생성
 
+대상 모듈명: `{project}-infra-db` (디렉토리: `{project}-infra-db/`)
+
 ## 생성 파일
 
 ```
-infra-db/src/main/
+{project}-infra-db/src/main/
 ├── java/com/gw/infra/db/
 │   └── config/
 │       ├── DataSourceConfig.java
@@ -37,12 +39,13 @@ public class DataSourceConfig {
 ### MyBatisConfig
 ```java
 @Configuration
-@MapperScan("com.gw.api.**.mapper")
+@MapperScan("com.gw.infra.db.**.mapper")
 public class MyBatisConfig {
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(dataSource);
+        factory.setTypeAliasesPackage("com.gw.share.vo,com.gw.share.jvo,...");
         factory.setMapperLocations(
             new PathMatchingResourcePatternResolver()
                 .getResources("classpath:mapper/**/*.xml")
@@ -77,4 +80,4 @@ sql/ddl/
 - [x] MyBatisConfig 생성
 - [x] mapper/ 디렉토리 구조 생성
 - [x] sql/ddl/, sql/dml/ 디렉토리 생성
-- [x] `./gradlew :api:bootRun` DB 연결 성공 확인
+- [x] `./gradlew :{project}-api:bootRun` DB 연결 성공 확인

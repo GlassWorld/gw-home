@@ -6,35 +6,35 @@
 ## DDL
 
 ```sql
--- sql/ddl/profile/tb_member_profile.sql
-CREATE TABLE tb_member_profile (
-    member_profile_idx    BIGSERIAL    PRIMARY KEY,
-    member_profile_uuid   UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    member_account_idx    BIGINT       NOT NULL UNIQUE,  -- FK to tb_member_account
-    nickname              VARCHAR(50)  NOT NULL UNIQUE,
-    introduction          VARCHAR(500),
-    profile_image_url     VARCHAR(1000),
-    created_by            VARCHAR(100) NOT NULL,
-    updated_by            VARCHAR(100),
-    created_at            TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at            TIMESTAMPTZ  NOT NULL DEFAULT now()
+-- sql/ddl/profile/tb_mbr_prfl.sql
+CREATE TABLE tb_mbr_prfl (
+    mbr_prfl_idx    BIGSERIAL    PRIMARY KEY,
+    mbr_prfl_uuid   UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    mbr_acct_idx    BIGINT       NOT NULL UNIQUE,  -- FK to tb_mbr_acct
+    nick_nm         VARCHAR(50)  NOT NULL UNIQUE,
+    intro           VARCHAR(500),
+    prfl_img_url    VARCHAR(1000),
+    created_by      VARCHAR(100) NOT NULL,
+    updated_by      VARCHAR(100),
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
-CREATE INDEX idx_member_profile_account ON tb_member_profile (member_account_idx);
+CREATE INDEX idx_mbr_prfl_mbr_acct ON tb_mbr_prfl (mbr_acct_idx);
 ```
 
 ## 생성 파일
 
 ```
-api/src/main/java/com/gw/api/profile/
-├── controller/ProfileController.java
-├── service/ProfileService.java
-├── mapper/ProfileMapper.java
-└── dto/
+{project}-api/src/main/java/com/gw/api/
+├── controller/profile/ProfileController.java
+├── service/profile/ProfileService.java
+└── dto/profile/
     ├── ProfileResponse.java
     └── UpdateProfileRequest.java
 
-infra-db/src/main/resources/mapper/profile/ProfileMapper.xml
-infra-db/src/main/resources/sql/ddl/profile/tb_member_profile.sql
+{project}-infra-db/src/main/java/com/gw/infra/db/mapper/profile/ProfileMapper.java
+{project}-infra-db/src/main/resources/mapper/profile/ProfileMapper.xml
+{project}-infra-db/src/main/resources/sql/ddl/profile/tb_mbr_prfl.sql
 ```
 
 ## API 엔드포인트
@@ -48,10 +48,10 @@ infra-db/src/main/resources/sql/ddl/profile/tb_member_profile.sql
 ## Mapper 메서드
 
 ```java
-ProfileDto selectProfileByUuid(@Param("uuid") String uuid);
-ProfileDto selectProfileByAccountIdx(@Param("memberAccountIdx") Long memberAccountIdx);
-int updateProfile(ProfileDto profile);
-void insertProfile(ProfileDto profile);  // 회원 가입 시 자동 생성용
+PrflVo selectProfileByUuid(@Param("uuid") String uuid);
+PrflVo selectProfileByAccountIdx(@Param("mbrAcctIdx") Long mbrAcctIdx);
+int updateProfile(PrflVo prfl);
+void insertProfile(PrflVo prfl);  // 회원 가입 시 자동 생성용
 ```
 
 ## UpdateProfileRequest
@@ -76,8 +76,8 @@ memberProfileUuid, nickname, introduction, profileImageUrl, createdAt
 
 ## 완료 체크
 
-- [ ] DDL 생성
-- [ ] ProfileMapper (interface + XML)
-- [ ] DTO 생성
-- [ ] ProfileService
-- [ ] ProfileController
+- [x] DDL 생성
+- [x] ProfileMapper (interface + XML)
+- [x] DTO 생성
+- [x] ProfileService
+- [x] ProfileController

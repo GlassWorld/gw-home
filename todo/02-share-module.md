@@ -3,10 +3,12 @@
 ## 목표
 모든 모듈이 의존하는 공통 클래스 생성
 
+대상 모듈명: `{project}-share` (디렉토리: `{project}-share/`)
+
 ## 생성 파일
 
 ```
-share/src/main/java/com/gw/share/
+{project}-share/src/main/java/com/gw/share/
 ├── common/
 │   ├── response/
 │   │   ├── ApiResponse.java
