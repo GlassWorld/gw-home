@@ -1,4 +1,4 @@
-# Rules
+# Backend Rules
 
 ## 절대 규칙 (위반 금지)
 
@@ -15,27 +15,27 @@
 - XML namespace = Mapper 인터페이스 fully qualified name
 - 동적 쿼리는 XML `<if>`, `<choose>`, `<foreach>` 사용
 - 조회 결과는 기본적으로 `resultMap` 대신 `resultType` 사용
-- 단일 테이블/기본 조회 모델은 `{Domain}Vo`, 조인 조회 모델은 `{Domain}Jvo` 사용
-- `resultType`에는 패키지명을 쓰지 않고 별칭만 사용한다
-- `mapUnderscoreToCamelCase=true`를 기본 적용하여 `snake_case -> camelCase` 매핑을 사용한다
-- `VO`는 단일 테이블 컬럼을 그대로 가져야 한다
-- `JVO`는 조인 등으로 인해 원본 테이블 컬럼에서 확장되거나 변경된 조회 결과에만 사용한다
-- DDL, `VO`, `JVO`는 감사 컬럼(`created_by`, `updated_by`, `created_at`, `updated_at`)을 제외하고 축약형 네이밍을 사용한다
-- 공통 PK/UUID/감사 컬럼(`idx`, `uuid`, `createdBy`, `updatedBy`, `createdAt`, `updatedAt`, `delAt`)은 `BaseVo`로 관리한다
-- 기본 PK/UUID 컬럼은 `resultType` 매핑 시 `AS idx`, `AS uuid` alias를 우선 사용한다
-- `VO` / `JVO` 필드명은 테이블 컬럼 기준 camelCase를 사용하므로 `idx`, `uuid` 같은 축약어를 허용한다
-- `VO` / `JVO`는 Lombok(`@Getter`, `@Setter`, `@SuperBuilder`, `@NoArgsConstructor`, `@AllArgsConstructor`) 사용을 기본으로 한다
-- `VO` / `JVO` 필드에는 가능한 한 DB 컬럼 코멘트를 주석으로 남긴다
+- 단일 테이블 조회 모델: `{Domain}Vo`, 조인 조회 모델: `{Domain}Jvo`
+- `resultType`에는 패키지명을 쓰지 않고 별칭만 사용
+- `mapUnderscoreToCamelCase=true` 기본 적용
+- `VO`는 단일 테이블 컬럼을 그대로 가져야 함
+- `JVO`는 조인 등으로 확장되거나 변경된 조회 결과에만 사용
+- DDL, `VO`, `JVO`는 감사 컬럼(`created_by`, `updated_by`, `created_at`, `updated_at`)을 제외하고 축약형 네이밍 사용
+- 공통 PK/UUID/감사 컬럼은 `BaseVo`로 관리
+- 기본 PK/UUID 컬럼은 `resultType` 매핑 시 `AS idx`, `AS uuid` alias 우선 사용
+- `VO` / `JVO` 필드명은 테이블 컬럼 기준 camelCase (`idx`, `uuid`, `mbrAcctIdx`)
+- `VO` / `JVO`는 Lombok(`@Getter`, `@Setter`, `@SuperBuilder`, `@NoArgsConstructor`, `@AllArgsConstructor`) 기본 사용
+- `VO` / `JVO` 필드에는 DB 컬럼 코멘트를 주석으로 남김
 
 ```
-✅ `infra-db/src/main/java/com/gw/infra/db/mapper/board/BoardMapper.java` (`{project}-infra-db`)
-✅ `infra-db/src/resources/mapper/board/BoardMapper.xml` (`{project}-infra-db`)
+✅ infra-db/src/main/java/com/gw/infra/db/mapper/board/BoardMapper.java
+✅ infra-db/src/main/resources/mapper/board/BoardMapper.xml
 ```
 
 ## Service 규칙
 
 - `@Service` + `@Transactional` 기본 적용
-- 조회 메서드는 `@Transactional(readOnly = true)`
+- 조회 메서드: `@Transactional(readOnly = true)`
 - Service는 다른 Service를 직접 호출 가능 (순환 금지)
 - 페이징: `PageRequest` DTO 수신 → `PageResponse` 반환
 
@@ -67,10 +67,3 @@ com.gw.share.jvo.{domain}        # 조인 조회 JVO
 | XML id | Mapper 메서드명과 동일 | `selectBoardByUuid` |
 | DB 컬럼 | 혼합 snake_case | `brd_pst_idx`, `created_at` |
 | Java 필드 | 혼합 camelCase | `brdPstIdx`, `createdAt` |
-
-## Frontend 규칙
-
-- 축약어 사용 금지 (`btn` → `button`, `usr` → `user`, `idx` → `index`)
-- 컴포넌트명: PascalCase
-- 함수명: camelCase (동사로 시작)
-- 파일명: kebab-case
