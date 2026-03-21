@@ -57,6 +57,20 @@ These rules are absolute. Never violate them.
 - After login: redirect to `/dashboard`
 - Auth-required pages: `definePageMeta({ middleware: 'auth' })`
 
+## 공통 — 주석 및 로그
+
+- **모든 주석은 한글로 작성한다** — 영문 주석 금지
+- 주석이 필요한 위치:
+  - 메서드/함수 상단 (목적 한 줄 요약)
+  - 복잡한 분기 로직 인라인
+  - SQL 쿼리 블록 상단
+- **로그는 모든 서비스 메서드에 필수 등록**:
+  - 진입 시: `log.info("메서드명 시작 - 파라미터: {}", param)`
+  - 정상 완료: `log.info("메서드명 완료")`
+  - 예외 발생: `log.error("메서드명 실패 - 원인: {}", e.getMessage(), e)`
+- 프론트엔드 composable: `console.log` 대신 개발 환경 한정 로그 (`if (import.meta.dev)`)
+- SQL 파일: 블록 상단에 목적 한글 주석 필수
+
 ## Repository Exploration
 
 - Do NOT analyze the entire repository

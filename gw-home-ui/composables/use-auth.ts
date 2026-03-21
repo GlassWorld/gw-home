@@ -1,6 +1,6 @@
 import type { ApiResponse } from '~/types/api/common'
-import type { LoginRequest, RefreshRequest, TokenResponse } from '~/types/api/auth'
-import type { AccountMeResponse, ProfileResponse, UserProfile } from '~/types/api/user'
+import type { LoginRequestBody, RefreshRequestBody, TokenApiResponse } from '~/types/api/auth'
+import type { AccountMeApiResponse, ProfileApiResponse, UserProfile } from '~/types/api/user'
 
 interface AuthorizedFetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -30,45 +30,45 @@ export function useAuth() {
     const authorizationHeader = buildAuthorizationHeader(accessTokenOverride ?? authStore.accessToken)
 
     const [accountResponse, profileResponse] = await Promise.all([
-      $fetch<ApiResponse<AccountMeResponse>>('/api/v1/accounts/me', {
+      $fetch<ApiResponse<AccountMeApiResponse>>('/api/v1/accounts/me', {
         baseURL: runtimeConfig.public.apiBase,
         headers: authorizationHeader
       }),
-      $fetch<ApiResponse<ProfileResponse>>('/api/v1/profiles/me', {
+      $fetch<ApiResponse<ProfileApiResponse>>('/api/v1/profiles/me', {
         baseURL: runtimeConfig.public.apiBase,
         headers: authorizationHeader
       })
     ])
 
     return {
-      memberAccountUuid: accountResponse.data.memberAccountUuid,
-      memberProfileUuid: profileResponse.data.memberProfileUuid,
-      loginId: accountResponse.data.loginId,
+      memberAccountUuid: accountResponse.data.member_account_uuid,
+      memberProfileUuid: profileResponse.data.member_profile_uuid,
+      loginId: accountResponse.data.login_id,
       email: accountResponse.data.email,
       role: accountResponse.data.role,
       nickname: profileResponse.data.nickname,
       introduction: profileResponse.data.introduction,
-      profileImageUrl: profileResponse.data.profileImageUrl,
-      createdAt: profileResponse.data.createdAt
+      profileImageUrl: profileResponse.data.profile_image_url,
+      createdAt: profileResponse.data.created_at
     }
   }
 
   async function login(loginId: string, password: string): Promise<void> {
-    const requestBody: LoginRequest = {
-      loginId,
+    const requestBody: LoginRequestBody = {
+      login_id: loginId,
       password
     }
 
-    const response = await $fetch<ApiResponse<TokenResponse>>('/api/v1/auth/login', {
+    const response = await $fetch<ApiResponse<TokenApiResponse>>('/api/v1/auth/login', {
       method: 'POST',
       baseURL: runtimeConfig.public.apiBase,
       body: requestBody
     })
 
-    authStore.setToken(response.data.accessToken)
-    refreshTokenCookie.value = response.data.refreshToken
+    authStore.setToken(response.data.access_token)
+    refreshTokenCookie.value = response.data.refresh_token
 
-    const currentUser = await fetchCurrentUser(response.data.accessToken)
+    const currentUser = await fetchCurrentUser(response.data.access_token)
     authStore.setUser(currentUser)
   }
 
@@ -77,7 +77,7 @@ export function useAuth() {
 
     try {
       if (refreshToken && authStore.accessToken) {
-        const requestBody: RefreshRequest = { refreshToken }
+        const requestBody: RefreshRequestBody = { refresh_token: refreshToken }
         await $fetch<ApiResponse<null>>('/api/v1/auth/logout', {
           method: 'POST',
           baseURL: runtimeConfig.public.apiBase,
@@ -101,23 +101,23 @@ export function useAuth() {
       })
     }
 
-    const requestBody: RefreshRequest = {
-      refreshToken: savedRefreshToken
+    const requestBody: RefreshRequestBody = {
+      refresh_token: savedRefreshToken
     }
 
-    const response = await $fetch<ApiResponse<TokenResponse>>('/api/v1/auth/refresh', {
+    const response = await $fetch<ApiResponse<TokenApiResponse>>('/api/v1/auth/refresh', {
       method: 'POST',
       baseURL: runtimeConfig.public.apiBase,
       body: requestBody
     })
 
-    authStore.setToken(response.data.accessToken)
-    refreshTokenCookie.value = response.data.refreshToken
+    authStore.setToken(response.data.access_token)
+    refreshTokenCookie.value = response.data.refresh_token
 
-    const currentUser = await fetchCurrentUser(response.data.accessToken)
+    const currentUser = await fetchCurrentUser(response.data.access_token)
     authStore.setUser(currentUser)
 
-    return response.data.accessToken
+    return response.data.access_token
   }
 
   async function ensureAuthenticated(): Promise<boolean> {

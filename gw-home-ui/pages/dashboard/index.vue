@@ -65,7 +65,7 @@ try {
       </p>
 
       <div v-else-if="recentBoards.length" class="dashboard-page__board-list">
-        <BoardListItem
+        <BoardBoardListItem
           v-for="board in recentBoards"
           :key="board.boardPostUuid"
           :board="board"

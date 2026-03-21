@@ -35,7 +35,7 @@ async function handleLogin(payload: { loginId: string; password: string }) {
         </p>
       </div>
 
-      <LoginForm
+      <AuthLoginForm
         :error-message="errorMessage"
         :is-submitting="isSubmitting"
         @submit="handleLogin"

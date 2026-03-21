@@ -9,7 +9,7 @@ const shouldShowHeader = computed(() => {
 
 <template>
   <div class="app-shell">
-    <AppHeader v-if="shouldShowHeader" />
+    <CommonAppHeader v-if="shouldShowHeader" />
     <NuxtPage />
   </div>
 </template>

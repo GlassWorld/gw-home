@@ -1,17 +1,17 @@
-export interface AccountMeResponse {
-  memberAccountUuid: string
-  loginId: string
+export interface AccountMeApiResponse {
+  member_account_uuid: string
+  login_id: string
   email: string
   role: string
-  createdAt: string
+  created_at: string
 }
 
-export interface ProfileResponse {
-  memberProfileUuid: string
+export interface ProfileApiResponse {
+  member_profile_uuid: string
   nickname: string
   introduction: string | null
-  profileImageUrl: string | null
-  createdAt: string
+  profile_image_url: string | null
+  created_at: string
 }
 
 export interface UserProfile {

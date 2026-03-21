@@ -60,6 +60,27 @@ class AuthServiceTest {
         verify(authMapper).insertRefreshToken(any());
     }
 
+    @Test
+    void adminLoginReturnsAccessTokenWithAdminRole() {
+        when(accountMapper.selectAccountByLoginId("admin")).thenReturn(
+                AcctVo.builder()
+                        .idx(99L)
+                        .uuid("admin-account-uuid")
+                        .lgnId("admin")
+                        .pwd(passwordEncoder.encode("admin!@34"))
+                        .email("admin@gw-home.local")
+                        .role("ADMIN")
+                        .createdAt(OffsetDateTime.parse("2026-03-22T01:00:00+09:00"))
+                        .build()
+        );
+
+        TokenResponse response = authService.login(new LoginRequest("admin", "admin!@34"));
+
+        assertEquals("admin", jwtProvider.extractLoginId(response.accessToken()));
+        assertEquals("ADMIN", jwtProvider.extractRole(response.accessToken()));
+        verify(authMapper).insertRefreshToken(any());
+    }
+
     private AcctVo createAccountVo() {
         return AcctVo.builder()
                 .idx(1L)

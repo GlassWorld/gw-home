@@ -1,15 +1,15 @@
-export interface LoginRequest {
-  loginId: string
+export interface LoginRequestBody {
+  login_id: string
   password: string
 }
 
-export interface RefreshRequest {
-  refreshToken: string
+export interface RefreshRequestBody {
+  refresh_token: string
 }
 
-export interface TokenResponse {
-  accessToken: string
-  refreshToken: string
-  tokenType: string
-  expiresIn: number
+export interface TokenApiResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  expires_in: number
 }

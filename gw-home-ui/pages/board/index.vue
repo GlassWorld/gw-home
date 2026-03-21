@@ -110,7 +110,7 @@ watch(
         게시글을 불러오는 중입니다.
       </p>
       <div v-else-if="boardList.length" class="board-page__list">
-        <BoardListItem
+        <BoardBoardListItem
           v-for="board in boardList"
           :key="board.boardPostUuid"
           :board="board"
