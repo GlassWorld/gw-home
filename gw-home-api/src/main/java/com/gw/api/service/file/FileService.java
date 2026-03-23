@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileService {
 
     private static final DateTimeFormatter YM_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
+    private static final Pattern UPLOADER_TYPE_PATTERN = Pattern.compile("^[A-Z_]+$");
 
     private final FileMapper fileMapper;
     private final AccountService accountService;
@@ -47,6 +49,7 @@ public class FileService {
         String extension = extractExtension(originalName);
         String savedName = UUID.randomUUID() + extension;
         String normalizedUploaderType = uploaderType.toUpperCase(Locale.ROOT);
+        validateUploaderType(normalizedUploaderType);
         String yearMonth = YM_FORMATTER.format(LocalDate.now());
         Path directory = Path.of(fileUploadProperties.getPath(), normalizedUploaderType, yearMonth);
         Path savedPath = directory.resolve(savedName);
@@ -72,6 +75,12 @@ public class FileService {
         fileMapper.insertFile(fileVo);
 
         return toResponse(getFileByIdx(fileVo.getIdx()));
+    }
+
+    private void validateUploaderType(String uploaderType) {
+        if (uploaderType == null || !UPLOADER_TYPE_PATTERN.matcher(uploaderType).matches()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "유효하지 않은 업로더 타입입니다.");
+        }
     }
 
     public void deleteFile(String loginId, String fileUuid) {

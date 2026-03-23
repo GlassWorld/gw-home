@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://144.24.79.156:5432/gw?currentSchema=home
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:admin123}
+    driver-class-name: org.postgresql.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+
+file:
+  upload:
+    path: /tmp/gw-home/uploads
+    base-url: ${FILE_BASE_URL:http://localhost/files}
+    max-size: 10MB
+    allowed-types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp

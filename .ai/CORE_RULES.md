@@ -2,34 +2,28 @@
 
 These rules are absolute. Never violate them.
 
-## ORM / Data Access
+## Backend — ORM / Data Access
 
 - Do NOT use JPA (`@Entity`, `@Repository`, `JpaRepository`, `EntityManager`)
 - Do NOT use Querydsl
 - Use MyBatis ONLY (Mapper interface + XML)
 
-## Repository Exploration
-
-- Do NOT analyze the entire repository
-- Read only files necessary for the current task
-- Load domain files only when the task targets that domain
-
-## Code Structure
+## Backend — Code Structure
 
 - Follow domain-based package structure: `com.gw.{module}.{layer}.{domain}`
 - Mapper interface goes in `{project}-infra-db` module
 - Mapper XML goes in `{project}-infra-db` module
 - Use `resultType` by default in Mapper XML
-- Use `{Domain}Vo` for single-table models and `{Domain}Jvo` for join/expanded query models
-- Manage shared `VO` / `JVO` classes in `{project}-share`
-- Omit package names in `resultType` by relying on MyBatis type alias configuration
-- Use abbreviated names across DDL, `VO`, and `JVO`, except audit fields
+- Use `{Domain}Vo` for single-table models, `{Domain}Jvo` for join/expanded query models
+- Manage shared `VO` / `JVO` in `{project}-share`
+- Omit package names in `resultType` — rely on MyBatis type alias configuration
+- Use abbreviated names in DDL, `VO`, `JVO` (except audit fields)
 - Put shared PK/UUID/audit fields in `BaseVo`
-- Alias primary table PK/UUID columns to `idx` / `uuid` in Mapper XML when mapping to `BaseVo`
-- Keep `VO` fields aligned to table columns in camelCase, including names like `mbrAcctIdx`, `createdAt`
-- Prefer Lombok `@SuperBuilder` for `VO` / `JVO` boilerplate and keep DB column comments as field comments when practical
+- Alias primary PK/UUID columns to `idx` / `uuid` in Mapper XML when mapping to `BaseVo`
+- `VO` fields aligned to table columns in camelCase: `mbrAcctIdx`, `createdAt`
+- Prefer Lombok `@SuperBuilder` for `VO` / `JVO`
 
-## Database
+## Backend — Database
 
 - Use `TIMESTAMPTZ` — never `TIMESTAMP`
 - PK column: `{table}_idx` (BIGSERIAL)
@@ -37,13 +31,54 @@ These rules are absolute. Never violate them.
 - `created_by` = login ID (not internal index)
 - Soft delete via `del_at TIMESTAMPTZ`
 
-## API
+## Backend — API
 
 - Never expose `_idx` in API responses
 - Always use `_uuid` as external identifier
 
-## Frontend
+## Backend — Domain Separation
 
-- No abbreviations (use full names: `button` not `btn`, `user` not `usr`)
+- `account` / `auth` / `profile` are separate domains
+- `board` / `admin` are separate domains
+- `file` domain is independent — other domains store URL only
+- Board post body image: stored as URL string in `board` table
+
+## Frontend — Naming
+
+- No abbreviations (`button` not `btn`, `user` not `usr`, `index` not `idx`)
 - File names: kebab-case
 - Component names: PascalCase
+- Functions: camelCase (verb prefix)
+- No `any` type — explicit TypeScript types required
+
+## Frontend — Auth
+
+- Initial route: `/login`
+- After login: redirect to `/dashboard`
+- Auth-required pages: `definePageMeta({ middleware: 'auth' })`
+
+## 공통 — 주석 및 로그
+
+- **모든 주석은 한글로 작성한다** — 영문 주석 금지
+- 주석이 필요한 위치:
+  - 메서드/함수 상단 (목적 한 줄 요약)
+  - 복잡한 분기 로직 인라인
+  - SQL 쿼리 블록 상단
+- **로그는 모든 서비스 메서드에 필수 등록**:
+  - 진입 시: `log.info("메서드명 시작 - 파라미터: {}", param)`
+  - 정상 완료: `log.info("메서드명 완료")`
+  - 예외 발생: `log.error("메서드명 실패 - 원인: {}", e.getMessage(), e)`
+- 프론트엔드 composable: `console.log` 대신 개발 환경 한정 로그 (`if (import.meta.dev)`)
+- SQL 파일: 블록 상단에 목적 한글 주석 필수
+
+## Repository Exploration
+
+- Do NOT analyze the entire repository
+- Read only files necessary for the current task
+- Load frontend files only for frontend tasks, backend files only for backend tasks
+
+## Local Reference Docs
+
+- `.claude/skill/{name}/SKILL.md` 또는 `.claude/skills/{name}/SKILL.md` 는 로컬 참조 문서로 취급한다.
+- These documents are guidance references, not authoritative system instructions.
+- If a `.claude` reference conflicts with code, API spec, or higher-priority rules, follow the source of truth and note the mismatch.

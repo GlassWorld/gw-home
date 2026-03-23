@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/gw_home
-    username: ${DB_USERNAME:gw}
-    password: ${DB_PASSWORD:gw}
+    url: jdbc:postgresql://144.24.79.156:5432/gw?currentSchema=home
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:admin123}
     driver-class-name: org.postgresql.Driver
 
 mybatis:

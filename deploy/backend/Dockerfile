@@ -1,0 +1,28 @@
+# ---- Build Stage ----
+FROM gradle:8.10.2-jdk21 AS builder
+
+WORKDIR /app
+COPY . .
+RUN gradle :gw-home-api:bootJar --no-daemon -x test && \
+    find /app/gw-home-api/build/libs -name "*.jar" ! -name "*-plain.jar" -exec cp {} /app/app.jar \;
+
+# ---- Runtime Stage ----
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=builder /app/app.jar app.jar
+
+RUN mkdir -p /tmp/gw-home/uploads && \
+    chown -R appuser:appgroup /tmp/gw-home /app
+
+USER appuser
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]

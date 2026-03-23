@@ -1,6 +1,7 @@
 package com.gw.api.file;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -11,6 +12,7 @@ import com.gw.api.dto.file.FileUploadResponse;
 import com.gw.api.service.account.AccountService;
 import com.gw.api.service.file.FileService;
 import com.gw.infra.db.mapper.file.FileMapper;
+import com.gw.share.common.exception.BusinessException;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.file.FileVo;
 import java.nio.file.Files;
@@ -83,4 +85,21 @@ class FileServiceTest {
         assertEquals("sample.png", response.originalName());
         assertTrue(Files.exists(tempDir.resolve("PROFILE/202603")));
     }
+
+    @Test
+    void uploadFileRejectsInvalidUploaderType() {
+        when(accountService.getAccountByLoginId("tester_01")).thenReturn(
+                AcctVo.builder().idx(1L).lgnId("tester_01").build()
+        );
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sample.png",
+                "image/png",
+                "test".getBytes()
+        );
+
+        assertThrows(BusinessException.class, () -> fileService.uploadFile("tester_01", "../profile", file));
+    }
+
 }
