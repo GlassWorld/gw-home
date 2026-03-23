@@ -7,6 +7,15 @@ on:
     paths:
       - 'gw-home-ui/**'
   workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: '프론트엔드 수동 배포 확인'
+        required: true
+        default: 'yes'
+      deploy_note:
+        description: '배포 메모'
+        required: false
+        default: ''
 
 concurrency:
   group: deploy
@@ -14,9 +23,13 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_deploy == 'yes'
     runs-on: ubuntu-latest
 
     steps:
+      - name: 배포 요청 정보 출력
+        run: echo "수동 배포 메모=${{ github.event.inputs.deploy_note }}"
+
       - name: 서버에 프론트엔드 배포
         uses: appleboy/ssh-action@v1.2.0
         with:
