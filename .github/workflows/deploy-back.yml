@@ -60,6 +60,7 @@ jobs:
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
           port: ${{ secrets.OCI_PORT }}
+          command_timeout: 30m
           script: |
             cd "${{ secrets.OCI_PROJECT_PATH }}"
             git pull origin main
