@@ -1,10 +1,10 @@
 # ---- Build Stage ----
 FROM gradle:8.10.2-jdk21 AS builder
 
-WORKDIR /app
+WORKDIR /home/gradle/app
 COPY . .
 RUN gradle :gw-home-api:bootJar --no-daemon -x test && \
-    find /app/gw-home-api/build/libs -name "*.jar" ! -name "*-plain.jar" -exec cp {} /app/app.jar \;
+    find /home/gradle/app/gw-home-api/build/libs -name "*.jar" ! -name "*-plain.jar" -exec cp {} /home/gradle/app/app.jar \;
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jre
@@ -12,7 +12,7 @@ WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /app/app.jar app.jar
+COPY --from=builder /home/gradle/app/app.jar app.jar
 
 RUN mkdir -p /tmp/gw-home/uploads && \
     chown -R appuser:appgroup /tmp/gw-home /app
