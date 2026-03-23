@@ -26,10 +26,41 @@ jobs:
   deploy:
     if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_deploy == 'yes'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: 배포 요청 정보 출력
         run: echo "수동 배포 메모=${{ github.event.inputs.deploy_note }}"
+
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: GitHub Container Registry 로그인
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 백엔드 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./deploy/backend/Dockerfile
+          push: true
+          tags: ghcr.io/glassworld/gw-home-backend:latest
+
+      - name: 프론트엔드 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v6
+        with:
+          context: ./gw-home-ui
+          file: ./deploy/frontend/Dockerfile
+          push: true
+          build-args: |
+            NUXT_PUBLIC_API_BASE=/api
+          tags: ghcr.io/glassworld/gw-home-frontend:latest
 
       - name: 서버에 전체 배포
         uses: appleboy/ssh-action@v1.2.0
@@ -41,4 +72,6 @@ jobs:
           script: |
             cd "${{ secrets.OCI_PROJECT_PATH }}"
             git pull origin main
-            docker compose up -d --build
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            docker compose pull backend frontend
+            docker compose up -d backend frontend nginx
