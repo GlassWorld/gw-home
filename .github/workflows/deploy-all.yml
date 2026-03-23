@@ -75,4 +75,4 @@ jobs:
             git pull origin main
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             docker compose pull backend frontend
-            docker compose up -d backend frontend nginx
+            docker compose up -d backend frontend

@@ -12,6 +12,8 @@ services:
 
   frontend:
     image: ghcr.io/glassworld/gw-home-frontend:latest
+    ports:
+      - "3000:3000"
     environment:
       NUXT_PUBLIC_API_BASE: /api
     networks:
@@ -19,19 +21,6 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-
-  nginx:
-    image: nginx:1.27-alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    networks:
-      - app-network
-    restart: unless-stopped
-    depends_on:
-      - backend
-      - frontend
 
 networks:
   app-network:
