@@ -10,7 +10,7 @@ RUN gradle :gw-home-api:bootJar --no-daemon -x test && \
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 COPY --from=builder /home/gradle/app/app.jar app.jar
 
