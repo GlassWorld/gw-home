@@ -1,0 +1,26 @@
+services:
+  frontend:
+    image: ghcr.io/glassworld/gw-home-frontend:latest
+    container_name: gw-fe-app
+    restart: always
+    environment:
+      NUXT_PUBLIC_API_BASE: /api
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: gw-fe-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

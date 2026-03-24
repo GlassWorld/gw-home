@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:15
+    container_name: gw-be-db
+    restart: always
+    environment:
+      POSTGRES_DB: gw
+      POSTGRES_USER: gw
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  backend:
+    image: ghcr.io/glassworld/gw-home-backend:latest
+    container_name: gw-be-api
+    restart: always
+    depends_on:
+      - db
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/gw
+      SPRING_DATASOURCE_USERNAME: gw
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge

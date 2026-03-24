@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'gw-home-ui/**'
+      - 'deploy/frontend/**'
   workflow_dispatch:
     inputs:
       confirm_deploy:
@@ -53,17 +54,37 @@ jobs:
             NUXT_PUBLIC_API_BASE=/api
           tags: ghcr.io/glassworld/gw-home-frontend:latest
 
+      - name: 프론트엔드 서버 배포 경로 준비
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.FRONT_HOST }}
+          username: ${{ secrets.FRONT_USER }}
+          key: ${{ secrets.FRONT_SSH_KEY }}
+          port: ${{ secrets.FRONT_PORT }}
+          command_timeout: 10m
+          script: mkdir -p "${{ secrets.FRONT_APP_PATH }}"
+
+      - name: 프론트엔드 배포 파일 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.FRONT_HOST }}
+          username: ${{ secrets.FRONT_USER }}
+          key: ${{ secrets.FRONT_SSH_KEY }}
+          port: ${{ secrets.FRONT_PORT }}
+          source: "deploy/frontend/docker-compose.yml,deploy/frontend/nginx.conf"
+          target: ${{ secrets.FRONT_APP_PATH }}
+          strip_components: 2
+
       - name: 서버에 프론트엔드 배포
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USER }}
-          key: ${{ secrets.OCI_SSH_KEY }}
-          port: ${{ secrets.OCI_PORT }}
+          host: ${{ secrets.FRONT_HOST }}
+          username: ${{ secrets.FRONT_USER }}
+          key: ${{ secrets.FRONT_SSH_KEY }}
+          port: ${{ secrets.FRONT_PORT }}
           command_timeout: 30m
           script: |
-            cd "${{ secrets.OCI_PROJECT_PATH }}"
-            git pull origin main
+            cd "${{ secrets.FRONT_APP_PATH }}"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
-            docker compose pull frontend
-            docker compose up -d frontend
+            docker compose pull frontend nginx
+            docker compose up -d

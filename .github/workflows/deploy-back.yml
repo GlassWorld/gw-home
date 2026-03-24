@@ -8,6 +8,7 @@ on:
       - 'gw-home-api/**'
       - 'gw-home-share/**'
       - 'gw-home-infra-db/**'
+      - 'deploy/backend/**'
   workflow_dispatch:
     inputs:
       confirm_deploy:
@@ -53,17 +54,40 @@ jobs:
           push: true
           tags: ghcr.io/glassworld/gw-home-backend:latest
 
+      - name: 백엔드 서버 배포 경로 준비
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.BACK_HOST }}
+          username: ${{ secrets.BACK_USER }}
+          key: ${{ secrets.BACK_SSH_KEY }}
+          port: ${{ secrets.BACK_PORT }}
+          command_timeout: 10m
+          script: mkdir -p "${{ secrets.BACK_APP_PATH }}"
+
+      - name: 백엔드 배포 파일 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.BACK_HOST }}
+          username: ${{ secrets.BACK_USER }}
+          key: ${{ secrets.BACK_SSH_KEY }}
+          port: ${{ secrets.BACK_PORT }}
+          source: "deploy/backend/docker-compose.yml"
+          target: ${{ secrets.BACK_APP_PATH }}
+          strip_components: 2
+
       - name: 서버에 백엔드 배포
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USER }}
-          key: ${{ secrets.OCI_SSH_KEY }}
-          port: ${{ secrets.OCI_PORT }}
+          host: ${{ secrets.BACK_HOST }}
+          username: ${{ secrets.BACK_USER }}
+          key: ${{ secrets.BACK_SSH_KEY }}
+          port: ${{ secrets.BACK_PORT }}
           command_timeout: 30m
           script: |
-            cd "${{ secrets.OCI_PROJECT_PATH }}"
-            git pull origin main
+            cd "${{ secrets.BACK_APP_PATH }}"
+            cat <<'EOF' > .env
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            EOF
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
-            docker compose pull backend
-            docker compose up -d backend
+            docker compose pull backend db
+            docker compose up -d
