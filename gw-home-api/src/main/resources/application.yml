@@ -8,8 +8,8 @@ spring:
 
 jwt:
   secret: Z3ctaG9tZS1kZWZhdWx0LXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LWFuZC10ZXN0aW5nLTEyMw==
-  access-token-expiration-seconds: 1800
-  refresh-token-expiration-seconds: 604800
+  access-token-expiration-seconds: 10800
+  refresh-token-expiration-seconds: 1814400
 
 server:
   port: 8080
