@@ -32,7 +32,7 @@ OCI_HOST, OCI_USER, OCI_SSH_KEY, OCI_PORT, OCI_PROJECT_PATH
 | `FRONT_USER` | 서버 ssh 접속 유저명 (예: `ubuntu`, `opc`) |
 | `FRONT_SSH_KEY` | 서버 SSH 개인키 전체 내용 (-----BEGIN ... -----END-----) |
 | `FRONT_PORT` | `22` |
-| `FRONT_APP_PATH` | `~/app/frontend` |
+| `FRONT_APP_PATH` | `/home/{user}/app/frontend` |
 
 ### 백엔드 서버 secrets (신규 추가)
 | Secret 이름 | 값 |
@@ -41,7 +41,7 @@ OCI_HOST, OCI_USER, OCI_SSH_KEY, OCI_PORT, OCI_PROJECT_PATH
 | `BACK_USER` | 서버 ssh 접속 유저명 |
 | `BACK_SSH_KEY` | 서버 SSH 개인키 전체 내용 |
 | `BACK_PORT` | `22` |
-| `BACK_APP_PATH` | `~/app/backend` |
+| `BACK_APP_PATH` | `/home/{user}/app/backend` |
 | `DB_PASSWORD` | DB 비밀번호 (예: `gw1234`, 실제 운영값 사용 권장) |
 
 ### GHCR secrets (기존 유지)

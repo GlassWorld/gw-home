@@ -62,7 +62,7 @@ jobs:
           key: ${{ secrets.BACK_SSH_KEY }}
           port: ${{ secrets.BACK_PORT }}
           command_timeout: 10m
-          script: mkdir -p "${{ secrets.BACK_APP_PATH }}"
+          script: mkdir -p '${{ secrets.BACK_APP_PATH }}'
 
       - name: 백엔드 배포 파일 전송
         uses: appleboy/scp-action@v0.1.7
@@ -84,10 +84,14 @@ jobs:
           port: ${{ secrets.BACK_PORT }}
           command_timeout: 30m
           script: |
-            cd "${{ secrets.BACK_APP_PATH }}"
+            APP_PATH='${{ secrets.BACK_APP_PATH }}'
+            COMPOSE_FILE="${APP_PATH}/docker-compose.yml"
+            ENV_FILE="${APP_PATH}/.env"
+            test -f "${COMPOSE_FILE}"
             cat <<'EOF' > .env
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             EOF
+            mv .env "${ENV_FILE}"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
-            docker compose pull backend db
-            docker compose up -d
+            docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" pull backend db
+            docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" up -d
