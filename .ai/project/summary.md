@@ -9,11 +9,12 @@
 | 구분 | 기술 |
 |------|------|
 | Backend Language | Java 21 |
-| Backend Framework | Spring Boot 3.x |
-| DB Access | MyBatis (JPA/Querydsl 금지) |
-| Database | PostgreSQL |
+| Backend Framework | Spring Boot 3.3.5 |
+| DB Access | MyBatis 3.0.3 (JPA/Querydsl 금지) |
+| Database | PostgreSQL 42.7.4 |
+| Auth | Spring Security + jjwt 0.12.6 |
 | Build | Gradle Multi-module |
-| Frontend Framework | Nuxt3 |
+| Frontend Framework | Nuxt3 3.16.x |
 | Frontend Language | TypeScript |
 
 ## 모듈 구조
