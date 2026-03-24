@@ -1,0 +1,18 @@
+services:
+  backend:
+    image: ghcr.io/glassworld/gw-home-backend:latest
+    container_name: gw-be-api
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://168.107.12.96:5432/gw?currentSchema=home
+      DB_USERNAME: gw
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -6,9 +6,17 @@ on:
       - main
     paths:
       - 'deploy/**'
-      - 'docker-compose.yml'
-      - '.github/workflows/**'
+      - '.github/workflows/deploy-all.yml'
   workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: '전체 수동 배포 확인'
+        required: true
+        default: 'yes'
+      deploy_note:
+        description: '배포 메모'
+        required: false
+        default: ''
 
 concurrency:
   group: deploy
@@ -16,17 +24,121 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_deploy == 'yes'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: 서버에 전체 배포
+      - name: 배포 요청 정보 출력
+        run: echo "수동 배포 메모=${{ github.event.inputs.deploy_note }}"
+
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: GitHub Container Registry 로그인
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 백엔드 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./deploy/backend/Dockerfile
+          push: true
+          tags: ghcr.io/glassworld/gw-home-backend:latest
+
+      - name: 프론트엔드 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v6
+        with:
+          context: ./gw-home-ui
+          file: ./deploy/frontend/Dockerfile
+          push: true
+          build-args: |
+            NUXT_PUBLIC_API_BASE=/api
+          tags: ghcr.io/glassworld/gw-home-frontend:latest
+
+      - name: 프론트엔드 서버 배포 경로 준비
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USER }}
-          key: ${{ secrets.OCI_SSH_KEY }}
-          port: ${{ secrets.OCI_PORT }}
+          host: ${{ secrets.FRONT_HOST }}
+          username: ${{ secrets.FRONT_USER }}
+          key: ${{ secrets.FRONT_SSH_KEY }}
+          port: ${{ secrets.FRONT_PORT }}
+          command_timeout: 10m
+          script: mkdir -p '${{ secrets.FRONT_APP_PATH }}'
+
+      - name: 프론트엔드 배포 파일 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.FRONT_HOST }}
+          username: ${{ secrets.FRONT_USER }}
+          key: ${{ secrets.FRONT_SSH_KEY }}
+          port: ${{ secrets.FRONT_PORT }}
+          source: "deploy/frontend/docker-compose.yml,deploy/frontend/nginx.conf"
+          target: ${{ secrets.FRONT_APP_PATH }}
+          strip_components: 2
+
+      - name: 프론트엔드 서버 배포
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.FRONT_HOST }}
+          username: ${{ secrets.FRONT_USER }}
+          key: ${{ secrets.FRONT_SSH_KEY }}
+          port: ${{ secrets.FRONT_PORT }}
+          command_timeout: 30m
           script: |
-            cd "${{ secrets.OCI_PROJECT_PATH }}"
-            git pull origin main
-            docker compose up -d --build
+            APP_PATH='${{ secrets.FRONT_APP_PATH }}'
+            COMPOSE_FILE="${APP_PATH}/docker-compose.yml"
+            NGINX_FILE="${APP_PATH}/nginx.conf"
+            test -f "${COMPOSE_FILE}"
+            test -f "${NGINX_FILE}"
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            docker compose -f "${COMPOSE_FILE}" pull frontend nginx
+            docker compose -f "${COMPOSE_FILE}" up -d
+
+      - name: 백엔드 서버 배포 경로 준비
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.BACK_HOST }}
+          username: ${{ secrets.BACK_USER }}
+          key: ${{ secrets.BACK_SSH_KEY }}
+          port: ${{ secrets.BACK_PORT }}
+          command_timeout: 10m
+          script: mkdir -p '${{ secrets.BACK_APP_PATH }}'
+
+      - name: 백엔드 배포 파일 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.BACK_HOST }}
+          username: ${{ secrets.BACK_USER }}
+          key: ${{ secrets.BACK_SSH_KEY }}
+          port: ${{ secrets.BACK_PORT }}
+          source: "deploy/backend/docker-compose.yml"
+          target: ${{ secrets.BACK_APP_PATH }}
+          strip_components: 2
+
+      - name: 백엔드 서버 배포
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.BACK_HOST }}
+          username: ${{ secrets.BACK_USER }}
+          key: ${{ secrets.BACK_SSH_KEY }}
+          port: ${{ secrets.BACK_PORT }}
+          command_timeout: 30m
+          script: |
+            APP_PATH='${{ secrets.BACK_APP_PATH }}'
+            COMPOSE_FILE="${APP_PATH}/docker-compose.yml"
+            ENV_FILE="${APP_PATH}/.env"
+            test -f "${COMPOSE_FILE}"
+            cat <<'EOF' > .env
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            EOF
+            mv .env "${ENV_FILE}"
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" pull backend
+            docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" up -d backend
