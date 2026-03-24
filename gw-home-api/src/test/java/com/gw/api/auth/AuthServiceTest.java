@@ -2,8 +2,10 @@ package com.gw.api.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +15,8 @@ import com.gw.api.jwt.JwtProvider;
 import com.gw.api.service.auth.AuthService;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.auth.AuthMapper;
+import com.gw.share.common.exception.BusinessException;
+import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.vo.account.AcctVo;
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +61,7 @@ class AuthServiceTest {
         assertNotNull(response.refreshToken());
         assertEquals("Bearer", response.tokenType());
         assertTrue(response.expiresIn() > 0);
+        verify(accountMapper).resetLoginFailCount(1L);
         verify(authMapper).insertRefreshToken(any());
     }
 
@@ -78,10 +83,68 @@ class AuthServiceTest {
 
         assertEquals("admin", jwtProvider.extractLoginId(response.accessToken()));
         assertEquals("ADMIN", jwtProvider.extractRole(response.accessToken()));
+        verify(accountMapper).resetLoginFailCount(99L);
         verify(authMapper).insertRefreshToken(any());
     }
 
+    @Test
+    void loginFailureIncrementsCountAndReturnsRemainingAttempts() {
+        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(
+                createAccountVo(2, false)
+        );
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> authService.login(new LoginRequest("tester_01", "wrong-password"))
+        );
+
+        assertEquals(ErrorCode.UNAUTHORIZED, exception.getErrorCode());
+        assertEquals("로그인 정보가 올바르지 않습니다. (잔여 2회)", exception.getMessage());
+        verify(accountMapper).incrementLoginFailCount(1L);
+        verify(accountMapper, never()).lockAccount(1L);
+        verify(accountMapper, never()).resetLoginFailCount(1L);
+    }
+
+    @Test
+    void lockedAccountReturnsAccountLocked() {
+        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(
+                createAccountVo(0, true)
+        );
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> authService.login(new LoginRequest("tester_01", "password1234"))
+        );
+
+        assertEquals(ErrorCode.ACCOUNT_LOCKED, exception.getErrorCode());
+        assertEquals("계정이 잠금되었습니다. 관리자에게 문의하세요.", exception.getMessage());
+        verify(accountMapper, never()).incrementLoginFailCount(1L);
+        verify(accountMapper, never()).resetLoginFailCount(1L);
+    }
+
+    @Test
+    void fifthLoginFailureLocksAccount() {
+        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(
+                createAccountVo(4, false)
+        );
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> authService.login(new LoginRequest("tester_01", "wrong-password"))
+        );
+
+        assertEquals(ErrorCode.UNAUTHORIZED, exception.getErrorCode());
+        assertEquals("로그인 정보가 올바르지 않습니다. (잔여 0회)", exception.getMessage());
+        verify(accountMapper).incrementLoginFailCount(1L);
+        verify(accountMapper).lockAccount(1L);
+        verify(accountMapper, never()).resetLoginFailCount(1L);
+    }
+
     private AcctVo createAccountVo() {
+        return createAccountVo(0, false);
+    }
+
+    private AcctVo createAccountVo(int loginFailCount, boolean isLocked) {
         return AcctVo.builder()
                 .idx(1L)
                 .uuid("account-uuid")
@@ -89,6 +152,9 @@ class AuthServiceTest {
                 .pwd(passwordEncoder.encode("password1234"))
                 .email("tester@example.com")
                 .role("USER")
+                .lgnFailCnt(loginFailCount)
+                .lckYn(isLocked)
+                .lckAt(null)
                 .createdAt(OffsetDateTime.parse("2026-03-17T21:00:00+09:00"))
                 .build();
     }

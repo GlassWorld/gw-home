@@ -22,4 +22,10 @@ public interface AccountMapper {
     boolean existsByLoginId(@Param("lgnId") String lgnId);
 
     boolean existsByEmail(@Param("email") String email);
+
+    int incrementLoginFailCount(@Param("idx") Long idx);
+
+    int lockAccount(@Param("idx") Long idx);
+
+    int resetLoginFailCount(@Param("idx") Long idx);
 }

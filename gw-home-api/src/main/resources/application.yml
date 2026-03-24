@@ -1,6 +1,10 @@
 spring:
   profiles:
     active: local
+  security:
+    user:
+      name: dev-user
+      password: dev-password
 
 jwt:
   secret: Z3ctaG9tZS1kZWZhdWx0LXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LWFuZC10ZXN0aW5nLTEyMw==

@@ -28,6 +28,9 @@
             pwd,
             email,
             role,
+            lgn_fail_cnt,
+            lck_yn,
+            lck_at,
             created_by,
             updated_by,
             created_at,
@@ -46,6 +49,9 @@
             pwd,
             email,
             role,
+            lgn_fail_cnt,
+            lck_yn,
+            lck_at,
             created_by,
             updated_by,
             created_at,
@@ -64,6 +70,9 @@
             pwd,
             email,
             role,
+            lgn_fail_cnt,
+            lck_yn,
+            lck_at,
             created_by,
             updated_by,
             created_at,
@@ -110,5 +119,36 @@
               AND del_at IS NULL
         )
     </select>
+
+    <!-- 로그인 실패 횟수를 1 증가한다 -->
+    <update id="incrementLoginFailCount">
+        UPDATE tb_mbr_acct
+        SET
+            lgn_fail_cnt = lgn_fail_cnt + 1,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- 계정을 잠금 처리한다 -->
+    <update id="lockAccount">
+        UPDATE tb_mbr_acct
+        SET
+            lck_yn = TRUE,
+            lck_at = now(),
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- 로그인 성공 시 실패 횟수를 초기화한다 -->
+    <update id="resetLoginFailCount">
+        UPDATE tb_mbr_acct
+        SET
+            lgn_fail_cnt = 0,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
 
 </mapper>
