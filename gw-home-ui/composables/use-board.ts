@@ -3,11 +3,24 @@ import type { BoardDetail, BoardListParams, BoardListResponse } from '~/types/ap
 
 export function useBoard() {
   const runtimeConfig = useRuntimeConfig()
+  const apiBaseUrl = import.meta.client || runtimeConfig.public.apiBase.startsWith('http://') || runtimeConfig.public.apiBase.startsWith('https://')
+    ? runtimeConfig.public.apiBase
+    : (() => {
+        const headers = useRequestHeaders(['host', 'x-forwarded-proto'])
+        const host = headers.host
+
+        if (!host) {
+          return runtimeConfig.public.apiBase
+        }
+
+        const protocol = headers['x-forwarded-proto'] ?? 'http'
+        return `${protocol}://${host}${runtimeConfig.public.apiBase}`
+      })()
   const { authorizedFetch } = useAuth()
 
   async function fetchBoardList(params: BoardListParams = {}): Promise<BoardListResponse> {
     const response = await $fetch<ApiResponse<BoardListResponse>>('/api/v1/boards', {
-      baseURL: runtimeConfig.public.apiBase,
+      baseURL: apiBaseUrl,
       query: {
         categoryUuid: params.categoryUuid,
         keyword: params.keyword,
@@ -23,7 +36,7 @@ export function useBoard() {
 
   async function fetchBoard(boardUuid: string): Promise<BoardDetail> {
     const response = await $fetch<ApiResponse<BoardDetail>>(`/api/v1/boards/${boardUuid}`, {
-      baseURL: runtimeConfig.public.apiBase
+      baseURL: apiBaseUrl
     })
 
     return response.data
