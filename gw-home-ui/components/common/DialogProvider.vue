@@ -8,6 +8,7 @@ const { dialogState, closeDialog } = useDialog()
     eyebrow="Dialog"
     :title="dialogState.title"
     width="420px"
+    :z-index="40"
     @close="closeDialog(false)"
   >
     <p class="dialog-provider__message">

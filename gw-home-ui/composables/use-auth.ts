@@ -40,7 +40,8 @@ export function useAuth() {
   const authStore = useAuthStore()
   const refreshTokenCookie = useCookie<string | null>('gw-home-refresh-token', {
     default: () => null,
-    sameSite: 'lax'
+    sameSite: 'lax',
+    path: '/'
   })
 
   async function fetchCurrentUser(accessTokenOverride?: string): Promise<UserProfile> {
