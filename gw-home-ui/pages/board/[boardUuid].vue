@@ -67,12 +67,12 @@ async function handleDelete() {
           </div>
 
           <div v-if="isOwner" class="board-detail-page__actions">
-            <button class="button-secondary" type="button" disabled>
+            <CommonBaseButton variant="secondary" disabled>
               수정 준비 중
-            </button>
-            <button class="button-danger" type="button" :disabled="isDeleting" @click="handleDelete">
+            </CommonBaseButton>
+            <CommonBaseButton variant="danger" :disabled="isDeleting" @click="handleDelete">
               {{ isDeleting ? '삭제 중...' : '삭제' }}
-            </button>
+            </CommonBaseButton>
           </div>
         </div>
 

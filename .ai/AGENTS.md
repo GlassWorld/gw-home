@@ -65,6 +65,7 @@
 - 패키지: `com.gw.{module}.{layer}.{domain}`
 - DDL/VO/JVO: 감사 컬럼 제외 축약형 네이밍 (`AcctVo`, `tb_mbr_acct`)
 - 공통 PK/UUID/감사 컬럼: `BaseVo` 상속
+- Mapper XML 은 기본적으로 `resultType + VO/JVO` 로 처리하고, `resultMap` 은 불가피한 경우에만 사용
 
 ### Frontend
 
@@ -73,6 +74,9 @@
 - 파일명: kebab-case / 컴포넌트명: PascalCase / 함수명: camelCase
 - 초기 라우트: `/login` → 로그인 성공 후 `/dashboard`
 - API 응답: `ApiResponse<T>` 래핑 기준 (`docs/common/api-contract.md` 참조)
+- 버튼 / 모달은 우선 `gw-home-ui/components/common` 의 공통 컴포넌트로 관리하고, 화면별 컴포넌트는 조합과 예외 스타일만 담당한다
+- 공통 UI 패턴(버튼, 모달, 입력 레이아웃)을 새로 만들거나 수정할 때는 기존 공통 컴포넌트 확장 가능성을 먼저 검토한다
+- 알림 메시지는 인라인 박스로 레이아웃을 밀기보다 공통 토스트로 우선 처리하고, 토스트 상태와 뷰포트는 전역 공통으로 관리한다
 
 ### 도메인 경계
 

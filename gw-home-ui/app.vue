@@ -15,6 +15,8 @@ const shouldShowFooter = computed(() => {
   <div class="app-shell">
     <CommonAppHeader v-if="shouldShowHeader" />
     <NuxtPage class="app-shell__content" />
+    <CommonToastViewport />
+    <CommonDialogProvider />
     <footer v-if="shouldShowFooter" class="app-footer">
       <div class="page-container app-footer__inner">
         <p>Copyright 2026 chjsa11</p>

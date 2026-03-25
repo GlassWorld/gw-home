@@ -51,12 +51,12 @@ try {
         </div>
 
         <div class="dashboard-page__actions">
-          <NuxtLink class="button-secondary" to="/board">
+          <CommonBaseButton variant="secondary" to="/board">
             전체 게시글
-          </NuxtLink>
-          <NuxtLink class="button-primary" to="/board/create">
+          </CommonBaseButton>
+          <CommonBaseButton to="/board/create">
             게시글 작성
-          </NuxtLink>
+          </CommonBaseButton>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ try {
   gap: 8px;
   padding: 20px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .dashboard-page__profile-card span {

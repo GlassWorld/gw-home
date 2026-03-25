@@ -101,9 +101,9 @@ function handleSubmit() {
       {{ props.errorMessage }}
     </p>
 
-    <button class="button-primary login-form__submit" type="submit" :disabled="props.isSubmitting">
+    <CommonBaseButton class="login-form__submit" block type="submit" :disabled="props.isSubmitting">
       {{ props.isSubmitting ? '로그인 중...' : '로그인' }}
-    </button>
+    </CommonBaseButton>
   </form>
 </template>
 
@@ -198,7 +198,7 @@ function handleSubmit() {
   color: #ffe2e2;
 }
 
-.login-form :deep(.button-primary) {
+.login-form :deep(.base-button--primary) {
   border: 1px solid rgba(147, 210, 255, 0.18);
   background: linear-gradient(135deg, #1a7fc4 0%, #0d5c9e 100%);
   box-shadow:
@@ -206,19 +206,15 @@ function handleSubmit() {
     0 0 24px rgba(26, 127, 196, 0.22);
 }
 
-.login-form :deep(.button-primary:hover) {
+.login-form :deep(.base-button--primary:hover) {
   box-shadow:
     0 20px 36px rgba(10, 65, 114, 0.4),
     0 0 26px rgba(26, 127, 196, 0.28);
 }
 
-.login-form :deep(.button-primary:disabled) {
+.login-form :deep(.base-button--disabled) {
   cursor: wait;
   opacity: 0.72;
   transform: none;
-}
-
-.login-form__submit {
-  width: 100%;
 }
 </style>

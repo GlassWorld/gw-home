@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.vault.VaultCategoryMapper">
+
+    <select id="selectCategoryList" resultType="CatVo">
+        SELECT
+            tb_vlt_cat_idx AS idx,
+            tb_vlt_cat_uuid AS uuid,
+            nm,
+            dsc,
+            sort_ord AS sortOrd,
+            created_by AS createdBy,
+            updated_by AS updatedBy,
+            created_at AS createdAt,
+            updated_at AS updatedAt,
+            del_at AS delAt
+        FROM tb_vlt_cat
+        WHERE del_at IS NULL
+        ORDER BY sort_ord ASC, created_at ASC
+    </select>
+
+    <select id="selectCategoryByIdx" resultType="CatVo">
+        SELECT
+            tb_vlt_cat_idx AS idx,
+            tb_vlt_cat_uuid AS uuid,
+            nm,
+            dsc,
+            sort_ord AS sortOrd,
+            created_by AS createdBy,
+            updated_by AS updatedBy,
+            created_at AS createdAt,
+            updated_at AS updatedAt,
+            del_at AS delAt
+        FROM tb_vlt_cat
+        WHERE tb_vlt_cat_idx = #{idx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectCategory" resultType="CatVo">
+        SELECT
+            tb_vlt_cat_idx AS idx,
+            tb_vlt_cat_uuid AS uuid,
+            nm,
+            dsc,
+            sort_ord AS sortOrd,
+            created_by AS createdBy,
+            updated_by AS updatedBy,
+            created_at AS createdAt,
+            updated_at AS updatedAt,
+            del_at AS delAt
+        FROM tb_vlt_cat
+        WHERE tb_vlt_cat_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </select>
+
+    <select id="existsByName" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM tb_vlt_cat
+            WHERE del_at IS NULL
+              AND lower(btrim(nm)) = lower(btrim(#{name}))
+              <if test="excludeUuid != null and excludeUuid != ''">
+                  AND tb_vlt_cat_uuid != CAST(#{excludeUuid} AS UUID)
+              </if>
+        )
+    </select>
+
+    <insert id="insertCategory" parameterType="CatVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_vlt_cat (
+            nm,
+            dsc,
+            sort_ord,
+            created_by
+        ) VALUES (
+            #{nm},
+            #{dsc},
+            #{sortOrd},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateCategory" parameterType="CatVo">
+        UPDATE tb_vlt_cat
+        SET
+            nm = #{nm},
+            dsc = #{dsc},
+            sort_ord = #{sortOrd},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE tb_vlt_cat_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteCategory">
+        UPDATE tb_vlt_cat
+        SET
+            del_at = now(),
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE tb_vlt_cat_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+</mapper>
