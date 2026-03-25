@@ -8,6 +8,22 @@ interface AuthorizedFetchOptions {
   query?: Record<string, string | number | undefined>
 }
 
+function resolveApiBaseUrl(apiBase: string): string {
+  if (import.meta.client || apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+    return apiBase
+  }
+
+  const headers = useRequestHeaders(['host', 'x-forwarded-proto'])
+  const host = headers.host
+
+  if (!host) {
+    return apiBase
+  }
+
+  const protocol = headers['x-forwarded-proto'] ?? 'http'
+  return `${protocol}://${host}${apiBase}`
+}
+
 function buildAuthorizationHeader(accessToken: string | null): Record<string, string> {
   if (!accessToken) {
     return {}
@@ -20,6 +36,7 @@ function buildAuthorizationHeader(accessToken: string | null): Record<string, st
 
 export function useAuth() {
   const runtimeConfig = useRuntimeConfig()
+  const apiBaseUrl = resolveApiBaseUrl(runtimeConfig.public.apiBase)
   const authStore = useAuthStore()
   const refreshTokenCookie = useCookie<string | null>('gw-home-refresh-token', {
     default: () => null,
@@ -31,11 +48,11 @@ export function useAuth() {
 
     const [accountResponse, profileResponse] = await Promise.all([
       $fetch<ApiResponse<AccountMeApiResponse>>('/api/v1/accounts/me', {
-        baseURL: runtimeConfig.public.apiBase,
+        baseURL: apiBaseUrl,
         headers: authorizationHeader
       }),
       $fetch<ApiResponse<ProfileApiResponse>>('/api/v1/profiles/me', {
-        baseURL: runtimeConfig.public.apiBase,
+        baseURL: apiBaseUrl,
         headers: authorizationHeader
       })
     ])
@@ -61,7 +78,7 @@ export function useAuth() {
 
     const response = await $fetch<ApiResponse<TokenApiResponse>>('/api/v1/auth/login', {
       method: 'POST',
-      baseURL: runtimeConfig.public.apiBase,
+      baseURL: apiBaseUrl,
       body: requestBody
     })
 
@@ -80,7 +97,7 @@ export function useAuth() {
         const requestBody: RefreshRequestBody = { refresh_token: refreshToken }
         await $fetch<ApiResponse<null>>('/api/v1/auth/logout', {
           method: 'POST',
-          baseURL: runtimeConfig.public.apiBase,
+          baseURL: apiBaseUrl,
           headers: buildAuthorizationHeader(authStore.accessToken),
           body: requestBody
         })
@@ -107,7 +124,7 @@ export function useAuth() {
 
     const response = await $fetch<ApiResponse<TokenApiResponse>>('/api/v1/auth/refresh', {
       method: 'POST',
-      baseURL: runtimeConfig.public.apiBase,
+      baseURL: apiBaseUrl,
       body: requestBody
     })
 
@@ -150,7 +167,7 @@ export function useAuth() {
     try {
       return await $fetch<T>(path, {
         ...options,
-        baseURL: runtimeConfig.public.apiBase,
+        baseURL: apiBaseUrl,
         headers: {
           ...buildAuthorizationHeader(accessToken)
         }
@@ -166,7 +183,7 @@ export function useAuth() {
 
       return await $fetch<T>(path, {
         ...options,
-        baseURL: runtimeConfig.public.apiBase,
+        baseURL: apiBaseUrl,
         headers: {
           ...buildAuthorizationHeader(refreshedToken)
         }

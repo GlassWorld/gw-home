@@ -252,11 +252,12 @@ await loadCategoryList()
 }
 
 .vault-page__hero .section-title {
-  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
 }
 
 .vault-page__hero .section-description {
   max-width: 640px;
+  font-size: 0.96rem;
 }
 
 .vault-page__search-form {

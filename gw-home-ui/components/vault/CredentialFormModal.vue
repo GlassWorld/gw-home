@@ -69,7 +69,6 @@ async function handleSave() {
       })
     }
 
-    showToast('저장되었습니다.', { variant: 'success' })
     emit('saved')
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
