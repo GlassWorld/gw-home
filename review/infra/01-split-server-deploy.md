@@ -6,7 +6,7 @@
 
 | 역할 | 서버 IP | 컨테이너 |
 |------|---------|----------|
-| Frontend | 158.179.168.138 | `nginx` + `frontend` |
+| Frontend | 168.107.58.105 | `nginx` + `frontend` |
 | Backend  | 168.107.12.96   | `db` (PostgreSQL) + `backend` |
 
 ---
@@ -52,7 +52,7 @@ OCI_HOST, OCI_USER, OCI_SSH_KEY, OCI_PORT, OCI_PROJECT_PATH
 
 ### 추가 필요
 ```
-FRONT_HOST       = 158.179.168.138
+FRONT_HOST       = 168.107.58.105
 FRONT_USER       = (서버 사용자명)
 FRONT_SSH_KEY    = (SSH 개인키)
 FRONT_PORT       = 22

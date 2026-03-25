@@ -8,7 +8,7 @@
 
 | 역할 | 서버 IP | 포트 | 컨테이너 |
 |------|---------|------|----------|
-| Frontend | 158.179.168.138 | 80 | nginx + frontend |
+| Frontend | 168.107.58.105 | 80 | nginx + frontend |
 | Backend  | 168.107.12.96   | 8080 | db (postgres:15) + backend |
 
 **API 방식**: 프론트 nginx에서 `/api → 168.107.12.96:8080` 프록시 (NUXT_PUBLIC_API_BASE=/api 유지)
@@ -28,7 +28,7 @@ OCI_HOST, OCI_USER, OCI_SSH_KEY, OCI_PORT, OCI_PROJECT_PATH
 ### 프론트엔드 서버 secrets (신규 추가)
 | Secret 이름 | 값 |
 |------------|-----|
-| `FRONT_HOST` | `158.179.168.138` |
+| `FRONT_HOST` | `168.107.58.105` |
 | `FRONT_USER` | 서버 ssh 접속 유저명 (예: `ubuntu`, `opc`) |
 | `FRONT_SSH_KEY` | 서버 SSH 개인키 전체 내용 (-----BEGIN ... -----END-----) |
 | `FRONT_PORT` | `22` |
@@ -54,7 +54,7 @@ OCI_HOST, OCI_USER, OCI_SSH_KEY, OCI_PORT, OCI_PROJECT_PATH
 
 ## 서버 사전 준비 (수동 작업)
 
-### 프론트엔드 서버 (158.179.168.138)
+### 프론트엔드 서버 (168.107.58.105)
 ```bash
 # SSH 접속 후
 mkdir -p ~/app/frontend
