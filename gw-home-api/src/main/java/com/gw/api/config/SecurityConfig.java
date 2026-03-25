@@ -65,6 +65,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
+                "https://home.glassworld.co.kr",
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
                 "http://localhost:3001",
