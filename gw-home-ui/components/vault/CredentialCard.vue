@@ -41,6 +41,7 @@ const memoPreview = computed(() => {
   display: grid;
   gap: 18px;
   padding: 22px;
+  align-self: start;
 }
 
 .credential-card__body {
@@ -89,6 +90,7 @@ const memoPreview = computed(() => {
 .credential-card__footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
 }
 

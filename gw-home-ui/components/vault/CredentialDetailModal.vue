@@ -49,7 +49,6 @@ async function handleDelete() {
 
   try {
     await removeCredential(props.credential.credentialUuid)
-    showToast('삭제되었습니다.', { variant: 'success' })
     emit('deleted')
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }

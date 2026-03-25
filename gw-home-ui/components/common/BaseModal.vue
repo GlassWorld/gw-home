@@ -4,9 +4,11 @@ const props = withDefaults(defineProps<{
   title: string
   eyebrow?: string
   width?: string
+  zIndex?: number
 }>(), {
   eyebrow: '',
-  width: '720px'
+  width: '720px',
+  zIndex: 30
 })
 
 const emit = defineEmits<{
@@ -16,7 +18,7 @@ const emit = defineEmits<{
 
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="base-modal">
+    <div v-if="visible" class="base-modal" :style="{ zIndex: String(zIndex) }">
       <div class="base-modal__backdrop" @click="emit('close')" />
       <section class="base-modal__panel content-panel" :style="{ maxWidth: width }">
         <header class="base-modal__header">
