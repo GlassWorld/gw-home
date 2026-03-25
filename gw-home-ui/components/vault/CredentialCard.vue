@@ -96,6 +96,8 @@ const memoPreview = computed(() => {
 
 .credential-card__footer :deep(button) {
   flex: 1;
+  min-height: 34px;
+  align-self: center;
 }
 
 @media (max-width: 768px) {
