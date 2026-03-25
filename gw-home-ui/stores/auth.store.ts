@@ -8,7 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   function setUser(user: UserProfile | null) {
-    currentUser.value = user
+    currentUser.value = user ? { ...user } : null
   }
 
   function setToken(token: string | null) {
