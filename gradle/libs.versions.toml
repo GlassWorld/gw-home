@@ -1,5 +1,5 @@
 [versions]
-java = "17"
+java = "21"
 spring-boot = "3.3.5"
 spring-dependency-management = "1.1.6"
 mybatis-spring-boot = "3.0.3"

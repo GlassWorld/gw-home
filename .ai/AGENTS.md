@@ -61,7 +61,7 @@
 - **MyBatis only** — JPA (`@Entity`, `JpaRepository`), Querydsl 절대 금지
 - **`_idx` API 응답 노출 금지** — 외부 식별자는 `uuid` 전용
 - **TIMESTAMPTZ** — `TIMESTAMP` (without timezone) 금지
-- Java 21 / Spring Boot 3.x
+- Java 21 / Spring Boot 3.3.5
 - 패키지: `com.gw.{module}.{layer}.{domain}`
 - DDL/VO/JVO: 감사 컬럼 제외 축약형 네이밍 (`AcctVo`, `tb_mbr_acct`)
 - 공통 PK/UUID/감사 컬럼: `BaseVo` 상속
