@@ -6,7 +6,9 @@ services:
     environment:
       NUXT_PUBLIC_API_BASE: /api
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - frontend
 
   nginx:
     image: nginx:latest
