@@ -38,6 +38,11 @@ export function useAuth() {
   const runtimeConfig = useRuntimeConfig()
   const apiBaseUrl = resolveApiBaseUrl(runtimeConfig.public.apiBase)
   const authStore = useAuthStore()
+  const accessTokenCookie = useCookie<string | null>('gw-home-access-token', {
+    default: () => null,
+    sameSite: 'lax',
+    path: '/'
+  })
   const refreshTokenCookie = useCookie<string | null>('gw-home-refresh-token', {
     default: () => null,
     sameSite: 'lax',
@@ -84,6 +89,7 @@ export function useAuth() {
     })
 
     authStore.setToken(response.data.access_token)
+    accessTokenCookie.value = response.data.access_token
     refreshTokenCookie.value = response.data.refresh_token
 
     const currentUser = await fetchCurrentUser(response.data.access_token)
@@ -104,6 +110,7 @@ export function useAuth() {
         })
       }
     } finally {
+      accessTokenCookie.value = null
       refreshTokenCookie.value = null
       authStore.clearAuth()
     }
@@ -130,6 +137,7 @@ export function useAuth() {
     })
 
     authStore.setToken(response.data.access_token)
+    accessTokenCookie.value = response.data.access_token
     refreshTokenCookie.value = response.data.refresh_token
 
     const currentUser = await fetchCurrentUser(response.data.access_token)
@@ -143,7 +151,20 @@ export function useAuth() {
       return true
     }
 
+    if (accessTokenCookie.value) {
+      try {
+        authStore.setToken(accessTokenCookie.value)
+        const currentUser = await fetchCurrentUser(accessTokenCookie.value)
+        authStore.setUser(currentUser)
+        return true
+      } catch {
+        accessTokenCookie.value = null
+        authStore.clearAuth()
+      }
+    }
+
     if (!refreshTokenCookie.value) {
+      accessTokenCookie.value = null
       authStore.clearAuth()
       return false
     }
@@ -152,6 +173,7 @@ export function useAuth() {
       await refreshToken()
       return true
     } catch {
+      accessTokenCookie.value = null
       refreshTokenCookie.value = null
       authStore.clearAuth()
       return false
@@ -159,7 +181,7 @@ export function useAuth() {
   }
 
   async function authorizedFetch<T>(path: string, options: AuthorizedFetchOptions = {}): Promise<T> {
-    let accessToken = authStore.accessToken
+    let accessToken = authStore.accessToken ?? accessTokenCookie.value
 
     if (!accessToken) {
       accessToken = await refreshToken()

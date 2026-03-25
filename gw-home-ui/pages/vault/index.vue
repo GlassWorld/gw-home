@@ -281,6 +281,7 @@ await loadCategoryList()
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+  align-items: start;
 }
 
 .vault-page__empty-state {
