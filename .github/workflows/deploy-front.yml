@@ -62,7 +62,11 @@ jobs:
           key: ${{ secrets.FRONT_SSH_KEY }}
           port: ${{ secrets.FRONT_PORT }}
           command_timeout: 10m
-          script: mkdir -p '${{ secrets.FRONT_APP_PATH }}'
+          script: |
+            APP_PATH='${{ secrets.FRONT_APP_PATH }}'
+            mkdir -p "${APP_PATH}"
+            mkdir -p "${APP_PATH}/certbot/www"
+            mkdir -p "${APP_PATH}/certbot/conf"
 
       - name: 프론트엔드 배포 파일 전송
         uses: appleboy/scp-action@v0.1.7
