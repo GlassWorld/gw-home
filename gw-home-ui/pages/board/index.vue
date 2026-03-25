@@ -89,18 +89,18 @@ watch(
           type="search"
           placeholder="제목 또는 키워드 검색"
         >
-        <button class="button-primary" type="submit">
+        <CommonBaseButton type="submit">
           검색
-        </button>
+        </CommonBaseButton>
       </form>
     </section>
 
     <section class="content-panel board-page__list-panel">
       <div class="board-page__list-header">
         <p class="message-muted">총 {{ totalCount }}건</p>
-        <NuxtLink class="button-secondary" to="/dashboard">
+        <CommonBaseButton variant="secondary" to="/dashboard">
           대시보드
-        </NuxtLink>
+        </CommonBaseButton>
       </div>
 
       <p v-if="errorMessage" class="message-error">
@@ -121,23 +121,21 @@ watch(
       </p>
 
       <div class="board-page__pagination">
-        <button
-          class="button-secondary"
-          type="button"
+        <CommonBaseButton
+          variant="secondary"
           :disabled="page <= 1"
           @click="movePage(page - 1)"
         >
           이전
-        </button>
+        </CommonBaseButton>
         <span>{{ page }} / {{ totalPages || 1 }}</span>
-        <button
-          class="button-secondary"
-          type="button"
+        <CommonBaseButton
+          variant="secondary"
           :disabled="page >= totalPages"
           @click="movePage(page + 1)"
         >
           다음
-        </button>
+        </CommonBaseButton>
       </div>
     </section>
   </main>

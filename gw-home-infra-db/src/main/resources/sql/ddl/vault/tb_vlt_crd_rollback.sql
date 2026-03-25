@@ -1,0 +1,5 @@
+ALTER TABLE tb_vlt_crd ADD COLUMN dsc TEXT;
+ALTER TABLE tb_vlt_crd ADD COLUMN url TEXT;
+ALTER TABLE tb_vlt_crd DROP COLUMN IF EXISTS vlt_cat_idx;
+
+DROP TABLE IF EXISTS tb_vlt_crd;

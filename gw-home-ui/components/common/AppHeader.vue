@@ -23,12 +23,13 @@ async function handleLogout() {
   <header class="app-header">
     <div class="page-container app-header__inner">
       <NuxtLink class="app-header__brand" to="/dashboard">
-        GW Home
+        Glass World
       </NuxtLink>
 
       <nav class="app-header__nav">
         <NuxtLink to="/dashboard">대시보드</NuxtLink>
         <NuxtLink to="/board">게시글</NuxtLink>
+        <NuxtLink to="/vault">Vault</NuxtLink>
       </nav>
 
       <div class="app-header__actions">
@@ -37,14 +38,13 @@ async function handleLogout() {
           <span>{{ authStore.currentUser?.loginId }}</span>
         </div>
 
-        <button
-          class="button-secondary"
-          type="button"
+        <CommonBaseButton
+          variant="secondary"
           :disabled="isSubmitting"
           @click="handleLogout"
         >
           로그아웃
-        </button>
+        </CommonBaseButton>
       </div>
     </div>
   </header>
@@ -56,8 +56,8 @@ async function handleLogout() {
   top: 0;
   z-index: 10;
   backdrop-filter: blur(14px);
-  background: rgba(249, 244, 234, 0.8);
-  border-bottom: 1px solid rgba(116, 87, 51, 0.12);
+  background: rgba(10, 22, 40, 0.85);
+  border-bottom: 1px solid rgba(147, 210, 255, 0.12);
 }
 
 .app-header__inner {
@@ -65,7 +65,7 @@ async function handleLogout() {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 76px;
+  min-height: 64px;
 }
 
 .app-header__brand {
@@ -89,7 +89,7 @@ async function handleLogout() {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1px;
 }
 
 .app-header__profile span {
@@ -101,8 +101,8 @@ async function handleLogout() {
   .app-header__inner {
     flex-wrap: wrap;
     justify-content: center;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
   .app-header__profile {

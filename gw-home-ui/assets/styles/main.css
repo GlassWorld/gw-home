@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
-  --color-background: #f4efe6;
-  --color-surface: rgba(255, 250, 242, 0.92);
-  --color-surface-strong: #fffdf8;
-  --color-border: rgba(116, 87, 51, 0.18);
-  --color-text: #2c241c;
-  --color-text-muted: #746553;
-  --color-primary: #c45c2d;
-  --color-primary-strong: #9f421a;
-  --color-accent: #1d6b63;
-  --color-danger: #b83b33;
-  --shadow-soft: 0 20px 45px rgba(69, 45, 20, 0.12);
+  --color-background: #0a1628;
+  --color-surface: rgba(255, 255, 255, 0.07);
+  --color-surface-strong: rgba(255, 255, 255, 0.12);
+  --color-border: rgba(147, 210, 255, 0.18);
+  --color-text: #e8f4ff;
+  --color-text-muted: rgba(147, 210, 255, 0.65);
+  --color-primary: #3a9fd6;
+  --color-primary-strong: #1d7cb8;
+  --color-accent: #6ec1ff;
+  --color-danger: #e05c5c;
+  --shadow-soft: 0 20px 45px rgba(2, 12, 27, 0.45);
   --radius-large: 28px;
   --radius-medium: 18px;
   --radius-small: 12px;
@@ -32,10 +32,7 @@ body {
   margin: 0;
   font-family: var(--font-body);
   color: var(--color-text);
-  background:
-    radial-gradient(circle at top left, rgba(196, 92, 45, 0.2), transparent 30%),
-    radial-gradient(circle at top right, rgba(29, 107, 99, 0.18), transparent 26%),
-    linear-gradient(180deg, #f9f4ea 0%, #f2ebde 100%);
+  background: linear-gradient(135deg, #0a1628 0%, #0d2847 50%, #0a3d62 100%);
 }
 
 a {
@@ -92,12 +89,12 @@ button {
 .button-primary {
   color: #fff;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
-  box-shadow: 0 16px 30px rgba(196, 92, 45, 0.22);
+  box-shadow: 0 16px 30px rgba(29, 124, 184, 0.28);
 }
 
 .button-secondary {
   color: var(--color-text);
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.1);
   border-color: var(--color-border);
 }
 
@@ -110,14 +107,14 @@ button {
   width: 100%;
   min-height: 48px;
   padding: 0 16px;
-  border: 1px solid rgba(116, 87, 51, 0.24);
+  border: 1px solid rgba(147, 210, 255, 0.18);
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--color-text);
 }
 
 .input-field:focus {
-  outline: 2px solid rgba(196, 92, 45, 0.18);
+  outline: 2px solid rgba(110, 193, 255, 0.22);
   border-color: var(--color-primary);
 }
 

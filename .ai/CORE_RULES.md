@@ -14,6 +14,7 @@ These rules are absolute. Never violate them.
 - Mapper interface goes in `{project}-infra-db` module
 - Mapper XML goes in `{project}-infra-db` module
 - Use `resultType` by default in Mapper XML
+- Do not use `resultMap` unless column aliasing or nested mapping makes it unavoidable
 - Use `{Domain}Vo` for single-table models, `{Domain}Jvo` for join/expanded query models
 - Manage shared `VO` / `JVO` in `{project}-share`
 - Omit package names in `resultType` — rely on MyBatis type alias configuration
@@ -50,6 +51,13 @@ These rules are absolute. Never violate them.
 - Component names: PascalCase
 - Functions: camelCase (verb prefix)
 - No `any` type — explicit TypeScript types required
+
+## Frontend — Common UI
+
+- Reusable UI primitives such as buttons and modals must be managed in `gw-home-ui/components/common`
+- Reusable toast notifications must be managed as common UI with shared state/composable instead of page-local inline alert blocks when the message is transient
+- Page/domain components should compose common UI components and keep only page-specific layout or exception styles locally
+- Before creating a new UI wrapper, check whether an existing common component can be extended without breaking current usage
 
 ## Frontend — Auth
 
