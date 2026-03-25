@@ -2,7 +2,9 @@ package com.gw.api.auth;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.gw.api.dto.admin.AdminSummaryResponse;
@@ -21,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 class AuthIntegrationTest {
+
+    private static final String DEPLOYED_FRONTEND_ORIGIN = "https://home.glassworld.co.kr";
 
     @Autowired
     private MockMvc mockMvc;
@@ -85,5 +89,16 @@ class AuthIntegrationTest {
                                 .header("Authorization", "Bearer " + accessToken)
                 )
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deployedFrontendOriginIsAllowedForCorsPreflight() throws Exception {
+        mockMvc.perform(
+                        options("/api/v1/auth/login")
+                                .header("Origin", DEPLOYED_FRONTEND_ORIGIN)
+                                .header("Access-Control-Request-Method", "POST")
+                )
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", DEPLOYED_FRONTEND_ORIGIN));
     }
 }
