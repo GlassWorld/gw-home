@@ -21,7 +21,7 @@ function resolveApiBaseUrl(apiBase: string): string {
   }
 
   const protocol = headers['x-forwarded-proto'] ?? 'http'
-  return `${protocol}://${host}${apiBase}`
+  return `${protocol}://${host}`
 }
 
 function buildAuthorizationHeader(accessToken: string | null): Record<string, string> {

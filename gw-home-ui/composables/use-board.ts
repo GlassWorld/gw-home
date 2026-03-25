@@ -14,7 +14,7 @@ export function useBoard() {
         }
 
         const protocol = headers['x-forwarded-proto'] ?? 'http'
-        return `${protocol}://${host}${runtimeConfig.public.apiBase}`
+        return `${protocol}://${host}`
       })()
   const { authorizedFetch } = useAuth()
 
