@@ -1,6 +1,17 @@
 export default defineNuxtConfig({
   modules: ['@pinia/nuxt'],
   css: ['~/assets/styles/main.css'],
+  app: {
+    head: {
+      link: [
+        {
+          rel: 'icon',
+          type: 'image/x-icon',
+          href: '/favicon.ico'
+        }
+      ]
+    }
+  },
   devtools: {
     enabled: true
   },

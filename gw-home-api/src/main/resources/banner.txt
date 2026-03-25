@@ -1,0 +1,13 @@
+${AnsiColor.BRIGHT_BLUE}
+ ██████╗ ██╗      █████╗ ███████╗███████╗    ██╗    ██╗ ██████╗ ██████╗ ██╗     ██████╗
+██╔════╝ ██║     ██╔══██╗██╔════╝██╔════╝    ██║    ██║██╔═══██╗██╔══██╗██║     ██╔══██╗
+██║  ███╗██║     ███████║███████╗███████╗    ██║ █╗ ██║██║   ██║██████╔╝██║     ██║  ██║
+██║   ██║██║     ██╔══██║╚════██║╚════██║    ██║███╗██║██║   ██║██╔══██╗██║     ██║  ██║
+╚██████╔╝███████╗██║  ██║███████║███████║    ╚███╔███╔╝╚██████╔╝██║  ██║███████╗██████╔╝
+ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝     ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═════╝
+${AnsiColor.BRIGHT_GREEN}Application : ${spring.application.name}
+${AnsiColor.BRIGHT_YELLOW}Version     : ${application.version}
+${AnsiColor.BRIGHT_YELLOW}Java        : ${java.version}
+${AnsiColor.BRIGHT_YELLOW}Spring Boot : ${spring-boot.version}
+${AnsiColor.BRIGHT_YELLOW}Gradle      : delegated-build
+${AnsiColor.DEFAULT}
