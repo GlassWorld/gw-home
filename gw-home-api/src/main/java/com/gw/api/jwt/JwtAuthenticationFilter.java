@@ -35,6 +35,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
             String token = authorizationHeader.substring(BEARER_PREFIX.length());
 
+            if (jwtProvider.isOtpTempToken(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             if (jwtProvider.validate(token) && "access".equals(jwtProvider.extractTokenType(token))) {
                 String loginId = jwtProvider.extractLoginId(token);
                 String role = jwtProvider.extractRole(token);

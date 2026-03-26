@@ -31,6 +31,10 @@
             lgn_fail_cnt,
             lck_yn,
             lck_at,
+            otp_enabled,
+            otp_secret,
+            otp_fail_cnt,
+            otp_last_failed_at,
             created_by,
             updated_by,
             created_at,
@@ -52,6 +56,10 @@
             lgn_fail_cnt,
             lck_yn,
             lck_at,
+            otp_enabled,
+            otp_secret,
+            otp_fail_cnt,
+            otp_last_failed_at,
             created_by,
             updated_by,
             created_at,
@@ -73,6 +81,10 @@
             lgn_fail_cnt,
             lck_yn,
             lck_at,
+            otp_enabled,
+            otp_secret,
+            otp_fail_cnt,
+            otp_last_failed_at,
             created_by,
             updated_by,
             created_at,
@@ -146,6 +158,80 @@
         UPDATE tb_mbr_acct
         SET
             lgn_fail_cnt = 0,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- OTP 시크릿을 저장한다 -->
+    <update id="updateOtpSecret">
+        UPDATE tb_mbr_acct
+        SET
+            otp_secret = #{otpSecret},
+            otp_enabled = FALSE,
+            otp_fail_cnt = 0,
+            otp_last_failed_at = NULL,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- OTP를 활성화한다 -->
+    <update id="enableOtp">
+        UPDATE tb_mbr_acct
+        SET
+            otp_enabled = TRUE,
+            otp_fail_cnt = 0,
+            otp_last_failed_at = NULL,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- OTP를 비활성화하고 시크릿을 제거한다 -->
+    <update id="disableOtp">
+        UPDATE tb_mbr_acct
+        SET
+            otp_enabled = FALSE,
+            otp_secret = NULL,
+            otp_fail_cnt = 0,
+            otp_last_failed_at = NULL,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- OTP 실패 횟수를 증가시키고 임계치 도달 시 차단 시각을 기록한다 -->
+    <update id="incrementOtpFailCount">
+        UPDATE tb_mbr_acct
+        SET
+            otp_fail_cnt = otp_fail_cnt + 1,
+            otp_last_failed_at = CASE
+                WHEN otp_fail_cnt + 1 >= 5 THEN now()
+                ELSE otp_last_failed_at
+            END,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- OTP 실패 횟수와 차단 시각을 초기화한다 -->
+    <update id="resetOtpFailCount">
+        UPDATE tb_mbr_acct
+        SET
+            otp_fail_cnt = 0,
+            otp_last_failed_at = NULL,
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- 비밀번호를 변경한다 -->
+    <update id="updatePassword">
+        UPDATE tb_mbr_acct
+        SET
+            pwd = #{pwd},
+            updated_by = #{updatedBy},
             updated_at = now()
         WHERE mbr_acct_idx = #{idx}
           AND del_at IS NULL

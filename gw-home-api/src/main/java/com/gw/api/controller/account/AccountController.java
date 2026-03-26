@@ -1,6 +1,7 @@
 package com.gw.api.controller.account;
 
 import com.gw.api.dto.account.AccountResponse;
+import com.gw.api.dto.account.ChangePasswordRequest;
 import com.gw.api.dto.account.SignUpRequest;
 import com.gw.api.dto.account.UpdateAccountRequest;
 import com.gw.api.service.account.AccountService;
@@ -43,6 +44,15 @@ public class AccountController {
             @Valid @RequestBody UpdateAccountRequest request
     ) {
         return ApiResponse.ok(accountService.updateMyAccount(getLoginId(principal), request));
+    }
+
+    @PutMapping("/me/password")
+    public ApiResponse<Void> changePassword(
+            Principal principal,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        accountService.changePassword(getLoginId(principal), request);
+        return ApiResponse.ok();
     }
 
     @DeleteMapping("/me")

@@ -15,6 +15,18 @@ const { createCredential, updateCredential } = useVaultApi()
 const { fetchCategoryList } = useVaultCategoryApi()
 const { showToast } = useToast()
 const categoryList = ref<VaultCategory[]>([])
+const categoryOptions = computed(() => {
+  return categoryList.value.map((category) => ({
+    value: category.categoryUuid,
+    label: category.name
+  }))
+})
+const selectedCategoryUuid = computed({
+  get: () => formState.categoryUuid ?? '',
+  set: (value: string) => {
+    formState.categoryUuid = value
+  }
+})
 
 const formState = reactive<SaveCredentialPayload>({
   title: '',
@@ -58,12 +70,14 @@ async function handleSave() {
     if (props.credential?.credentialUuid) {
       await updateCredential(props.credential.credentialUuid, {
         ...formState,
+        categoryUuid: formState.categoryUuid ?? '',
         title: formState.title.trim(),
         password: formState.password.trim()
       })
     } else {
       await createCredential({
         ...formState,
+        categoryUuid: formState.categoryUuid ?? '',
         title: formState.title.trim(),
         password: formState.password.trim()
       })
@@ -105,16 +119,11 @@ watch(
       </label>
       <label class="vault-modal__field">
         <span>카테고리</span>
-        <select v-model="formState.categoryUuid" class="vault-modal__select">
-          <option value="">미분류</option>
-          <option
-            v-for="category in categoryList"
-            :key="category.categoryUuid"
-            :value="category.categoryUuid"
-          >
-            {{ category.name }}
-          </option>
-        </select>
+        <CommonSearchableSelect
+          v-model="selectedCategoryUuid"
+          :options="categoryOptions"
+          placeholder="카테고리를 검색하세요"
+        />
       </label>
       <label class="vault-modal__field">
         <span>아이디</span>
@@ -175,17 +184,6 @@ watch(
   resize: vertical;
 }
 
-.vault-modal__select {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 16px;
-  border: 1px solid rgba(147, 210, 255, 0.28);
-  border-radius: var(--radius-small);
-  background: rgba(8, 23, 42, 0.72);
-  color: var(--color-text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
 .vault-modal__form :deep(.input-field) {
   border-color: rgba(147, 210, 255, 0.28);
   background: rgba(8, 23, 42, 0.72);
@@ -199,7 +197,6 @@ watch(
 }
 
 .vault-modal__form :deep(.input-field:focus),
-.vault-modal__select:focus,
 .vault-modal__textarea:focus {
   outline: 2px solid rgba(110, 193, 255, 0.2);
   border-color: rgba(124, 209, 255, 0.92);

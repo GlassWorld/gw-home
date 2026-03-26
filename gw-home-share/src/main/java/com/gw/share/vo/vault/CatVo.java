@@ -20,6 +20,9 @@ public class CatVo extends BaseVo {
     // 카테고리 설명
     private String dsc;
 
+    // 카테고리 색상
+    private String color;
+
     // 정렬 순서
     private Integer sortOrd;
 }

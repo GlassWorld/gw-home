@@ -3,6 +3,7 @@ export interface Credential {
   title: string
   categoryUuid: string | null
   categoryName: string | null
+  categoryColor: string | null
   loginId: string | null
   password: string
   memo: string | null
@@ -27,10 +28,12 @@ export interface VaultCategory {
   name: string
   description: string | null
   sortOrder: number
+  color: string | null
 }
 
 export interface SaveVaultCategoryPayload {
   name: string
   description?: string
   sortOrder?: number
+  color?: string
 }

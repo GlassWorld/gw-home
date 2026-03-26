@@ -12,7 +12,8 @@ export function useVaultCategoryApi() {
       categoryUuid: category.categoryUuid ?? category.category_uuid ?? '',
       name: category.name ?? '',
       description: category.description ?? null,
-      sortOrder: Number(category.sortOrder ?? category.sort_order ?? 0)
+      sortOrder: Number(category.sortOrder ?? category.sort_order ?? 0),
+      color: category.color ?? null
     }
   }
 
@@ -20,7 +21,8 @@ export function useVaultCategoryApi() {
     return {
       name: payload.name,
       description: payload.description,
-      sort_order: payload.sortOrder
+      sort_order: payload.sortOrder,
+      color: payload.color
     }
   }
 

@@ -10,6 +10,7 @@
             tb_vlt_cat_uuid AS uuid,
             nm,
             dsc,
+            color,
             sort_ord AS sortOrd,
             created_by AS createdBy,
             updated_by AS updatedBy,
@@ -27,6 +28,7 @@
             tb_vlt_cat_uuid AS uuid,
             nm,
             dsc,
+            color,
             sort_ord AS sortOrd,
             created_by AS createdBy,
             updated_by AS updatedBy,
@@ -44,6 +46,7 @@
             tb_vlt_cat_uuid AS uuid,
             nm,
             dsc,
+            color,
             sort_ord AS sortOrd,
             created_by AS createdBy,
             updated_by AS updatedBy,
@@ -71,11 +74,13 @@
         INSERT INTO tb_vlt_cat (
             nm,
             dsc,
+            color,
             sort_ord,
             created_by
         ) VALUES (
             #{nm},
             #{dsc},
+            #{color},
             #{sortOrd},
             #{createdBy}
         )
@@ -86,6 +91,7 @@
         SET
             nm = #{nm},
             dsc = #{dsc},
+            color = #{color},
             sort_ord = #{sortOrd},
             updated_by = #{updatedBy},
             updated_at = now()

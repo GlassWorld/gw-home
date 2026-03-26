@@ -9,6 +9,8 @@ public record SaveVaultCategoryRequest(
         @Size(max = 100, message = "name은 100자 이하여야 합니다.")
         String name,
         String description,
+        @Size(max = 7, message = "color는 7자 이하여야 합니다.")
+        String color,
         @JsonAlias("sortOrder")
         Integer sortOrder
 ) {

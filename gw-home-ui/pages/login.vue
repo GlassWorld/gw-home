@@ -3,17 +3,30 @@ definePageMeta({
   middleware: 'guest'
 })
 
+type LoginStep = 'credentials' | 'otp'
+
+const { login } = useAuth()
+const { verifyOtp } = useOtpApi()
 const errorMessage = ref('')
 const isSubmitting = ref(false)
+const loginStep = ref<LoginStep>('credentials')
+const otpTempToken = ref('')
+const otpCode = ref('')
 
 async function handleLogin(payload: { loginId: string; password: string }) {
-  const { login } = useAuth()
-
   errorMessage.value = ''
   isSubmitting.value = true
 
   try {
-    await login(payload.loginId, payload.password)
+    const response = await login(payload.loginId, payload.password)
+
+    if (response.status === 'OTP_REQUIRED') {
+      loginStep.value = 'otp'
+      otpTempToken.value = response.otpTempToken
+      otpCode.value = ''
+      return
+    }
+
     await navigateTo('/dashboard')
   } catch (error) {
     const fetchError = error as { data?: { message?: string }; message?: string }
@@ -21,6 +34,36 @@ async function handleLogin(payload: { loginId: string; password: string }) {
   } finally {
     isSubmitting.value = false
   }
+}
+
+async function handleVerifyOtp() {
+  if (isSubmitting.value || otpCode.value.length !== 6 || !otpTempToken.value) {
+    return
+  }
+
+  errorMessage.value = ''
+  isSubmitting.value = true
+
+  try {
+    await verifyOtp(otpTempToken.value, otpCode.value)
+    await navigateTo('/dashboard')
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    errorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'OTP 인증에 실패했습니다.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+function handleBackToCredentials() {
+  if (isSubmitting.value) {
+    return
+  }
+
+  loginStep.value = 'credentials'
+  otpTempToken.value = ''
+  otpCode.value = ''
+  errorMessage.value = ''
 }
 </script>
 
@@ -37,10 +80,44 @@ async function handleLogin(payload: { loginId: string; password: string }) {
           🌏Wellcome...
         </p>
         <AuthLoginForm
+          v-if="loginStep === 'credentials'"
           :error-message="errorMessage"
           :is-submitting="isSubmitting"
           @submit="handleLogin"
         />
+
+        <div v-else class="login-otp-panel">
+          <div class="login-otp-panel__header">
+            <h2>OTP 인증</h2>
+            <p>Google Authenticator 앱에 표시된 6자리 코드를 입력해 주세요.</p>
+          </div>
+
+          <AuthOtpCodeInput
+            v-model="otpCode"
+            :disabled="isSubmitting"
+            @complete="handleVerifyOtp"
+          />
+
+          <p v-if="errorMessage" class="message-error">
+            {{ errorMessage }}
+          </p>
+
+          <div class="login-otp-panel__actions">
+            <CommonBaseButton
+              variant="secondary"
+              :disabled="isSubmitting"
+              @click="handleBackToCredentials"
+            >
+              뒤로가기
+            </CommonBaseButton>
+            <CommonBaseButton
+              :disabled="otpCode.length !== 6 || isSubmitting"
+              @click="handleVerifyOtp"
+            >
+              {{ isSubmitting ? '인증 중...' : 'OTP 인증' }}
+            </CommonBaseButton>
+          </div>
+        </div>
       </div>
 
       <p class="login-page__copyright">Copyright 2026 chjsa11</p>
@@ -54,7 +131,8 @@ async function handleLogin(payload: { loginId: string; password: string }) {
 }
 
 .login-page {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 100%;
   position: relative;
   display: flex;
   align-items: center;
@@ -154,6 +232,39 @@ async function handleLogin(payload: { loginId: string; password: string }) {
   text-align: center;
 }
 
+.login-otp-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.login-otp-panel__header {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.login-otp-panel__header h2,
+.login-otp-panel__header p {
+  margin: 0;
+}
+
+.login-otp-panel__header p {
+  color: rgba(219, 241, 255, 0.76);
+  line-height: 1.6;
+}
+
+.login-otp-panel :deep(.otp-code-input) {
+  border-color: rgba(147, 210, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.login-otp-panel__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 @media (max-width: 768px) {
   .login-page {
     padding: 20px 16px;
@@ -170,6 +281,10 @@ async function handleLogin(payload: { loginId: string; password: string }) {
   .login-card__description {
     margin-bottom: 18px;
     font-size: 0.95rem;
+  }
+
+  .login-otp-panel__actions {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -36,6 +36,7 @@ public class VaultCategoryService {
         CatVo category = CatVo.builder()
                 .nm(request.name())
                 .dsc(request.description())
+                .color(request.color())
                 .sortOrd(request.sortOrder() == null ? 0 : request.sortOrder())
                 .createdBy(loginId)
                 .build();
@@ -49,6 +50,7 @@ public class VaultCategoryService {
         validateDuplicateName(request.name(), uuid);
         category.setNm(request.name());
         category.setDsc(request.description());
+        category.setColor(request.color());
         category.setSortOrd(request.sortOrder() == null ? 0 : request.sortOrder());
         category.setUpdatedBy(loginId);
         vaultCategoryMapper.updateCategory(category);
@@ -94,6 +96,7 @@ public class VaultCategoryService {
                 category.getUuid(),
                 category.getNm(),
                 category.getDsc(),
+                category.getColor(),
                 category.getSortOrd()
         );
     }

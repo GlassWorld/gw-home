@@ -252,7 +252,7 @@ await loadCategoryList()
 }
 
 .vault-page__hero .section-title {
-  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-size: clamp(1rem, 1.3vw, 1.3rem);
 }
 
 .vault-page__hero .section-description {

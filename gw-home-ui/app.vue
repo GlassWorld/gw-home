@@ -14,7 +14,9 @@ const shouldShowFooter = computed(() => {
 <template>
   <div class="app-shell">
     <CommonAppHeader v-if="shouldShowHeader" />
-    <NuxtPage class="app-shell__content" />
+    <div class="app-shell__content">
+      <NuxtPage />
+    </div>
     <CommonToastViewport />
     <CommonDialogProvider />
     <footer v-if="shouldShowFooter" class="app-footer">
@@ -32,7 +34,10 @@ const shouldShowFooter = computed(() => {
 }
 
 .app-shell__content {
+  display: flex;
   flex: 1;
+  min-height: 0;
+  align-items: flex-start;
 }
 
 .app-footer__inner {

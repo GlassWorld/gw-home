@@ -10,9 +10,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.gw.api.dto.auth.LoginRequest;
+import com.gw.api.dto.auth.LoginResponse;
 import com.gw.api.dto.auth.TokenResponse;
 import com.gw.api.jwt.JwtProvider;
 import com.gw.api.service.auth.AuthService;
+import com.gw.api.util.auth.OtpSecretEncryptor;
+import com.gw.api.util.auth.OtpTotpUtil;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.auth.AuthMapper;
 import com.gw.share.common.exception.BusinessException;
@@ -36,10 +39,17 @@ class AuthServiceTest {
     @Mock
     private AccountMapper accountMapper;
 
+    @Mock
+    private OtpSecretEncryptor otpSecretEncryptor;
+
+    @Mock
+    private OtpTotpUtil otpTotpUtil;
+
     private final JwtProvider jwtProvider = new JwtProvider(
             "Z3ctaG9tZS1kZWZhdWx0LXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LWFuZC10ZXN0aW5nLTEyMw==",
             1800,
-            604800
+            604800,
+            300
     );
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -48,19 +58,29 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(authMapper, accountMapper, jwtProvider, passwordEncoder);
+        authService = new AuthService(
+                authMapper,
+                accountMapper,
+                jwtProvider,
+                passwordEncoder,
+                otpSecretEncryptor,
+                otpTotpUtil
+        );
     }
 
     @Test
     void loginReturnsTokensAndStoresRefreshToken() {
         when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(createAccountVo());
 
-        TokenResponse response = authService.login(new LoginRequest("tester_01", "password1234"));
+        LoginResponse response = authService.login(new LoginRequest("tester_01", "password1234"));
+        TokenResponse tokenResponse = response.tokenResponse();
 
-        assertNotNull(response.accessToken());
-        assertNotNull(response.refreshToken());
-        assertEquals("Bearer", response.tokenType());
-        assertTrue(response.expiresIn() > 0);
+        assertEquals("SUCCESS", response.loginStatus());
+        assertNotNull(tokenResponse);
+        assertNotNull(tokenResponse.accessToken());
+        assertNotNull(tokenResponse.refreshToken());
+        assertEquals("Bearer", tokenResponse.tokenType());
+        assertTrue(tokenResponse.expiresIn() > 0);
         verify(accountMapper).resetLoginFailCount(1L);
         verify(authMapper).insertRefreshToken(any());
     }
@@ -79,10 +99,11 @@ class AuthServiceTest {
                         .build()
         );
 
-        TokenResponse response = authService.login(new LoginRequest("admin", "admin!@34"));
+        LoginResponse response = authService.login(new LoginRequest("admin", "admin!@34"));
 
-        assertEquals("admin", jwtProvider.extractLoginId(response.accessToken()));
-        assertEquals("ADMIN", jwtProvider.extractRole(response.accessToken()));
+        assertNotNull(response.tokenResponse());
+        assertEquals("admin", jwtProvider.extractLoginId(response.tokenResponse().accessToken()));
+        assertEquals("ADMIN", jwtProvider.extractRole(response.tokenResponse().accessToken()));
         verify(accountMapper).resetLoginFailCount(99L);
         verify(authMapper).insertRefreshToken(any());
     }

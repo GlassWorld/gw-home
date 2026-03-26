@@ -25,4 +25,7 @@ public class PrflVo extends BaseVo {
 
     // 프로필 이미지 URL
     private String prflImgUrl;
+
+    // 개인 메모
+    private String memo;
 }
