@@ -8,6 +8,7 @@ export function useVaultApi() {
     credential_uuid?: string
     category_uuid?: string | null
     category_name?: string | null
+    category_color?: string | null
     login_id?: string | null
     created_at?: string
   }): Credential {
@@ -16,6 +17,7 @@ export function useVaultApi() {
       title: credential.title ?? '',
       categoryUuid: credential.categoryUuid ?? credential.category_uuid ?? null,
       categoryName: credential.categoryName ?? credential.category_name ?? null,
+      categoryColor: credential.categoryColor ?? credential.category_color ?? null,
       loginId: credential.loginId ?? credential.login_id ?? null,
       password: credential.password ?? '',
       memo: credential.memo ?? null,

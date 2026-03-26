@@ -15,7 +15,8 @@ const isSubmitting = ref(false)
 const formState = reactive<SaveVaultCategoryPayload>({
   name: '',
   description: '',
-  sortOrder: 0
+  sortOrder: 0,
+  color: '#6ec1ff'
 })
 
 async function loadCategoryList() {
@@ -33,6 +34,7 @@ function resetForm() {
   formState.name = ''
   formState.description = ''
   formState.sortOrder = 0
+  formState.color = '#6ec1ff'
 }
 
 function startEdit(category: VaultCategory) {
@@ -40,6 +42,7 @@ function startEdit(category: VaultCategory) {
   formState.name = category.name
   formState.description = category.description ?? ''
   formState.sortOrder = category.sortOrder
+  formState.color = category.color ?? '#6ec1ff'
 }
 
 async function handleSubmit() {
@@ -52,7 +55,8 @@ async function handleSubmit() {
   const payload: SaveVaultCategoryPayload = {
     name: formState.name.trim(),
     description: formState.description?.trim() || '',
-    sortOrder: Number(formState.sortOrder || 0)
+    sortOrder: Number(formState.sortOrder || 0),
+    color: formState.color || '#6ec1ff'
   }
 
   try {
@@ -121,6 +125,13 @@ await loadCategoryList()
           <span>설명</span>
           <input v-model="formState.description" class="input-field" type="text" maxlength="200">
         </label>
+        <label>
+          <span>색상</span>
+          <div class="vault-category-admin-page__color-field">
+            <input v-model="formState.color" class="vault-category-admin-page__color-input" type="color">
+            <span class="vault-category-admin-page__color-value">{{ formState.color }}</span>
+          </div>
+        </label>
 
         <div class="vault-category-admin-page__actions">
           <CommonBaseButton v-if="editingCategoryUuid" variant="secondary" @click="resetForm">
@@ -141,7 +152,17 @@ await loadCategoryList()
           class="vault-category-admin-page__item"
         >
           <div class="vault-category-admin-page__item-summary">
-            <strong>{{ category.name }}</strong>
+            <strong class="vault-category-admin-page__item-name">
+              <span
+                class="vault-category-admin-page__item-badge"
+                :style="{
+                  background: category.color ? `${category.color}22` : 'rgba(110, 193, 255, 0.12)',
+                  color: category.color ?? 'var(--color-accent)'
+                }"
+              >
+                {{ category.name }}
+              </span>
+            </strong>
             <span class="vault-category-admin-page__item-sort">정렬순서 {{ category.sortOrder }}</span>
             <p>{{ category.description || '-' }}</p>
           </div>
@@ -208,6 +229,27 @@ await loadCategoryList()
   grid-column: 1 / -1;
 }
 
+.vault-category-admin-page__color-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vault-category-admin-page__color-input {
+  width: 52px;
+  height: 40px;
+  padding: 4px;
+  border: 1px solid rgba(147, 210, 255, 0.28);
+  border-radius: var(--radius-small);
+  background: rgba(8, 23, 42, 0.72);
+  cursor: pointer;
+}
+
+.vault-category-admin-page__color-value {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .vault-category-admin-page__list {
   display: grid;
   gap: 14px;
@@ -249,6 +291,18 @@ await loadCategoryList()
   font-size: 0.88rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.vault-category-admin-page__item-name {
+  display: flex;
+  align-items: center;
+}
+
+.vault-category-admin-page__item-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
 }
 
 .vault-category-admin-page__item-sort {

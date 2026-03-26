@@ -1,6 +1,8 @@
 package com.gw.api.controller.profile;
 
+import com.gw.api.dto.profile.MemoResponse;
 import com.gw.api.dto.profile.ProfileResponse;
+import com.gw.api.dto.profile.SaveMemoRequest;
 import com.gw.api.dto.profile.UpdateProfileRequest;
 import com.gw.api.service.profile.ProfileService;
 import com.gw.share.common.exception.BusinessException;
@@ -35,12 +37,25 @@ public class ProfileController {
         return ApiResponse.ok(profileService.getMyProfile(getLoginId(principal)));
     }
 
+    @GetMapping("/me/memo")
+    public ApiResponse<MemoResponse> getMyMemo(Principal principal) {
+        return ApiResponse.ok(profileService.getMemo(getLoginId(principal)));
+    }
+
     @PutMapping("/me")
     public ApiResponse<ProfileResponse> updateMyProfile(
             Principal principal,
             @Valid @RequestBody UpdateProfileRequest request
     ) {
         return ApiResponse.ok(profileService.updateMyProfile(getLoginId(principal), request));
+    }
+
+    @PutMapping("/me/memo")
+    public ApiResponse<MemoResponse> saveMyMemo(
+            Principal principal,
+            @Valid @RequestBody SaveMemoRequest request
+    ) {
+        return ApiResponse.ok(profileService.saveMemo(getLoginId(principal), request));
     }
 
     private String getLoginId(Principal principal) {

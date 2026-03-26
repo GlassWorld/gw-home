@@ -11,7 +11,15 @@ public interface ProfileMapper {
 
     PrflVo selectProfileByAccountIdx(@Param("mbrAcctIdx") Long mbrAcctIdx);
 
+    String selectMemoByAccountIdx(@Param("mbrAcctIdx") Long mbrAcctIdx);
+
     int updateProfile(PrflVo prfl);
+
+    int updateMemo(
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
+            @Param("memo") String memo,
+            @Param("updatedBy") String updatedBy
+    );
 
     void insertProfile(PrflVo prfl);
 }

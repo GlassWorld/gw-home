@@ -10,6 +10,7 @@ dependencies {
     implementation libs.spring.boot.starter.validation
     implementation libs.mybatis.spring.boot.starter
     implementation libs.jjwt.api
+    implementation libs.java.otp
     runtimeOnly libs.jjwt.impl
     runtimeOnly libs.jjwt.jackson
 }

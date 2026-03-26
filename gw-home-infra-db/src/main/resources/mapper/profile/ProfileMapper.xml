@@ -12,6 +12,7 @@
             nick_nm,
             intro,
             prfl_img_url,
+            memo,
             created_by,
             updated_by,
             created_at,
@@ -28,6 +29,7 @@
             nick_nm,
             intro,
             prfl_img_url,
+            memo,
             created_by,
             updated_by,
             created_at,
@@ -45,6 +47,23 @@
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE mbr_prfl_uuid = CAST(#{uuid} AS UUID)
+    </update>
+
+    <!-- 회원 계정 PK로 메모를 조회한다 -->
+    <select id="selectMemoByAccountIdx" resultType="string">
+        SELECT memo
+        FROM tb_mbr_prfl
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+    </select>
+
+    <!-- 회원 계정 PK 기준으로 메모를 저장한다 -->
+    <update id="updateMemo">
+        UPDATE tb_mbr_prfl
+        SET
+            memo = #{memo},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
     </update>
 
     <insert id="insertProfile" parameterType="PrflVo">

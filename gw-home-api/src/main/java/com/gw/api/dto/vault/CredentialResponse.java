@@ -7,6 +7,7 @@ public record CredentialResponse(
         String title,
         String categoryUuid,
         String categoryName,
+        String categoryColor,
         String loginId,
         String password,
         String memo,

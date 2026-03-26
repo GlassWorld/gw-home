@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 import type { Credential } from '~/types/vault'
 
 const props = defineProps<{
@@ -16,6 +18,36 @@ const { removeCredential } = useVaultApi()
 const { showToast } = useToast()
 const { confirm } = useDialog()
 const isDeleting = ref(false)
+
+const parsedMemo = computed(() => {
+  const rawMemo = props.credential?.memo?.trim()
+
+  if (!rawMemo) {
+    return '-'
+  }
+
+  const parsedHtml = marked.parse(rawMemo, { async: false })
+
+  if (!import.meta.client) {
+    return parsedHtml
+  }
+
+  return DOMPurify.sanitize(parsedHtml)
+})
+
+const categoryStyle = computed(() => {
+  if (!props.credential?.categoryColor) {
+    return {
+      background: 'rgba(110, 193, 255, 0.12)',
+      color: 'var(--color-accent)'
+    }
+  }
+
+  return {
+    background: `${props.credential.categoryColor}22`,
+    color: props.credential.categoryColor
+  }
+})
 
 async function copyPassword() {
   if (!props.credential) {
@@ -69,7 +101,7 @@ async function handleDelete() {
     @close="emit('close')"
   >
     <template #title-extra>
-      <span class="credential-detail__category-badge">
+      <span class="credential-detail__category-badge" :style="categoryStyle">
         {{ credential.categoryName || '미분류' }}
       </span>
     </template>
@@ -77,7 +109,7 @@ async function handleDelete() {
     <dl class="credential-detail">
       <div class="credential-detail__item credential-detail__item--wide">
         <dt>메모</dt>
-        <dd>{{ credential.memo || '-' }}</dd>
+        <dd class="credential-detail__memo" v-html="parsedMemo"></dd>
       </div>
       <div class="credential-detail__item">
         <dt>아이디</dt>
@@ -151,6 +183,47 @@ async function handleDelete() {
 
 .credential-detail__password {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.credential-detail__memo:deep(p:first-child) {
+  margin-top: 0;
+}
+
+.credential-detail__memo:deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.credential-detail__memo:deep(code) {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(147, 210, 255, 0.12);
+  color: #a9dcff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.credential-detail__memo:deep(pre) {
+  margin: 12px 0 0;
+  padding: 14px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: rgba(3, 12, 24, 0.82);
+  border: 1px solid rgba(147, 210, 255, 0.14);
+}
+
+.credential-detail__memo:deep(pre code) {
+  padding: 0;
+  background: transparent;
+}
+
+.credential-detail__memo:deep(a) {
+  color: #8bd0ff;
+  text-decoration: underline;
+}
+
+.credential-detail__memo:deep(ul),
+.credential-detail__memo:deep(ol) {
+  padding-left: 20px;
 }
 
 @media (max-width: 768px) {

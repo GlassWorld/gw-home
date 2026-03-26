@@ -35,4 +35,16 @@ public class AcctVo extends BaseVo {
 
     // 계정 잠금 일시
     private OffsetDateTime lckAt;
+
+    // OTP 활성화 여부
+    private boolean otpEnabled;
+
+    // 암호화된 OTP 시크릿
+    private String otpSecret;
+
+    // OTP 실패 횟수
+    private int otpFailCnt;
+
+    // 마지막 OTP 실패 일시
+    private OffsetDateTime otpLastFailedAt;
 }

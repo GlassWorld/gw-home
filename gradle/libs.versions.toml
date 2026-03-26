@@ -6,6 +6,7 @@ mybatis-spring-boot = "3.0.3"
 postgresql = "42.7.4"
 lombok = "1.18.34"
 jjwt = "0.12.6"
+java-otp = "0.4.0"
 
 [libraries]
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
@@ -20,6 +21,7 @@ lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
 jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
 jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+java-otp = { module = "com.eatthepath:java-otp", version.ref = "java-otp" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

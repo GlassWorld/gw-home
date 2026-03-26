@@ -13,6 +13,20 @@ const emit = defineEmits<{
 const memoPreview = computed(() => {
   return props.credential.memo?.trim() || '메모가 없습니다.'
 })
+
+const categoryStyle = computed(() => {
+  if (!props.credential.categoryColor) {
+    return {
+      background: 'rgba(110, 193, 255, 0.12)',
+      color: 'var(--color-accent)'
+    }
+  }
+
+  return {
+    background: `${props.credential.categoryColor}22`,
+    color: props.credential.categoryColor
+  }
+})
 </script>
 
 <template>
@@ -20,7 +34,13 @@ const memoPreview = computed(() => {
     <div class="credential-card__body">
       <div class="credential-card__title-row">
         <h2 class="credential-card__title">{{ credential.title }}</h2>
-        <p v-if="credential.categoryName" class="credential-card__category">{{ credential.categoryName }}</p>
+        <p
+          v-if="credential.categoryName"
+          class="credential-card__category"
+          :style="categoryStyle"
+        >
+          {{ credential.categoryName }}
+        </p>
       </div>
       <p class="credential-card__description">{{ memoPreview }}</p>
     </div>

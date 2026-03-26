@@ -25,6 +25,7 @@
 html,
 body,
 #__nuxt {
+  height: 100%;
   min-height: 100%;
 }
 
@@ -34,6 +35,8 @@ html {
 
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   font-family: var(--font-body);
   color: var(--color-text);
   background: linear-gradient(135deg, #0a1628 0%, #0d2847 50%, #0a3d62 100%);
@@ -55,12 +58,13 @@ button {
 
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .page-container {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 24px 0 56px;
+  padding: 12px 0 12px;
 }
 
 .content-panel {
@@ -125,7 +129,7 @@ button {
 .section-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  font-size: clamp(.8rem, 1.5vw, 1.25rem);
   line-height: 1.1;
 }
 

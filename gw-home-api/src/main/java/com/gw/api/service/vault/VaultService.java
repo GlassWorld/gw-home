@@ -136,6 +136,7 @@ public class VaultService {
                 credential.getTtl(),
                 category == null ? null : category.getUuid(),
                 category == null ? null : category.getNm(),
+                category == null ? null : category.getColor(),
                 credential.getLgnId(),
                 credential.getPwd(),
                 credential.getMemo(),

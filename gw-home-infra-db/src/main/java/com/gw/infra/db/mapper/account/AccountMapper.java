@@ -28,4 +28,20 @@ public interface AccountMapper {
     int lockAccount(@Param("idx") Long idx);
 
     int resetLoginFailCount(@Param("idx") Long idx);
+
+    int updateOtpSecret(@Param("idx") Long idx, @Param("otpSecret") String otpSecret);
+
+    int enableOtp(@Param("idx") Long idx);
+
+    int disableOtp(@Param("idx") Long idx);
+
+    int incrementOtpFailCount(@Param("idx") Long idx);
+
+    int resetOtpFailCount(@Param("idx") Long idx);
+
+    int updatePassword(
+            @Param("idx") Long idx,
+            @Param("pwd") String pwd,
+            @Param("updatedBy") String updatedBy
+    );
 }

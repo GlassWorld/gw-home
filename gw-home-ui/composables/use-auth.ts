@@ -1,5 +1,5 @@
 import type { ApiResponse } from '~/types/api/common'
-import type { LoginRequestBody, RefreshRequestBody, TokenApiResponse } from '~/types/api/auth'
+import type { LoginApiResponse, LoginRequestBody, RefreshRequestBody, TokenApiResponse } from '~/types/api/auth'
 import type { AccountMeApiResponse, ProfileApiResponse, UserProfile } from '~/types/api/user'
 
 interface AuthorizedFetchOptions {
@@ -7,6 +7,10 @@ interface AuthorizedFetchOptions {
   body?: BodyInit | Record<string, unknown> | null
   query?: Record<string, string | number | undefined>
 }
+
+type LoginResult =
+  | { status: 'SUCCESS' }
+  | { status: 'OTP_REQUIRED'; otpTempToken: string }
 
 function resolveApiBaseUrl(apiBase: string): string {
   if (import.meta.client || apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
@@ -76,24 +80,47 @@ export function useAuth() {
     }
   }
 
-  async function login(loginId: string, password: string): Promise<void> {
+  function applyTokenResponse(tokenResponse: TokenApiResponse) {
+    authStore.setToken(tokenResponse.access_token)
+    accessTokenCookie.value = tokenResponse.access_token
+    refreshTokenCookie.value = tokenResponse.refresh_token
+  }
+
+  async function login(loginId: string, password: string): Promise<LoginResult> {
     const requestBody: LoginRequestBody = {
       login_id: loginId,
       password
     }
 
-    const response = await $fetch<ApiResponse<TokenApiResponse>>('/api/v1/auth/login', {
+    const response = await $fetch<ApiResponse<LoginApiResponse>>('/api/v1/auth/login', {
       method: 'POST',
       baseURL: apiBaseUrl,
       body: requestBody
     })
 
-    authStore.setToken(response.data.access_token)
-    accessTokenCookie.value = response.data.access_token
-    refreshTokenCookie.value = response.data.refresh_token
+    if (!response.success || response.data === null) {
+      throw new Error(response.message ?? '로그인에 실패했습니다.')
+    }
 
-    const currentUser = await fetchCurrentUser(response.data.access_token)
+    if (response.data.login_status === 'OTP_REQUIRED') {
+      if (!response.data.otp_temp_token) {
+        throw new Error('OTP 임시 토큰이 없습니다.')
+      }
+
+      return {
+        status: 'OTP_REQUIRED',
+        otpTempToken: response.data.otp_temp_token
+      }
+    }
+
+    if (!response.data.token_response) {
+      throw new Error('로그인 토큰 응답이 없습니다.')
+    }
+
+    applyTokenResponse(response.data.token_response)
+    const currentUser = await fetchCurrentUser(response.data.token_response.access_token)
     authStore.setUser(currentUser)
+    return { status: 'SUCCESS' }
   }
 
   async function logout(): Promise<void> {
@@ -136,9 +163,14 @@ export function useAuth() {
       body: requestBody
     })
 
-    authStore.setToken(response.data.access_token)
-    accessTokenCookie.value = response.data.access_token
-    refreshTokenCookie.value = response.data.refresh_token
+    if (!response.success || response.data === null) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: response.message ?? '토큰 갱신에 실패했습니다.'
+      })
+    }
+
+    applyTokenResponse(response.data)
 
     const currentUser = await fetchCurrentUser(response.data.access_token)
     authStore.setUser(currentUser)
@@ -220,6 +252,7 @@ export function useAuth() {
     refreshToken,
     ensureAuthenticated,
     fetchCurrentUser,
+    applyTokenResponse,
     authorizedFetch
   }
 }

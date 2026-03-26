@@ -13,3 +13,17 @@ export interface TokenApiResponse {
   token_type: string
   expires_in: number
 }
+
+export interface LoginApiResponse {
+  login_status: 'SUCCESS' | 'OTP_REQUIRED'
+  token_response: TokenApiResponse | null
+  otp_temp_token: string | null
+}
+
+export interface OtpSetupApiResponse {
+  otp_auth_url: string
+}
+
+export interface OtpStatusApiResponse {
+  otp_enabled: boolean
+}

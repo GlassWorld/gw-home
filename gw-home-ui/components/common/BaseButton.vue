@@ -85,6 +85,7 @@ const componentProps = computed(() => {
   font-weight: 600;
   white-space: nowrap;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+  max-height: 34px;
 }
 
 .base-button:hover:not(:disabled) {
