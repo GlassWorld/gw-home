@@ -14,6 +14,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class CrdVo extends BaseVo {
 
+    // 회원 계정 PK
+    private Long mbrAcctIdx;
+
     // 제목
     private String ttl;
 

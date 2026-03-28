@@ -11,6 +11,7 @@ interface AuthorizedFetchOptions {
 type LoginResult =
   | { status: 'SUCCESS' }
   | { status: 'OTP_REQUIRED'; otpTempToken: string }
+  | { status: 'OTP_SETUP_REQUIRED' }
 
 function resolveApiBaseUrl(apiBase: string): string {
   if (import.meta.client || apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
@@ -110,6 +111,20 @@ export function useAuth() {
       return {
         status: 'OTP_REQUIRED',
         otpTempToken: response.data.otp_temp_token
+      }
+    }
+
+    if (response.data.login_status === 'OTP_SETUP_REQUIRED') {
+      if (!response.data.token_response) {
+        throw new Error('OTP 설정용 로그인 토큰 응답이 없습니다.')
+      }
+
+      applyTokenResponse(response.data.token_response)
+      const currentUser = await fetchCurrentUser(response.data.token_response.access_token)
+      authStore.setUser(currentUser)
+
+      return {
+        status: 'OTP_SETUP_REQUIRED'
       }
     }
 

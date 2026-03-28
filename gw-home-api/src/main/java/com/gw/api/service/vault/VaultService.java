@@ -45,9 +45,9 @@ public class VaultService {
 
     @Transactional(readOnly = true)
     public List<CredentialResponse> getCredentialList(String keyword, String categoryUuid, String loginId) {
-        getAccountByLoginId(loginId);
+        AcctVo account = getAccountByLoginId(loginId);
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
-        List<CrdVo> credentialList = vaultMapper.selectCredentialList(keyword, categoryUuid, loginId);
+        List<CrdVo> credentialList = vaultMapper.selectCredentialList(keyword, categoryUuid, account.getIdx());
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(credentialList, categoryByIdx);
 
         return credentialList.stream()
@@ -57,18 +57,19 @@ public class VaultService {
 
     @Transactional(readOnly = true)
     public CredentialResponse getCredential(String uuid, String loginId) {
-        getAccountByLoginId(loginId);
-        CrdVo credential = getCredentialVo(uuid, loginId);
+        AcctVo account = getAccountByLoginId(loginId);
+        CrdVo credential = getCredentialVo(uuid, account.getIdx());
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(List.of(credential), categoryByIdx);
         return toResponse(credential, categoriesByCredentialIdx);
     }
 
     public CredentialResponse saveCredential(SaveCredentialRequest request, String loginId) {
-        getAccountByLoginId(loginId);
+        AcctVo account = getAccountByLoginId(loginId);
         List<Long> categoryIdxList = getCategoryIndexes(request.categoryUuids());
 
         CrdVo credential = CrdVo.builder()
+                .mbrAcctIdx(account.getIdx())
                 .ttl(request.title())
                 .lgnId(request.loginId())
                 .pwd(request.password())
@@ -82,8 +83,8 @@ public class VaultService {
     }
 
     public CredentialResponse updateCredential(String uuid, SaveCredentialRequest request, String loginId) {
-        getAccountByLoginId(loginId);
-        CrdVo credential = getCredentialVo(uuid, loginId);
+        AcctVo account = getAccountByLoginId(loginId);
+        CrdVo credential = getCredentialVo(uuid, account.getIdx());
         List<Long> categoryIdxList = getCategoryIndexes(request.categoryUuids());
 
         credential.setTtl(request.title());
@@ -99,14 +100,14 @@ public class VaultService {
     }
 
     public void deleteCredential(String uuid, String loginId) {
-        getAccountByLoginId(loginId);
-        CrdVo credential = getCredentialVo(uuid, loginId);
+        AcctVo account = getAccountByLoginId(loginId);
+        CrdVo credential = getCredentialVo(uuid, account.getIdx());
         vaultCredentialCategoryMapper.deleteCredentialCategoryMappings(credential.getIdx());
-        vaultMapper.deleteCredential(uuid, loginId, loginId);
+        vaultMapper.deleteCredential(uuid, account.getIdx(), loginId);
     }
 
-    private CrdVo getCredentialVo(String uuid, String loginId) {
-        CrdVo credential = vaultMapper.selectCredential(uuid, loginId);
+    private CrdVo getCredentialVo(String uuid, Long mbrAcctIdx) {
+        CrdVo credential = vaultMapper.selectCredential(uuid, mbrAcctIdx);
 
         if (credential == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "자격증명 정보를 찾을 수 없습니다.");

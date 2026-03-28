@@ -16,14 +16,14 @@ INSERT INTO tb_mbr_acct (
 SELECT
     'admin',
     '$2a$10$okcY7.JTQKdPlB5TKyEipuKjRL6gepDk5h7caUU./mvql0sT.oExS',
-    'admin@gw-home.local',
+    'chjsa11@naver.com',
     'ADMIN',
     'system'
 WHERE NOT EXISTS (
     SELECT 1
     FROM tb_mbr_acct
     WHERE lgn_id = 'admin'
-       OR email = 'admin@gw-home.local'
+       OR email = 'chjsa11@naver.com'
 )
 ON CONFLICT (lgn_id) DO NOTHING;
 
