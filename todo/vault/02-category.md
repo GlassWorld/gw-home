@@ -17,9 +17,8 @@
 - [x] **1-2** DDL: `tb_vlt_crd` 컬럼 추가
   - `vlt_cat_idx BIGINT NULL REFERENCES tb_vlt_cat(tb_vlt_cat_idx) ON DELETE SET NULL`
   - 인덱스: `tb_vlt_crd(vlt_cat_idx)`
-- [x] **1-3** 롤백 SQL 작성
-  - `ALTER TABLE tb_vlt_crd DROP COLUMN vlt_cat_idx`
-  - `DROP TABLE tb_vlt_cat`
+- [x] **1-3** 기존 테이블 DDL 반영
+  - `tb_vlt_cat.sql` / `tb_vlt_crd.sql` 최신 정의 반영
 
 ---
 
@@ -122,6 +121,4 @@
 - [x] DDL: `ALTER TABLE tb_vlt_crd ADD COLUMN vlt_cat_idx` 작성
 - [x] 기존 `tb_vlt_crd` 데이터 영향 검토 (NULL 허용 — 영향 없음)
 - [x] 인덱스 추가 확인
-- [x] 롤백 SQL 작성
-- [x] 운영 반영 순서: `tb_vlt_cat` 생성 → `tb_vlt_crd` 컬럼 추가 → 앱 배포
 - [x] 데이터 마이그레이션 필요 여부 확인 (불필요)

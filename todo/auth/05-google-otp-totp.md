@@ -7,7 +7,7 @@
 
 ## Step 1. DB 스키마 변경
 
-- [x] `tb_mbr_acct_add_otp.sql` 생성 — ALTER + 롤백 SQL
+- [x] `tb_mbr_acct_add_otp.sql` 생성 — 기존 테이블 ALTER 반영
   ```sql
   ALTER TABLE tb_mbr_acct
     ADD COLUMN otp_enabled        BOOLEAN     NOT NULL DEFAULT FALSE,

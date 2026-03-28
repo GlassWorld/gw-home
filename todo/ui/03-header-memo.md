@@ -7,12 +7,9 @@
 
 ## Step 1. DB 스키마 변경
 
-- [x] `tb_mbr_prfl_add_memo.sql` 생성 — ALTER + 롤백 SQL
+- [x] `tb_mbr_prfl_add_memo.sql` 생성 — 기존 테이블 ALTER 반영
   ```sql
-  -- 적용
   ALTER TABLE tb_mbr_prfl ADD COLUMN memo TEXT;
-  -- 롤백
-  -- ALTER TABLE tb_mbr_prfl DROP COLUMN memo;
   ```
 - [x] DB에 직접 실행 확인
 

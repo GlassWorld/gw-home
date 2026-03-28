@@ -7,32 +7,31 @@
 
 ## Step 1 — DB: acct_stat 컬럼 추가
 
-- [ ] `tb_mbr_acct_add_acct_stat.sql` 작성 (ALTER TABLE)
-- [ ] `tb_mbr_acct_add_acct_stat_rollback.sql` 작성
-- [ ] `docs/all-ddl.sql` 에 `acct_stat` 컬럼 반영
+- [x] `tb_mbr_acct_add_acct_stat.sql` 작성 (ALTER TABLE)
+- [x] `docs/all-ddl.sql` 에 `acct_stat` 컬럼 반영
 
 ---
 
 ## Step 2 — VO: AcctVo 수정
 
-- [ ] `AcctVo.java` — `acctStat` 필드 추가
+- [x] `AcctVo.java` — `acctStat` 필드 추가
 
 ---
 
 ## Step 3 — Mapper: AccountMapper 확장
 
-- [ ] `AccountMapper.java` — 다음 메서드 추가
+- [x] `AccountMapper.java` — 다음 메서드 추가
   - `selectAllAccounts(String loginId, String role, String acctStat, int offset, int limit)`
   - `countAllAccounts(String loginId, String role, String acctStat)`
   - `updateRole(String uuid, String role, String updatedBy)`
   - `updateStatus(String uuid, String acctStat, String updatedBy)`
-- [ ] `AccountMapper.xml` — 위 SQL 추가 + 기존 SELECT에 `acct_stat` 컬럼 추가
+- [x] `AccountMapper.xml` — 위 SQL 추가 + 기존 SELECT에 `acct_stat` 컬럼 추가
 
 ---
 
 ## Step 4 — Backend: AdminAccountService 생성
 
-- [ ] `AdminAccountService.java` 생성 — 다음 메서드 구현
+- [x] `AdminAccountService.java` 생성 — 다음 메서드 구현
   - `getAccounts(...)` — 목록 조회 (페이지네이션)
   - `getAccount(uuid)` — 단건 조회
   - `createAccount(request, adminLoginId)` — 계정 생성
@@ -44,17 +43,17 @@
 
 ## Step 5 — Backend: DTO 생성 (5개)
 
-- [ ] `AdminAccountListResponse.java` — `(uuid, loginId, email, role, acctStat, lckYn, createdAt)`
-- [ ] `AdminAccountDetailResponse.java` — `(uuid, loginId, email, role, acctStat, lckYn, lckAt, createdAt, updatedAt)`
-- [ ] `AdminCreateAccountRequest.java` — `(loginId, email, password, role)`
-- [ ] `UpdateRoleRequest.java` — `(role)` ADMIN/USER/GUEST 검증
-- [ ] `UpdateStatusRequest.java` — `(status)` ACTIVE/INACTIVE 검증
+- [x] `AdminAccountListResponse.java` — `(uuid, loginId, email, role, acctStat, lckYn, createdAt)`
+- [x] `AdminAccountDetailResponse.java` — `(uuid, loginId, email, role, acctStat, lckYn, lckAt, createdAt, updatedAt)`
+- [x] `AdminCreateAccountRequest.java` — `(loginId, email, password, role)`
+- [x] `UpdateRoleRequest.java` — `(role)` ADMIN/USER/GUEST 검증
+- [x] `UpdateStatusRequest.java` — `(status)` ACTIVE/INACTIVE 검증
 
 ---
 
 ## Step 6 — Backend: AdminAccountController 생성
 
-- [ ] `AdminAccountController.java` 생성 — `/api/v1/admin/accounts`
+- [x] `AdminAccountController.java` 생성 — `/api/v1/admin/accounts`
   - `GET /` — 목록 조회 (query: loginId, role, status, page, size)
   - `GET /{uuid}` — 단건 조회
   - `POST /` — 계정 생성
@@ -66,13 +65,13 @@
 
 ## Step 7 — Backend: AuthService INACTIVE 차단
 
-- [ ] `AuthService.java` — `login()` 에서 `acct_stat == 'INACTIVE'` 체크 → `BusinessException(UNAUTHORIZED)` 추가
+- [x] `AuthService.java` — `login()` 에서 `acct_stat == 'INACTIVE'` 체크 → `BusinessException(UNAUTHORIZED)` 추가
 
 ---
 
 ## Step 8 — Frontend: TypeScript 타입 정의
 
-- [ ] `types/admin.ts` 생성
+- [x] `types/admin.ts` 생성
   - `AdminAccount` (목록용)
   - `AdminAccountDetail` (상세용)
   - `AdminCreateAccountForm`
@@ -85,7 +84,7 @@
 
 ## Step 9 — Frontend: useAdminAccountApi 생성
 
-- [ ] `composables/useAdminAccountApi.ts` 생성
+- [x] `composables/useAdminAccountApi.ts` 생성
   - `fetchAccounts(params)` — GET `/api/v1/admin/accounts`
   - `fetchAccount(uuid)` — GET `/api/v1/admin/accounts/{uuid}`
   - `createAccount(form)` — POST `/api/v1/admin/accounts`
@@ -97,13 +96,13 @@
 
 ## Step 10 — Frontend: admin middleware 생성
 
-- [ ] `middleware/admin.ts` 생성 — ADMIN role 미소유 시 `/dashboard` 리다이렉트
+- [x] `middleware/admin.ts` 생성 — ADMIN role 미소유 시 `/dashboard` 리다이렉트
 
 ---
 
 ## Step 11 — Frontend: 계정관리 페이지 생성
 
-- [ ] `pages/admin/accounts/index.vue` 생성
+- [x] `pages/admin/accounts/index.vue` 생성
   - `definePageMeta({ middleware: 'admin' })`
   - 계정 목록 테이블 (loginId, email, role, status, 잠금여부, 가입일)
   - 필터: role / status / loginId 검색
@@ -114,7 +113,7 @@
 
 ## Step 12 — Frontend: AppHeader 관리자 메뉴 추가
 
-- [ ] `components/common/AppHeader.vue` — ADMIN role 조건부 `관리자` nav 링크 추가
+- [x] `components/common/AppHeader.vue` — ADMIN role 조건부 `관리자` nav 링크 추가
   - `authStore.currentUser?.role === 'ADMIN'` 일 때만 렌더링
   - 링크 대상: `/admin/accounts`
 
@@ -122,13 +121,11 @@
 
 ## DB 마이그레이션 체크리스트
 
-- [ ] DDL 변경 SQL 작성
-- [ ] 기존 데이터 영향 검토 → DEFAULT 'ACTIVE' 로 안전
-- [ ] NULL / DEFAULT 정책 확인 → NOT NULL + DEFAULT 'ACTIVE'
-- [ ] 인덱스 영향 확인 → 추가 불필요
-- [ ] 롤백 SQL 작성
-- [ ] 운영 반영 순서 정의 → DB ALTER 먼저, 앱 배포 후
-- [ ] 데이터 마이그레이션 필요 여부 확인 → 불필요
+- [x] DDL 변경 SQL 작성
+- [x] 기존 데이터 영향 검토 → DEFAULT 'ACTIVE' 로 안전
+- [x] NULL / DEFAULT 정책 확인 → NOT NULL + DEFAULT 'ACTIVE'
+- [x] 인덱스 영향 확인 → 추가 불필요
+- [x] 데이터 마이그레이션 필요 여부 확인 → 불필요
 
 ---
 
