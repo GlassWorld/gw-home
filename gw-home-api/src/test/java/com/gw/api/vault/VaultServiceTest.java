@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -123,6 +124,44 @@ class VaultServiceTest {
         assertEquals("tester_a", savedCredential.getCreatedBy());
         assertEquals("credential-uuid", response.credentialUuid());
         assertEquals("메일 계정", response.title());
+    }
+
+    @Test
+    void updateCredentialThrowsWhenOtherAccountTriesToModify() {
+        SaveCredentialRequest request = new SaveCredentialRequest(
+                "수정 시도",
+                List.of(),
+                "tester@example.com",
+                "password1234",
+                "개인 메모"
+        );
+
+        when(accountMapper.selectAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
+        when(vaultMapper.selectCredential("credential-uuid", 9L)).thenReturn(null);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> vaultService.updateCredential("credential-uuid", request, "tester_b")
+        );
+
+        assertEquals(ErrorCode.NOT_FOUND, exception.getErrorCode());
+        assertEquals("자격증명 정보를 찾을 수 없습니다.", exception.getMessage());
+        verify(vaultMapper, never()).updateCredential(any(CrdVo.class));
+    }
+
+    @Test
+    void deleteCredentialThrowsWhenOtherAccountTriesToDelete() {
+        when(accountMapper.selectAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
+        when(vaultMapper.selectCredential("credential-uuid", 9L)).thenReturn(null);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> vaultService.deleteCredential("credential-uuid", "tester_b")
+        );
+
+        assertEquals(ErrorCode.NOT_FOUND, exception.getErrorCode());
+        assertEquals("자격증명 정보를 찾을 수 없습니다.", exception.getMessage());
+        verify(vaultMapper, never()).deleteCredential(any(), any(), any());
     }
 
     private AcctVo createAccount(Long idx, String loginId) {

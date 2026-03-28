@@ -35,53 +35,53 @@
 
 ## Phase 1 — DB 구조 변경
 
-- [ ] **1-1** `tb_vlt_crd` 에 `mbr_acct_idx BIGINT` 컬럼 추가
-- [ ] **1-2** `mbr_acct_idx` 인덱스 추가
+- [x] **1-1** `tb_vlt_crd` 에 `mbr_acct_idx BIGINT` 컬럼 추가
+- [x] **1-2** `mbr_acct_idx` 인덱스 추가
   - `idx_vlt_crd_mbr_acct_del_at (mbr_acct_idx, del_at)`
-- [ ] **1-3** 컬럼 코멘트 추가
+- [x] **1-3** 컬럼 코멘트 추가
   - `회원 계정 PK`
-- [ ] **1-4** 신규 생성 DDL 최신화
+- [x] **1-4** 신규 생성 DDL 최신화
   - `tb_vlt_crd.sql`
-- [ ] **1-5** 집계 DDL 최신화
+- [x] **1-5** 집계 DDL 최신화
   - `docs/all-ddl.sql`
 
 ---
 
 ## Phase 2 — 데이터 이관 SQL
 
-- [ ] **2-1** 기존 `tb_vlt_crd.created_by` 값을 기준으로 `tb_mbr_acct.lgn_id` 와 매핑
-- [ ] **2-2** 매핑 결과로 `tb_vlt_crd.mbr_acct_idx` 일괄 업데이트
-- [ ] **2-3** 이관 후 `mbr_acct_idx IS NULL` 데이터 존재 여부 검증 쿼리 작성
-- [ ] **2-4** 이관 완료 후 `mbr_acct_idx NOT NULL` 강제
-- [ ] **2-5** 롤백 SQL 작성
+- [x] **2-1** 기존 `tb_vlt_crd.created_by` 값을 기준으로 `tb_mbr_acct.lgn_id` 와 매핑
+- [x] **2-2** 매핑 결과로 `tb_vlt_crd.mbr_acct_idx` 일괄 업데이트
+- [x] **2-3** 이관 후 `mbr_acct_idx IS NULL` 데이터 존재 여부 검증 쿼리 작성
+- [x] **2-4** 이관 완료 후 `mbr_acct_idx NOT NULL` 강제
+- [x] **2-5** 롤백 SQL 작성
 
 ---
 
 ## Phase 3 — Backend VO / Mapper
 
-- [ ] **3-1** `CrdVo` 에 `mbrAcctIdx` 필드 추가
-- [ ] **3-2** `VaultMapper` 시그니처를 `createdBy` 문자열 기준에서 `mbrAcctIdx` 기준으로 변경
-- [ ] **3-3** `VaultMapper.xml` 목록/상세/삭제 조건을 `mbr_acct_idx` 기준으로 변경
-- [ ] **3-4** 등록 시 `mbr_acct_idx` 저장하도록 INSERT 구문 수정
+- [x] **3-1** `CrdVo` 에 `mbrAcctIdx` 필드 추가
+- [x] **3-2** `VaultMapper` 시그니처를 `createdBy` 문자열 기준에서 `mbrAcctIdx` 기준으로 변경
+- [x] **3-3** `VaultMapper.xml` 목록/상세/삭제 조건을 `mbr_acct_idx` 기준으로 변경
+- [x] **3-4** 등록 시 `mbr_acct_idx` 저장하도록 INSERT 구문 수정
 
 ---
 
 ## Phase 4 — Backend Service
 
-- [ ] **4-1** 로그인 사용자의 `AcctVo` 조회 후 `account.idx` 확보
-- [ ] **4-2** Vault 목록 조회를 `mbrAcctIdx` 기준으로 변경
-- [ ] **4-3** Vault 상세 조회를 `mbrAcctIdx` 기준으로 변경
-- [ ] **4-4** Vault 수정/삭제 소유 검증을 `mbrAcctIdx` 기준으로 변경
-- [ ] **4-5** 등록 시 생성자 로그인 ID는 감사용으로만 유지
+- [x] **4-1** 로그인 사용자의 `AcctVo` 조회 후 `account.idx` 확보
+- [x] **4-2** Vault 목록 조회를 `mbrAcctIdx` 기준으로 변경
+- [x] **4-3** Vault 상세 조회를 `mbrAcctIdx` 기준으로 변경
+- [x] **4-4** Vault 수정/삭제 소유 검증을 `mbrAcctIdx` 기준으로 변경
+- [x] **4-5** 등록 시 생성자 로그인 ID는 감사용으로만 유지
 
 ---
 
 ## Phase 5 — 운영 반영 순서
 
-- [ ] **5-1** `tb_vlt_crd_add_mbr_acct_idx.sql` 실행
-- [ ] **5-2** `mbr_acct_idx IS NULL` 잔존 건수 점검
+- [x] **5-1** `tb_vlt_crd_add_mbr_acct_idx.sql` 실행
+- [x] **5-2** `mbr_acct_idx IS NULL` 잔존 건수 점검
 - [ ] **5-3** 앱 배포
-- [ ] **5-4** 기능 점검
+- [x] **5-4** 기능 점검
   - 서로 다른 계정 간 자격증명 목록 격리 확인
   - 상세/수정/삭제 권한 확인
 
@@ -89,17 +89,17 @@
 
 ## 검증 항목
 
-- [ ] 같은 서버에서 서로 다른 두 계정이 각자 다른 자격증명 목록을 본다
-- [ ] 한 계정이 다른 계정의 자격증명 UUID로 조회 시 실패한다
-- [ ] 한 계정이 다른 계정의 자격증명 UUID로 수정/삭제 시 실패한다
-- [ ] 로그인 ID 변경과 무관하게 기존 자격증명 소유가 유지된다
-- [ ] 신규 등록 자격증명에 `mbr_acct_idx` 가 정상 저장된다
+- [x] 같은 서버에서 서로 다른 두 계정이 각자 다른 자격증명 목록을 본다
+- [x] 한 계정이 다른 계정의 자격증명 UUID로 조회 시 실패한다
+- [x] 한 계정이 다른 계정의 자격증명 UUID로 수정/삭제 시 실패한다
+- [x] 로그인 ID 변경과 무관하게 기존 자격증명 소유가 유지된다
+- [x] 신규 등록 자격증명에 `mbr_acct_idx` 가 정상 저장된다
 
 ---
 
 ## 리스크 체크리스트
 
-- [ ] `created_by` 와 `tb_mbr_acct.lgn_id` 가 일치하지 않는 데이터 없음
-- [ ] 이관 후 `mbr_acct_idx IS NULL` 데이터 없음
-- [ ] 기존 감사 컬럼(`created_by`, `updated_by`) 의미 훼손 없음
-- [ ] 운영 DB 반영 전 검증 쿼리 준비됨
+- [x] `created_by` 와 `tb_mbr_acct.lgn_id` 가 일치하지 않는 데이터 없음
+- [x] 이관 후 `mbr_acct_idx IS NULL` 데이터 없음
+- [x] 기존 감사 컬럼(`created_by`, `updated_by`) 의미 훼손 없음
+- [x] 운영 DB 반영 전 검증 쿼리 준비됨
