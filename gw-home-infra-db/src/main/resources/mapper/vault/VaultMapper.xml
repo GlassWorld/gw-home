@@ -12,7 +12,6 @@
             lgn_id AS lgnId,
             pwd,
             memo,
-            vlt_cat_idx AS vltCatIdx,
             created_by AS createdBy,
             updated_by AS updatedBy,
             created_at AS createdAt,
@@ -22,11 +21,13 @@
         WHERE created_by = #{createdBy}
           AND del_at IS NULL
         <if test="categoryUuid != null and categoryUuid != ''">
-            AND vlt_cat_idx = (
-                SELECT tb_vlt_cat_idx
-                FROM tb_vlt_cat
-                WHERE tb_vlt_cat_uuid = CAST(#{categoryUuid} AS UUID)
-                  AND del_at IS NULL
+            AND EXISTS (
+                SELECT 1
+                FROM tb_vlt_crd_cat vcc
+                INNER JOIN tb_vlt_cat vc ON vc.tb_vlt_cat_idx = vcc.tb_vlt_cat_idx
+                WHERE vcc.tb_vlt_crd_idx = tb_vlt_crd.tb_vlt_crd_idx
+                  AND vc.tb_vlt_cat_uuid = CAST(#{categoryUuid} AS UUID)
+                  AND vc.del_at IS NULL
             )
         </if>
         <if test="keyword != null and keyword != ''">
@@ -46,7 +47,6 @@
             lgn_id AS lgnId,
             pwd,
             memo,
-            vlt_cat_idx AS vltCatIdx,
             created_by AS createdBy,
             updated_by AS updatedBy,
             created_at AS createdAt,
@@ -65,7 +65,6 @@
             lgn_id AS lgnId,
             pwd,
             memo,
-            vlt_cat_idx AS vltCatIdx,
             created_by AS createdBy,
             updated_by AS updatedBy,
             created_at AS createdAt,
@@ -83,14 +82,12 @@
             lgn_id,
             pwd,
             memo,
-            vlt_cat_idx,
             created_by
         ) VALUES (
             #{ttl},
             #{lgnId},
             #{pwd},
             #{memo},
-            #{vltCatIdx},
             #{createdBy}
         )
     </insert>
@@ -102,7 +99,6 @@
             lgn_id = #{lgnId},
             pwd = #{pwd},
             memo = #{memo},
-            vlt_cat_idx = #{vltCatIdx},
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE tb_vlt_crd_uuid = CAST(#{uuid} AS UUID)
@@ -118,15 +114,6 @@
             updated_at = now()
         WHERE tb_vlt_crd_uuid = CAST(#{uuid} AS UUID)
           AND created_by = #{createdBy}
-          AND del_at IS NULL
-    </update>
-
-    <update id="clearCredentialCategory">
-        UPDATE tb_vlt_crd
-        SET
-            vlt_cat_idx = NULL,
-            updated_at = now()
-        WHERE vlt_cat_idx = #{vltCatIdx}
           AND del_at IS NULL
     </update>
 

@@ -1,18 +1,24 @@
 package com.gw.api.service.vault;
 
+import com.gw.api.dto.vault.CredentialCategoryResponse;
 import com.gw.api.dto.vault.CredentialResponse;
 import com.gw.api.dto.vault.SaveCredentialRequest;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.vault.VaultCategoryMapper;
+import com.gw.infra.db.mapper.vault.VaultCredentialCategoryMapper;
 import com.gw.infra.db.mapper.vault.VaultMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.vault.CatVo;
+import com.gw.share.vo.vault.CrdCatVo;
 import com.gw.share.vo.vault.CrdVo;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +28,18 @@ public class VaultService {
 
     private final VaultMapper vaultMapper;
     private final VaultCategoryMapper vaultCategoryMapper;
+    private final VaultCredentialCategoryMapper vaultCredentialCategoryMapper;
     private final AccountMapper accountMapper;
 
-    public VaultService(VaultMapper vaultMapper, VaultCategoryMapper vaultCategoryMapper, AccountMapper accountMapper) {
+    public VaultService(
+            VaultMapper vaultMapper,
+            VaultCategoryMapper vaultCategoryMapper,
+            VaultCredentialCategoryMapper vaultCredentialCategoryMapper,
+            AccountMapper accountMapper
+    ) {
         this.vaultMapper = vaultMapper;
         this.vaultCategoryMapper = vaultCategoryMapper;
+        this.vaultCredentialCategoryMapper = vaultCredentialCategoryMapper;
         this.accountMapper = accountMapper;
     }
 
@@ -34,53 +47,61 @@ public class VaultService {
     public List<CredentialResponse> getCredentialList(String keyword, String categoryUuid, String loginId) {
         getAccountByLoginId(loginId);
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
+        List<CrdVo> credentialList = vaultMapper.selectCredentialList(keyword, categoryUuid, loginId);
+        Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(credentialList, categoryByIdx);
 
-        return vaultMapper.selectCredentialList(keyword, categoryUuid, loginId)
-                .stream()
-                .map(credential -> toResponse(credential, categoryByIdx))
+        return credentialList.stream()
+                .map(credential -> toResponse(credential, categoriesByCredentialIdx))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public CredentialResponse getCredential(String uuid, String loginId) {
         getAccountByLoginId(loginId);
-        return toResponse(getCredentialVo(uuid, loginId), getCategoryByIdxMap());
+        CrdVo credential = getCredentialVo(uuid, loginId);
+        Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
+        Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(List.of(credential), categoryByIdx);
+        return toResponse(credential, categoriesByCredentialIdx);
     }
 
     public CredentialResponse saveCredential(SaveCredentialRequest request, String loginId) {
         getAccountByLoginId(loginId);
+        List<Long> categoryIdxList = getCategoryIndexes(request.categoryUuids());
 
         CrdVo credential = CrdVo.builder()
                 .ttl(request.title())
-                .vltCatIdx(getCategoryIndex(request.categoryUuid()))
                 .lgnId(request.loginId())
                 .pwd(request.password())
                 .memo(request.memo())
                 .createdBy(loginId)
                 .build();
         vaultMapper.insertCredential(credential);
+        replaceCredentialCategoryMappings(credential.getIdx(), categoryIdxList);
 
-        return toResponse(vaultMapper.selectCredentialByIdx(credential.getIdx()), getCategoryByIdxMap());
+        return getCredentialByIndex(credential.getIdx());
     }
 
     public CredentialResponse updateCredential(String uuid, SaveCredentialRequest request, String loginId) {
         getAccountByLoginId(loginId);
         CrdVo credential = getCredentialVo(uuid, loginId);
+        List<Long> categoryIdxList = getCategoryIndexes(request.categoryUuids());
 
         credential.setTtl(request.title());
-        credential.setVltCatIdx(getCategoryIndex(request.categoryUuid()));
         credential.setLgnId(request.loginId());
         credential.setPwd(request.password());
         credential.setMemo(request.memo());
         credential.setUpdatedBy(loginId);
 
         vaultMapper.updateCredential(credential);
-        return toResponse(getCredentialVo(uuid, loginId), getCategoryByIdxMap());
+        replaceCredentialCategoryMappings(credential.getIdx(), categoryIdxList);
+
+        return getCredential(uuid, loginId);
     }
 
     public void deleteCredential(String uuid, String loginId) {
         getAccountByLoginId(loginId);
-        getCredentialVo(uuid, loginId);
+        CrdVo credential = getCredentialVo(uuid, loginId);
+        vaultCredentialCategoryMapper.deleteCredentialCategoryMappings(credential.getIdx());
         vaultMapper.deleteCredential(uuid, loginId, loginId);
     }
 
@@ -94,6 +115,19 @@ public class VaultService {
         return credential;
     }
 
+    @Transactional(readOnly = true)
+    private CredentialResponse getCredentialByIndex(Long idx) {
+        CrdVo credential = vaultMapper.selectCredentialByIdx(idx);
+
+        if (credential == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "자격증명 정보를 찾을 수 없습니다.");
+        }
+
+        Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
+        Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(List.of(credential), categoryByIdx);
+        return toResponse(credential, categoriesByCredentialIdx);
+    }
+
     private AcctVo getAccountByLoginId(String loginId) {
         AcctVo account = accountMapper.selectAccountByLoginId(loginId);
 
@@ -104,18 +138,34 @@ public class VaultService {
         return account;
     }
 
-    private Long getCategoryIndex(String categoryUuid) {
-        if (categoryUuid == null || categoryUuid.isBlank()) {
-            return null;
+    private List<Long> getCategoryIndexes(List<String> categoryUuids) {
+        if (categoryUuids == null || categoryUuids.isEmpty()) {
+            return List.of();
         }
 
-        CatVo category = vaultCategoryMapper.selectCategory(categoryUuid);
-
-        if (category == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
+        Set<String> uniqueCategoryUuids = new LinkedHashSet<>();
+        for (String categoryUuid : categoryUuids) {
+            if (categoryUuid != null && !categoryUuid.isBlank()) {
+                uniqueCategoryUuids.add(categoryUuid);
+            }
         }
 
-        return category.getIdx();
+        if (uniqueCategoryUuids.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> categoryIdxList = new ArrayList<>();
+        for (String categoryUuid : uniqueCategoryUuids) {
+            CatVo category = vaultCategoryMapper.selectCategory(categoryUuid);
+
+            if (category == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
+            }
+
+            categoryIdxList.add(category.getIdx());
+        }
+
+        return categoryIdxList;
     }
 
     private Map<Long, CatVo> getCategoryByIdxMap() {
@@ -128,15 +178,55 @@ public class VaultService {
         return categoryByIdx;
     }
 
-    private CredentialResponse toResponse(CrdVo credential, Map<Long, CatVo> categoryByIdx) {
-        CatVo category = credential.getVltCatIdx() == null ? null : categoryByIdx.get(credential.getVltCatIdx());
+    private Map<Long, List<CatVo>> getCategoriesByCredentialIdx(List<CrdVo> credentialList, Map<Long, CatVo> categoryByIdx) {
+        Map<Long, List<CatVo>> categoriesByCredentialIdx = new HashMap<>();
+
+        if (credentialList.isEmpty()) {
+            return categoriesByCredentialIdx;
+        }
+
+        List<Long> credentialIdxList = credentialList.stream()
+                .map(CrdVo::getIdx)
+                .toList();
+
+        for (CrdCatVo mapping : vaultCredentialCategoryMapper.selectCredentialCategoryMappings(credentialIdxList)) {
+            CatVo category = categoryByIdx.get(mapping.getTbVltCatIdx());
+
+            if (category == null) {
+                continue;
+            }
+
+            categoriesByCredentialIdx
+                    .computeIfAbsent(mapping.getTbVltCrdIdx(), ignored -> new ArrayList<>())
+                    .add(category);
+        }
+
+        return categoriesByCredentialIdx;
+    }
+
+    private void replaceCredentialCategoryMappings(Long credentialIdx, List<Long> categoryIdxList) {
+        vaultCredentialCategoryMapper.deleteCredentialCategoryMappings(credentialIdx);
+
+        if (!categoryIdxList.isEmpty()) {
+            vaultCredentialCategoryMapper.insertCredentialCategoryMappings(credentialIdx, categoryIdxList);
+        }
+    }
+
+    private CredentialResponse toResponse(CrdVo credential, Map<Long, List<CatVo>> categoriesByCredentialIdx) {
+        List<CredentialCategoryResponse> categories = categoriesByCredentialIdx
+                .getOrDefault(credential.getIdx(), List.of())
+                .stream()
+                .map(category -> new CredentialCategoryResponse(
+                        category.getUuid(),
+                        category.getNm(),
+                        category.getColor()
+                ))
+                .toList();
 
         return new CredentialResponse(
                 credential.getUuid(),
                 credential.getTtl(),
-                category == null ? null : category.getUuid(),
-                category == null ? null : category.getNm(),
-                category == null ? null : category.getColor(),
+                categories,
                 credential.getLgnId(),
                 credential.getPwd(),
                 credential.getMemo(),

@@ -31,7 +31,7 @@ export function useVaultCategoryApi() {
       method: 'GET'
     })
 
-    return response.data.map(toCategory)
+    return response.data.map(toCategory).sort((leftCategory, rightCategory) => leftCategory.sortOrder - rightCategory.sortOrder)
   }
 
   async function fetchAdminCategoryList(): Promise<VaultCategory[]> {

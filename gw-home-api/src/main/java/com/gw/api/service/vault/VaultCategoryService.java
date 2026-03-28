@@ -2,8 +2,8 @@ package com.gw.api.service.vault;
 
 import com.gw.api.dto.vault.SaveVaultCategoryRequest;
 import com.gw.api.dto.vault.VaultCategoryResponse;
-import com.gw.infra.db.mapper.vault.VaultMapper;
 import com.gw.infra.db.mapper.vault.VaultCategoryMapper;
+import com.gw.infra.db.mapper.vault.VaultCredentialCategoryMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.vo.vault.CatVo;
@@ -16,11 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class VaultCategoryService {
 
     private final VaultCategoryMapper vaultCategoryMapper;
-    private final VaultMapper vaultMapper;
+    private final VaultCredentialCategoryMapper vaultCredentialCategoryMapper;
 
-    public VaultCategoryService(VaultCategoryMapper vaultCategoryMapper, VaultMapper vaultMapper) {
+    public VaultCategoryService(
+            VaultCategoryMapper vaultCategoryMapper,
+            VaultCredentialCategoryMapper vaultCredentialCategoryMapper
+    ) {
         this.vaultCategoryMapper = vaultCategoryMapper;
-        this.vaultMapper = vaultMapper;
+        this.vaultCredentialCategoryMapper = vaultCredentialCategoryMapper;
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +62,7 @@ public class VaultCategoryService {
 
     public void deleteCategory(String uuid, String loginId) {
         CatVo category = getCategory(uuid);
-        vaultMapper.clearCredentialCategory(category.getIdx());
+        vaultCredentialCategoryMapper.deleteCategoryMappings(category.getIdx());
         vaultCategoryMapper.deleteCategory(uuid, loginId);
     }
 

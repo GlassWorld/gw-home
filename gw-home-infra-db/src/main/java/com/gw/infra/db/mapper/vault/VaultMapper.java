@@ -22,8 +22,6 @@ public interface VaultMapper {
 
     int updateCredential(CrdVo credential);
 
-    int clearCredentialCategory(@Param("vltCatIdx") Long vltCatIdx);
-
     int deleteCredential(
             @Param("uuid") String uuid,
             @Param("createdBy") String createdBy,

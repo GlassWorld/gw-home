@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS tb_fav CASCADE;
 DROP TABLE IF EXISTS tb_brd_cmt CASCADE;
 DROP TABLE IF EXISTS tb_auth_rfsh_tkn CASCADE;
 DROP TABLE IF EXISTS tb_file CASCADE;
+DROP TABLE IF EXISTS tb_vlt_crd_cat CASCADE;
 DROP TABLE IF EXISTS tb_vlt_crd CASCADE;
 DROP TABLE IF EXISTS tb_vlt_cat CASCADE;
 DROP TABLE IF EXISTS tb_mbr_prfl CASCADE;
@@ -20,6 +21,13 @@ CREATE TABLE tb_mbr_acct (
     pwd            VARCHAR(255) NOT NULL,
     email          VARCHAR(255) NOT NULL UNIQUE,
     role           VARCHAR(20)  NOT NULL DEFAULT 'USER',
+    lgn_fail_cnt   INT          NOT NULL DEFAULT 0,
+    lck_yn         BOOLEAN      NOT NULL DEFAULT FALSE,
+    lck_at         TIMESTAMPTZ,
+    otp_enabled    BOOLEAN      NOT NULL DEFAULT FALSE,
+    otp_secret     TEXT,
+    otp_fail_cnt   INT          NOT NULL DEFAULT 0,
+    otp_last_failed_at TIMESTAMPTZ,
     created_by     VARCHAR(100) NOT NULL,
     updated_by     VARCHAR(100),
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
@@ -34,6 +42,13 @@ COMMENT ON COLUMN tb_mbr_acct.lgn_id IS '로그인 ID';
 COMMENT ON COLUMN tb_mbr_acct.pwd IS '비밀번호 해시';
 COMMENT ON COLUMN tb_mbr_acct.email IS '이메일';
 COMMENT ON COLUMN tb_mbr_acct.role IS '권한';
+COMMENT ON COLUMN tb_mbr_acct.lgn_fail_cnt IS '로그인 실패 횟수';
+COMMENT ON COLUMN tb_mbr_acct.lck_yn IS '계정 잠금 여부';
+COMMENT ON COLUMN tb_mbr_acct.lck_at IS '계정 잠금 일시';
+COMMENT ON COLUMN tb_mbr_acct.otp_enabled IS 'OTP 활성화 여부';
+COMMENT ON COLUMN tb_mbr_acct.otp_secret IS '암호화된 OTP 시크릿';
+COMMENT ON COLUMN tb_mbr_acct.otp_fail_cnt IS 'OTP 실패 횟수';
+COMMENT ON COLUMN tb_mbr_acct.otp_last_failed_at IS '마지막 OTP 실패 일시';
 COMMENT ON COLUMN tb_mbr_acct.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_mbr_acct.updated_by IS '수정자 로그인 ID';
 COMMENT ON COLUMN tb_mbr_acct.created_at IS '생성 일시';
@@ -70,6 +85,7 @@ CREATE TABLE tb_mbr_prfl (
     nick_nm         VARCHAR(50)  NOT NULL UNIQUE,
     intro           VARCHAR(500),
     prfl_img_url    VARCHAR(1000),
+    memo            TEXT,
     created_by      VARCHAR(100) NOT NULL,
     updated_by      VARCHAR(100),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
@@ -85,6 +101,7 @@ COMMENT ON COLUMN tb_mbr_prfl.mbr_acct_idx IS '회원 계정 PK';
 COMMENT ON COLUMN tb_mbr_prfl.nick_nm IS '닉네임';
 COMMENT ON COLUMN tb_mbr_prfl.intro IS '자기소개';
 COMMENT ON COLUMN tb_mbr_prfl.prfl_img_url IS '프로필 이미지 URL';
+COMMENT ON COLUMN tb_mbr_prfl.memo IS '개인 메모';
 COMMENT ON COLUMN tb_mbr_prfl.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_mbr_prfl.updated_by IS '수정자 로그인 ID';
 COMMENT ON COLUMN tb_mbr_prfl.created_at IS '생성 일시';
@@ -95,6 +112,7 @@ CREATE TABLE tb_vlt_cat (
     tb_vlt_cat_uuid UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     nm              VARCHAR(100) NOT NULL,
     dsc             TEXT,
+    color           VARCHAR(7),
     sort_ord        INT          NOT NULL DEFAULT 0,
     created_by      VARCHAR(100) NOT NULL,
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
@@ -110,6 +128,7 @@ COMMENT ON COLUMN tb_vlt_cat.tb_vlt_cat_idx IS 'Vault 카테고리 PK';
 COMMENT ON COLUMN tb_vlt_cat.tb_vlt_cat_uuid IS 'Vault 카테고리 UUID';
 COMMENT ON COLUMN tb_vlt_cat.nm IS '카테고리명';
 COMMENT ON COLUMN tb_vlt_cat.dsc IS '카테고리 설명';
+COMMENT ON COLUMN tb_vlt_cat.color IS '카테고리 색상 HEX';
 COMMENT ON COLUMN tb_vlt_cat.sort_ord IS '정렬 순서';
 COMMENT ON COLUMN tb_vlt_cat.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_vlt_cat.created_at IS '생성 일시';
@@ -124,7 +143,6 @@ CREATE TABLE tb_vlt_crd (
     lgn_id          VARCHAR(200),
     pwd             TEXT         NOT NULL,
     memo            TEXT,
-    vlt_cat_idx     BIGINT       REFERENCES tb_vlt_cat(tb_vlt_cat_idx) ON DELETE SET NULL,
     created_by      VARCHAR(100) NOT NULL,
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_by      VARCHAR(100),
@@ -133,7 +151,6 @@ CREATE TABLE tb_vlt_crd (
 );
 
 CREATE INDEX idx_vlt_crd_created_by_del_at ON tb_vlt_crd (created_by, del_at);
-CREATE INDEX idx_vlt_crd_vlt_cat_idx ON tb_vlt_crd (vlt_cat_idx);
 
 COMMENT ON TABLE tb_vlt_crd IS '개인 자격증명';
 COMMENT ON COLUMN tb_vlt_crd.tb_vlt_crd_idx IS '개인 자격증명 PK';
@@ -142,12 +159,28 @@ COMMENT ON COLUMN tb_vlt_crd.ttl IS '제목';
 COMMENT ON COLUMN tb_vlt_crd.lgn_id IS '로그인 ID';
 COMMENT ON COLUMN tb_vlt_crd.pwd IS '비밀번호';
 COMMENT ON COLUMN tb_vlt_crd.memo IS '통합 메모';
-COMMENT ON COLUMN tb_vlt_crd.vlt_cat_idx IS 'Vault 카테고리 PK';
 COMMENT ON COLUMN tb_vlt_crd.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_vlt_crd.created_at IS '생성 일시';
 COMMENT ON COLUMN tb_vlt_crd.updated_by IS '수정자 로그인 ID';
 COMMENT ON COLUMN tb_vlt_crd.updated_at IS '수정 일시';
 COMMENT ON COLUMN tb_vlt_crd.del_at IS '삭제 일시';
+
+CREATE TABLE tb_vlt_crd_cat (
+    vlt_crd_cat_idx BIGSERIAL PRIMARY KEY,
+    tb_vlt_crd_idx  BIGINT      NOT NULL REFERENCES tb_vlt_crd(tb_vlt_crd_idx) ON DELETE CASCADE,
+    tb_vlt_cat_idx  BIGINT      NOT NULL REFERENCES tb_vlt_cat(tb_vlt_cat_idx) ON DELETE CASCADE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (tb_vlt_crd_idx, tb_vlt_cat_idx)
+);
+
+CREATE INDEX idx_vlt_crd_cat_crd_idx ON tb_vlt_crd_cat (tb_vlt_crd_idx);
+CREATE INDEX idx_vlt_crd_cat_cat_idx ON tb_vlt_crd_cat (tb_vlt_cat_idx);
+
+COMMENT ON TABLE tb_vlt_crd_cat IS '개인 자격증명-카테고리 매핑';
+COMMENT ON COLUMN tb_vlt_crd_cat.vlt_crd_cat_idx IS '자격증명-카테고리 매핑 PK';
+COMMENT ON COLUMN tb_vlt_crd_cat.tb_vlt_crd_idx IS '개인 자격증명 PK';
+COMMENT ON COLUMN tb_vlt_crd_cat.tb_vlt_cat_idx IS 'Vault 카테고리 PK';
+COMMENT ON COLUMN tb_vlt_crd_cat.created_at IS '생성 일시';
 
 CREATE TABLE tb_brd_ctgr (
     brd_ctgr_idx   BIGSERIAL    PRIMARY KEY,
