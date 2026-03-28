@@ -15,22 +15,21 @@ const { createCredential, updateCredential } = useVaultApi()
 const { fetchCategoryList } = useVaultCategoryApi()
 const { showToast } = useToast()
 const categoryList = ref<VaultCategory[]>([])
-const categoryOptions = computed(() => {
-  return categoryList.value.map((category) => ({
-    value: category.categoryUuid,
-    label: category.name
-  }))
-})
-const selectedCategoryUuid = computed({
-  get: () => formState.categoryUuid ?? '',
-  set: (value: string) => {
-    formState.categoryUuid = value
+const categorySearchKeyword = ref('')
+
+const filteredCategoryList = computed(() => {
+  const normalizedKeyword = categorySearchKeyword.value.trim().toLowerCase()
+
+  if (!normalizedKeyword) {
+    return categoryList.value
   }
+
+  return categoryList.value.filter((category) => category.name.toLowerCase().includes(normalizedKeyword))
 })
 
 const formState = reactive<SaveCredentialPayload>({
   title: '',
-  categoryUuid: '',
+  categoryUuids: [],
   loginId: '',
   password: '',
   memo: ''
@@ -40,10 +39,11 @@ const isSubmitting = ref(false)
 
 function resetForm() {
   formState.title = props.credential?.title ?? ''
-  formState.categoryUuid = props.credential?.categoryUuid ?? ''
+  formState.categoryUuids = props.credential?.categories.map((category) => category.categoryUuid) ?? []
   formState.loginId = props.credential?.loginId ?? ''
   formState.password = props.credential?.password ?? ''
   formState.memo = props.credential?.memo ?? ''
+  categorySearchKeyword.value = ''
 }
 
 async function loadCategoryList() {
@@ -52,6 +52,22 @@ async function loadCategoryList() {
   } catch {
     categoryList.value = []
   }
+}
+
+function isCategorySelected(categoryUuid: string): boolean {
+  return (formState.categoryUuids ?? []).includes(categoryUuid)
+}
+
+function toggleCategory(categoryUuid: string) {
+  const selectedCategoryUuids = new Set(formState.categoryUuids ?? [])
+
+  if (selectedCategoryUuids.has(categoryUuid)) {
+    selectedCategoryUuids.delete(categoryUuid)
+  } else {
+    selectedCategoryUuids.add(categoryUuid)
+  }
+
+  formState.categoryUuids = [...selectedCategoryUuids]
 }
 
 async function handleSave() {
@@ -67,20 +83,17 @@ async function handleSave() {
   isSubmitting.value = true
 
   try {
+    const payload: SaveCredentialPayload = {
+      ...formState,
+      categoryUuids: [...(formState.categoryUuids ?? [])],
+      title: formState.title.trim(),
+      password: formState.password.trim()
+    }
+
     if (props.credential?.credentialUuid) {
-      await updateCredential(props.credential.credentialUuid, {
-        ...formState,
-        categoryUuid: formState.categoryUuid ?? '',
-        title: formState.title.trim(),
-        password: formState.password.trim()
-      })
+      await updateCredential(props.credential.credentialUuid, payload)
     } else {
-      await createCredential({
-        ...formState,
-        categoryUuid: formState.categoryUuid ?? '',
-        title: formState.title.trim(),
-        password: formState.password.trim()
-      })
+      await createCredential(payload)
     }
 
     emit('saved')
@@ -109,31 +122,51 @@ watch(
     :visible="visible"
     eyebrow="Vault"
     :title="credential ? '자격증명 수정' : '자격증명 등록'"
-    width="720px"
+    width="800px"
     @close="emit('close')"
   >
     <div class="vault-modal__form">
-      <label class="vault-modal__field">
-        <span>제목 <strong class="vault-modal__required">*</strong></span>
-        <input v-model="formState.title" class="input-field" type="text" maxlength="200">
-      </label>
-      <label class="vault-modal__field">
+      <div class="vault-modal__primary-fields">
+        <label class="vault-modal__field">
+          <span>제목 <strong class="vault-modal__required">*</strong></span>
+          <input v-model="formState.title" class="input-field" type="text" maxlength="200">
+        </label>
+        <label class="vault-modal__field">
+          <span>아이디</span>
+          <input v-model="formState.loginId" class="input-field" type="text" maxlength="200">
+        </label>
+        <label class="vault-modal__field">
+          <span>비밀번호 <strong class="vault-modal__required">*</strong></span>
+          <input v-model="formState.password" class="input-field" type="text">
+        </label>
+      </div>
+      <label class="vault-modal__field vault-modal__field--category">
         <span>카테고리</span>
-        <CommonSearchableSelect
-          v-model="selectedCategoryUuid"
-          :options="categoryOptions"
-          placeholder="카테고리를 검색하세요"
-        />
+        <div class="vault-modal__category-picker">
+          <input
+            v-model="categorySearchKeyword"
+            class="input-field"
+            type="text"
+            placeholder="카테고리를 검색하세요"
+          >
+          <div class="vault-modal__category-list">
+            <button
+              v-for="category in filteredCategoryList"
+              :key="category.categoryUuid"
+              class="vault-modal__category-chip"
+              :class="{ 'vault-modal__category-chip--selected': isCategorySelected(category.categoryUuid) }"
+              type="button"
+              @click="toggleCategory(category.categoryUuid)"
+            >
+              {{ category.name }}
+            </button>
+            <p v-if="filteredCategoryList.length === 0" class="vault-modal__category-empty">
+              검색 결과가 없습니다.
+            </p>
+          </div>
+        </div>
       </label>
-      <label class="vault-modal__field">
-        <span>아이디</span>
-        <input v-model="formState.loginId" class="input-field" type="text" maxlength="200">
-      </label>
-      <label class="vault-modal__field">
-        <span>비밀번호 <strong class="vault-modal__required">*</strong></span>
-        <input v-model="formState.password" class="input-field" type="text">
-      </label>
-      <label class="vault-modal__field">
+      <label class="vault-modal__field vault-modal__field--wide">
         <span>메모</span>
         <textarea v-model="formState.memo" class="vault-modal__textarea" rows="5"></textarea>
       </label>
@@ -153,8 +186,15 @@ watch(
 <style scoped>
 .vault-modal__form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(360px, 1fr) minmax(260px, 320px);
   gap: 16px;
+  align-items: start;
+}
+
+.vault-modal__primary-fields {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
 }
 
 .vault-modal__field {
@@ -170,6 +210,49 @@ watch(
 .vault-modal__required {
   color: #ff8f8f;
   font-weight: 700;
+}
+
+.vault-modal__category-picker {
+  display: grid;
+  gap: 10px;
+  height: 100%;
+}
+
+.vault-modal__category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid rgba(147, 210, 255, 0.22);
+  border-radius: var(--radius-small);
+  background: rgba(8, 23, 42, 0.72);
+}
+
+.vault-modal__field--category {
+  min-height: 100%;
+  min-width: 0;
+}
+
+.vault-modal__category-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(147, 210, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(110, 193, 255, 0.08);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.vault-modal__category-chip--selected {
+  border-color: rgba(124, 209, 255, 0.92);
+  background: rgba(110, 193, 255, 0.18);
+  color: var(--color-accent);
+}
+
+.vault-modal__category-empty {
+  margin: 0;
+  color: var(--color-text-muted);
 }
 
 .vault-modal__textarea {
@@ -205,13 +288,17 @@ watch(
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.vault-modal__field:last-child {
+.vault-modal__field--wide {
   grid-column: 1 / -1;
 }
 
 @media (max-width: 768px) {
   .vault-modal__form {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .vault-modal__primary-fields {
     gap: 12px;
   }
 }

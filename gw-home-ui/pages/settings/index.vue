@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import QRCode from 'qrcode'
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -24,6 +26,7 @@ const isDisableSubmitting = ref(false)
 const isDisableModalVisible = ref(false)
 const otpEnabled = ref(false)
 const otpAuthUrl = ref('')
+const qrCodeDataUrl = ref('')
 const activationOtpCode = ref('')
 const disableOtpCode = ref('')
 const securityErrorMessage = ref('')
@@ -117,6 +120,10 @@ async function handleSetupOtp() {
     const response = await setupOtp()
     otpAuthUrl.value = response.otpAuthUrl
     activationOtpCode.value = ''
+    qrCodeDataUrl.value = await QRCode.toDataURL(response.otpAuthUrl, {
+      width: 220,
+      margin: 1
+    })
     showToast('OTP 설정을 시작했습니다. 인증 앱에 등록해 주세요.', { variant: 'info' })
   } catch (error) {
     const fetchError = error as { data?: { message?: string }; message?: string }
@@ -138,6 +145,7 @@ async function handleActivateOtp() {
     await activateOtp(activationOtpCode.value)
     otpEnabled.value = true
     otpAuthUrl.value = ''
+    qrCodeDataUrl.value = ''
     activationOtpCode.value = ''
     showToast('OTP가 활성화되었습니다.', { variant: 'success' })
   } catch (error) {
@@ -176,6 +184,7 @@ async function handleDisableOtp() {
     await disableOtp(disableOtpCode.value)
     otpEnabled.value = false
     otpAuthUrl.value = ''
+    qrCodeDataUrl.value = ''
     closeDisableModal()
     showToast('OTP가 해제되었습니다.', { variant: 'success' })
   } catch (error) {
@@ -324,7 +333,7 @@ await loadOtpStatus()
         <div class="settings-page__security-card">
           <div>
             <h3>OTP 미설정</h3>
-            <p class="message-muted">설정을 시작하면 인증 앱에 등록할 수 있는 URL이 표시됩니다.</p>
+            <p class="message-muted">설정을 시작하면 QR 코드와 수동 등록 URL이 함께 표시됩니다.</p>
           </div>
 
           <CommonBaseButton :disabled="isSetupSubmitting" @click="handleSetupOtp">
@@ -334,8 +343,9 @@ await loadOtpStatus()
 
         <div v-if="otpAuthUrl" class="settings-page__otp-grid">
           <div class="settings-page__otp-panel">
-            <h3>등록 URL</h3>
-            <p class="message-muted">인증 앱의 수동 등록 기능에 아래 값을 입력할 수 있습니다.</p>
+            <h3>QR 코드 등록</h3>
+            <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="OTP QR 코드" class="settings-page__otp-qr-image">
+            <p class="message-muted">QR 스캔이 어렵다면 아래 URL을 인증 앱의 수동 등록에 사용할 수 있습니다.</p>
             <code class="settings-page__otp-url">{{ otpAuthUrl }}</code>
           </div>
 
@@ -524,6 +534,14 @@ await loadOtpStatus()
   color: #bfe7ff;
   font-size: 0.88rem;
   line-height: 1.5;
+}
+
+.settings-page__otp-qr-image {
+  width: 220px;
+  max-width: 100%;
+  padding: 12px;
+  border-radius: 20px;
+  background: #ffffff;
 }
 
 @media (max-width: 900px) {

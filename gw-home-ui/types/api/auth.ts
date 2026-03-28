@@ -15,7 +15,7 @@ export interface TokenApiResponse {
 }
 
 export interface LoginApiResponse {
-  login_status: 'SUCCESS' | 'OTP_REQUIRED'
+  login_status: 'SUCCESS' | 'OTP_REQUIRED' | 'OTP_SETUP_REQUIRED'
   token_response: TokenApiResponse | null
   otp_temp_token: string | null
 }

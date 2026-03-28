@@ -1,23 +1,29 @@
 import type { ApiResponse } from '~/types/api/common'
-import type { Credential, CredentialListParams, SaveCredentialPayload } from '~/types/vault'
+import type { Credential, CredentialCategory, CredentialListParams, SaveCredentialPayload } from '~/types/vault'
+
+interface CredentialCategoryApi extends Partial<CredentialCategory> {
+  category_uuid?: string
+}
 
 export function useVaultApi() {
   const { authorizedFetch } = useAuth()
 
   function toCredential(credential: Partial<Credential> & {
     credential_uuid?: string
-    category_uuid?: string | null
-    category_name?: string | null
-    category_color?: string | null
+    categories?: CredentialCategoryApi[]
     login_id?: string | null
     created_at?: string
   }): Credential {
+    const categories = (credential.categories ?? []).map((category: CredentialCategoryApi) => ({
+      categoryUuid: category.categoryUuid ?? category.category_uuid ?? '',
+      name: category.name ?? '',
+      color: category.color ?? null
+    }))
+
     return {
       credentialUuid: credential.credentialUuid ?? credential.credential_uuid ?? '',
       title: credential.title ?? '',
-      categoryUuid: credential.categoryUuid ?? credential.category_uuid ?? null,
-      categoryName: credential.categoryName ?? credential.category_name ?? null,
-      categoryColor: credential.categoryColor ?? credential.category_color ?? null,
+      categories,
       loginId: credential.loginId ?? credential.login_id ?? null,
       password: credential.password ?? '',
       memo: credential.memo ?? null,
@@ -25,10 +31,10 @@ export function useVaultApi() {
     }
   }
 
-  function toRequestBody(payload: SaveCredentialPayload): Record<string, string | undefined> {
+  function toRequestBody(payload: SaveCredentialPayload): Record<string, string | string[] | undefined> {
     return {
       title: payload.title,
-      category_uuid: payload.categoryUuid,
+      category_uuids: payload.categoryUuids,
       login_id: payload.loginId,
       password: payload.password,
       memo: payload.memo

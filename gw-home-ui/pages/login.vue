@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import QRCode from 'qrcode'
+
 definePageMeta({
   middleware: 'guest'
 })
@@ -6,12 +8,19 @@ definePageMeta({
 type LoginStep = 'credentials' | 'otp'
 
 const { login } = useAuth()
-const { verifyOtp } = useOtpApi()
+const { verifyOtp, setupOtp, activateOtp } = useOtpApi()
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 const loginStep = ref<LoginStep>('credentials')
 const otpTempToken = ref('')
 const otpCode = ref('')
+const isOtpSetupRequired = ref(false)
+const isOtpSetupSubmitting = ref(false)
+const isOtpActivateSubmitting = ref(false)
+const otpAuthUrl = ref('')
+const qrCodeDataUrl = ref('')
+const activationOtpCode = ref('')
+const otpSetupErrorMessage = ref('')
 
 async function handleLogin(payload: { loginId: string; password: string }) {
   errorMessage.value = ''
@@ -24,6 +33,14 @@ async function handleLogin(payload: { loginId: string; password: string }) {
       loginStep.value = 'otp'
       otpTempToken.value = response.otpTempToken
       otpCode.value = ''
+      return
+    }
+
+    if (response.status === 'OTP_SETUP_REQUIRED') {
+      isOtpSetupRequired.value = true
+      activationOtpCode.value = ''
+      otpSetupErrorMessage.value = ''
+      await handleSetupOtp()
       return
     }
 
@@ -64,6 +81,52 @@ function handleBackToCredentials() {
   otpTempToken.value = ''
   otpCode.value = ''
   errorMessage.value = ''
+}
+
+async function handleSetupOtp() {
+  if (isOtpSetupSubmitting.value) {
+    return
+  }
+
+  isOtpSetupSubmitting.value = true
+  otpSetupErrorMessage.value = ''
+
+  try {
+    const response = await setupOtp()
+    otpAuthUrl.value = response.otpAuthUrl
+    qrCodeDataUrl.value = await QRCode.toDataURL(response.otpAuthUrl, {
+      width: 220,
+      margin: 1
+    })
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    otpSetupErrorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'OTP 설정을 시작하지 못했습니다.'
+  } finally {
+    isOtpSetupSubmitting.value = false
+  }
+}
+
+async function handleActivateOtp() {
+  if (isOtpActivateSubmitting.value || activationOtpCode.value.length !== 6) {
+    return
+  }
+
+  isOtpActivateSubmitting.value = true
+  otpSetupErrorMessage.value = ''
+
+  try {
+    await activateOtp(activationOtpCode.value)
+    isOtpSetupRequired.value = false
+    otpAuthUrl.value = ''
+    qrCodeDataUrl.value = ''
+    activationOtpCode.value = ''
+    await navigateTo('/dashboard')
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    otpSetupErrorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'OTP 활성화에 실패했습니다.'
+  } finally {
+    isOtpActivateSubmitting.value = false
+  }
 }
 </script>
 
@@ -122,6 +185,55 @@ function handleBackToCredentials() {
 
       <p class="login-page__copyright">Copyright 2026 chjsa11</p>
     </section>
+
+    <CommonBaseModal
+      :visible="isOtpSetupRequired"
+      eyebrow="Security"
+      title="OTP 등록이 필요합니다"
+      width="680px"
+      @close="void 0"
+    >
+      <div class="login-page__otp-setup">
+        <div class="login-page__otp-setup-header">
+          <p class="message-muted">
+            로그인하려면 먼저 OTP를 등록해야 합니다. 앱에서 QR 코드를 스캔하고 6자리 코드를 입력해 주세요.
+          </p>
+        </div>
+
+        <div class="login-page__otp-setup-grid">
+          <div class="login-page__otp-setup-panel">
+            <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="OTP QR 코드" class="login-page__otp-setup-qr">
+            <p class="message-muted">QR 스캔이 어렵다면 아래 URL을 수동 등록에 사용할 수 있습니다.</p>
+            <code class="login-page__otp-setup-url">{{ otpAuthUrl }}</code>
+          </div>
+
+          <div class="login-page__otp-setup-panel">
+            <h3>OTP 코드 입력</h3>
+            <p class="message-muted">앱에 표시된 6자리 코드를 입력하면 등록이 완료됩니다.</p>
+            <AuthOtpCodeInput
+              v-model="activationOtpCode"
+              :disabled="isOtpActivateSubmitting || isOtpSetupSubmitting"
+              @complete="handleActivateOtp"
+            />
+            <p v-if="otpSetupErrorMessage" class="message-error">
+              {{ otpSetupErrorMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <template #actions>
+        <CommonBaseButton variant="secondary" :disabled="isOtpSetupSubmitting" @click="handleSetupOtp">
+          {{ isOtpSetupSubmitting ? 'QR 생성 중...' : 'QR 다시 생성' }}
+        </CommonBaseButton>
+        <CommonBaseButton
+          :disabled="activationOtpCode.length !== 6 || isOtpActivateSubmitting || isOtpSetupSubmitting"
+          @click="handleActivateOtp"
+        >
+          {{ isOtpActivateSubmitting ? '등록 중...' : 'OTP 등록 완료' }}
+        </CommonBaseButton>
+      </template>
+    </CommonBaseModal>
   </main>
 </template>
 
@@ -265,6 +377,51 @@ function handleBackToCredentials() {
   gap: 12px;
 }
 
+.login-page__otp-setup {
+  display: grid;
+  gap: 18px;
+}
+
+.login-page__otp-setup-header {
+  display: grid;
+  gap: 8px;
+}
+
+.login-page__otp-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.login-page__otp-setup-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(147, 210, 255, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.login-page__otp-setup-qr {
+  width: min(100%, 220px);
+  justify-self: center;
+  padding: 10px;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.login-page__otp-setup-url {
+  display: block;
+  max-height: 180px;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 14px;
+  background: rgba(7, 18, 32, 0.84);
+  color: rgba(232, 244, 255, 0.94);
+  white-space: normal;
+  word-break: break-all;
+}
+
 @media (max-width: 768px) {
   .login-page {
     padding: 20px 16px;
@@ -284,6 +441,10 @@ function handleBackToCredentials() {
   }
 
   .login-otp-panel__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page__otp-setup-grid {
     grid-template-columns: 1fr;
   }
 }

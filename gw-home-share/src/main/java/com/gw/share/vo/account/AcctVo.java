@@ -27,6 +27,9 @@ public class AcctVo extends BaseVo {
     // 권한
     private String role;
 
+    // 계정 상태
+    private String acctStat;
+
     // 로그인 실패 횟수
     private int lgnFailCnt;
 

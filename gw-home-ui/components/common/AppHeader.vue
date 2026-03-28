@@ -37,7 +37,10 @@ function closeMemo() {
 
       <nav class="app-header__nav">
         <NuxtLink to="/board">게시글</NuxtLink>
-        <NuxtLink to="/vault">Vault</NuxtLink>
+        <NuxtLink to="/vault">자격증명</NuxtLink>
+        <NuxtLink v-if="authStore.currentUser?.role === 'ADMIN'" to="/admin/accounts">
+          계정관리
+        </NuxtLink>
       </nav>
 
       <div class="app-header__actions">

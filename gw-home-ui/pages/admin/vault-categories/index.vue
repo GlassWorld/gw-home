@@ -113,24 +113,24 @@ await loadCategoryList()
       </div>
 
       <form class="vault-category-admin-page__form" @submit.prevent="handleSubmit">
-        <label>
+        <label class="vault-category-admin-page__field vault-category-admin-page__field--name">
           <span>이름</span>
           <input v-model="formState.name" class="input-field" type="text" maxlength="100" required>
         </label>
-        <label>
-          <span>정렬 순서</span>
-          <input v-model.number="formState.sortOrder" class="input-field" type="number" min="0">
-        </label>
-        <label class="vault-category-admin-page__field--wide">
-          <span>설명</span>
-          <input v-model="formState.description" class="input-field" type="text" maxlength="200">
-        </label>
-        <label>
+        <label class="vault-category-admin-page__field vault-category-admin-page__field--color">
           <span>색상</span>
           <div class="vault-category-admin-page__color-field">
             <input v-model="formState.color" class="vault-category-admin-page__color-input" type="color">
             <span class="vault-category-admin-page__color-value">{{ formState.color }}</span>
           </div>
+        </label>
+        <label class="vault-category-admin-page__field vault-category-admin-page__field--sort">
+          <span>정렬 순서</span>
+          <input v-model.number="formState.sortOrder" class="input-field" type="number" min="0">
+        </label>
+        <label class="vault-category-admin-page__field vault-category-admin-page__field--wide">
+          <span>설명</span>
+          <input v-model="formState.description" class="input-field" type="text" maxlength="200">
         </label>
 
         <div class="vault-category-admin-page__actions">
@@ -208,14 +208,31 @@ await loadCategoryList()
 
 .vault-category-admin-page__form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto 140px;
+  gap: 14px 16px;
   margin-top: 18px;
+  align-items: end;
 }
 
 .vault-category-admin-page__form label {
   display: grid;
   gap: 8px;
+}
+
+.vault-category-admin-page__field {
+  min-width: 0;
+}
+
+.vault-category-admin-page__field--name {
+  min-width: 0;
+}
+
+.vault-category-admin-page__field--color {
+  min-width: 170px;
+}
+
+.vault-category-admin-page__field--sort {
+  min-width: 140px;
 }
 
 .vault-category-admin-page__field--wide {
@@ -226,7 +243,7 @@ await loadCategoryList()
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  grid-column: 1 / -1;
+  grid-column: 2 / 4;
 }
 
 .vault-category-admin-page__color-field {
@@ -319,6 +336,10 @@ await loadCategoryList()
 @media (max-width: 768px) {
   .vault-category-admin-page__form {
     grid-template-columns: 1fr;
+  }
+
+  .vault-category-admin-page__actions {
+    grid-column: 1 / -1;
   }
 
   .vault-category-admin-page__item {

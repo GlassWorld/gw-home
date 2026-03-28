@@ -11,22 +11,20 @@ public interface VaultMapper {
     List<CrdVo> selectCredentialList(
             @Param("keyword") String keyword,
             @Param("categoryUuid") String categoryUuid,
-            @Param("createdBy") String createdBy
+            @Param("mbrAcctIdx") Long mbrAcctIdx
     );
 
     CrdVo selectCredentialByIdx(@Param("idx") Long idx);
 
-    CrdVo selectCredential(@Param("uuid") String uuid, @Param("createdBy") String createdBy);
+    CrdVo selectCredential(@Param("uuid") String uuid, @Param("mbrAcctIdx") Long mbrAcctIdx);
 
     void insertCredential(CrdVo credential);
 
     int updateCredential(CrdVo credential);
 
-    int clearCredentialCategory(@Param("vltCatIdx") Long vltCatIdx);
-
     int deleteCredential(
             @Param("uuid") String uuid,
-            @Param("createdBy") String createdBy,
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
             @Param("updatedBy") String updatedBy
     );
 }

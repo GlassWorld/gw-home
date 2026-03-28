@@ -15,6 +15,20 @@ public interface AccountMapper {
 
     AcctVo selectAccountByIdx(@Param("idx") Long idx);
 
+    java.util.List<AcctVo> selectAllAccounts(
+            @Param("loginId") String loginId,
+            @Param("role") String role,
+            @Param("acctStat") String acctStat,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    long countAllAccounts(
+            @Param("loginId") String loginId,
+            @Param("role") String role,
+            @Param("acctStat") String acctStat
+    );
+
     int updateAccount(AcctVo account);
 
     int deleteAccount(@Param("uuid") String uuid);
@@ -29,6 +43,11 @@ public interface AccountMapper {
 
     int resetLoginFailCount(@Param("idx") Long idx);
 
+    int unlockAccountByUuid(
+            @Param("uuid") String uuid,
+            @Param("updatedBy") String updatedBy
+    );
+
     int updateOtpSecret(@Param("idx") Long idx, @Param("otpSecret") String otpSecret);
 
     int enableOtp(@Param("idx") Long idx);
@@ -39,9 +58,37 @@ public interface AccountMapper {
 
     int resetOtpFailCount(@Param("idx") Long idx);
 
+    int resetOtpFailureByUuid(
+            @Param("uuid") String uuid,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int resetOtpByUuid(
+            @Param("uuid") String uuid,
+            @Param("updatedBy") String updatedBy
+    );
+
     int updatePassword(
             @Param("idx") Long idx,
             @Param("pwd") String pwd,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int updatePasswordByUuid(
+            @Param("uuid") String uuid,
+            @Param("pwd") String pwd,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int updateRole(
+            @Param("uuid") String uuid,
+            @Param("role") String role,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int updateStatus(
+            @Param("uuid") String uuid,
+            @Param("acctStat") String acctStat,
             @Param("updatedBy") String updatedBy
     );
 }

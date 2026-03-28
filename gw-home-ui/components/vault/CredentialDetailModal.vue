@@ -35,8 +35,8 @@ const parsedMemo = computed(() => {
   return DOMPurify.sanitize(parsedHtml)
 })
 
-const categoryStyle = computed(() => {
-  if (!props.credential?.categoryColor) {
+function getCategoryStyle(categoryColor: string | null) {
+  if (!categoryColor) {
     return {
       background: 'rgba(110, 193, 255, 0.12)',
       color: 'var(--color-accent)'
@@ -44,10 +44,10 @@ const categoryStyle = computed(() => {
   }
 
   return {
-    background: `${props.credential.categoryColor}22`,
-    color: props.credential.categoryColor
+    background: `${categoryColor}22`,
+    color: categoryColor
   }
-})
+}
 
 async function copyPassword() {
   if (!props.credential) {
@@ -101,9 +101,19 @@ async function handleDelete() {
     @close="emit('close')"
   >
     <template #title-extra>
-      <span class="credential-detail__category-badge" :style="categoryStyle">
-        {{ credential.categoryName || '미분류' }}
-      </span>
+      <div class="credential-detail__category-list">
+        <span
+          v-for="category in credential.categories"
+          :key="category.categoryUuid"
+          class="credential-detail__category-badge"
+          :style="getCategoryStyle(category.color)"
+        >
+          {{ category.name }}
+        </span>
+        <span v-if="credential.categories.length === 0" class="credential-detail__category-badge">
+          미분류
+        </span>
+      </div>
     </template>
 
     <dl class="credential-detail">
@@ -143,9 +153,17 @@ async function handleDelete() {
   margin: 0;
 }
 
+.credential-detail__category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
 .credential-detail__category-badge {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   flex: none;
   padding: 3px 8px;
   border-radius: 999px;
@@ -154,6 +172,8 @@ async function handleDelete() {
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .credential-detail__item {

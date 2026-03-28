@@ -65,6 +65,11 @@ public class AuthService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "로그인 정보가 올바르지 않습니다.");
         }
 
+        if ("INACTIVE".equals(account.getAcctStat())) {
+            log.error("login 실패 - 원인: 비활성화된 계정입니다. loginId={}", request.loginId());
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "비활성화된 계정입니다. 관리자에게 문의하세요.");
+        }
+
         if (account.isLckYn()) {
             log.error("login 실패 - 원인: 잠긴 계정입니다. loginId={}", request.loginId());
             throw new BusinessException(ErrorCode.ACCOUNT_LOCKED, "계정이 잠금되었습니다. 관리자에게 문의하세요.");
@@ -91,6 +96,11 @@ public class AuthService {
         if (account.isOtpEnabled() && account.getOtpSecret() != null && !account.getOtpSecret().isBlank()) {
             log.info("login 완료 - OTP 추가 인증 필요");
             return new LoginResponse("OTP_REQUIRED", null, jwtProvider.generateOtpTempToken(account.getLgnId()));
+        }
+
+        if (!account.isOtpEnabled()) {
+            log.info("login 완료 - OTP 설정 필요");
+            return new LoginResponse("OTP_SETUP_REQUIRED", issueTokenResponse(account), null);
         }
 
         log.info("login 완료");

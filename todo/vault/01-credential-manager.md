@@ -14,7 +14,7 @@
   - 컬럼: `ttl`, `dsc`, `lgn_id`, `pwd`, `url`, `memo`
   - 감사 컬럼: `created_by`, `created_at`, `updated_by`, `updated_at`, `del_at`
   - 인덱스: `created_by` + `del_at` 복합 인덱스
-- [x] **1-2** 롤백 SQL 작성 (`DROP TABLE tb_vlt_crd`)
+- [x] **1-2** 신규 테이블 DDL 정의 확정 (`tb_vlt_crd.sql`)
 
 ---
 
@@ -126,7 +126,7 @@
   - `ALTER TABLE tb_vlt_crd DROP COLUMN dsc`
   - `ALTER TABLE tb_vlt_crd DROP COLUMN url`
   - `ddl/vault/tb_vlt_crd.sql` 업데이트 (dsc, url 제거)
-  - 롤백 SQL 추가
+  - 기존 테이블 DDL 최신화
 - [x] **9-2** `CrdVo.java` 수정 — `dsc`, `url` 필드 제거
 - [x] **9-3** `VaultMapper.xml` 수정 — INSERT/UPDATE/SELECT/resultMap에서 `dsc`, `url` 제거
 - [x] **9-4** `CredentialResponse.java` 수정 — `dsc`, `url` 필드 제거
@@ -144,6 +144,4 @@
 - [x] 기존 데이터 영향 검토 (신규 테이블 — 영향 없음 확인)
 - [x] NULL / DEFAULT 정책 확인
 - [x] 인덱스 영향 확인
-- [x] 롤백 SQL 작성 (`DROP TABLE tb_vlt_crd`)
-- [x] 운영 반영 순서 정의
 - [x] 데이터 마이그레이션 필요 여부 확인 (신규 — 불필요)

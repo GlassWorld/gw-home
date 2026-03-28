@@ -40,7 +40,7 @@
 
 ### DB
 - [x] DDL: `ALTER TABLE tb_vlt_ctgr ADD COLUMN color VARCHAR(7) DEFAULT NULL`
-- [x] 롤백 SQL 준비: `ALTER TABLE tb_vlt_ctgr DROP COLUMN color`
+- [x] 기존 테이블 DDL 반영: `tb_vlt_cat.sql` 및 집계 DDL 최신화
 
 ### Backend
 - [x] `VltCtgrVo.java` (share) — `color` 필드 추가

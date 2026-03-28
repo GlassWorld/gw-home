@@ -28,6 +28,7 @@
             pwd,
             email,
             role,
+            acct_stat,
             lgn_fail_cnt,
             lck_yn,
             lck_at,
@@ -53,6 +54,7 @@
             pwd,
             email,
             role,
+            acct_stat,
             lgn_fail_cnt,
             lck_yn,
             lck_at,
@@ -78,6 +80,7 @@
             pwd,
             email,
             role,
+            acct_stat,
             lgn_fail_cnt,
             lck_yn,
             lck_at,
@@ -93,6 +96,57 @@
         FROM tb_mbr_acct
         WHERE mbr_acct_idx = #{idx}
           AND del_at IS NULL
+    </select>
+
+    <select id="selectAllAccounts" resultType="AcctVo">
+        SELECT
+            mbr_acct_idx AS idx,
+            mbr_acct_uuid AS uuid,
+            lgn_id,
+            pwd,
+            email,
+            role,
+            acct_stat,
+            lgn_fail_cnt,
+            lck_yn,
+            lck_at,
+            otp_enabled,
+            otp_secret,
+            otp_fail_cnt,
+            otp_last_failed_at,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_mbr_acct
+        WHERE del_at IS NULL
+        <if test="loginId != null and loginId != ''">
+            AND lgn_id LIKE CONCAT('%', #{loginId}, '%')
+        </if>
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        <if test="acctStat != null and acctStat != ''">
+            AND acct_stat = #{acctStat}
+        </if>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAllAccounts" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_mbr_acct
+        WHERE del_at IS NULL
+        <if test="loginId != null and loginId != ''">
+            AND lgn_id LIKE CONCAT('%', #{loginId}, '%')
+        </if>
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        <if test="acctStat != null and acctStat != ''">
+            AND acct_stat = #{acctStat}
+        </if>
     </select>
 
     <update id="updateAccount" parameterType="AcctVo">
@@ -163,6 +217,18 @@
           AND del_at IS NULL
     </update>
 
+    <update id="unlockAccountByUuid">
+        UPDATE tb_mbr_acct
+        SET
+            lgn_fail_cnt = 0,
+            lck_yn = FALSE,
+            lck_at = NULL,
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
     <!-- OTP 시크릿을 저장한다 -->
     <update id="updateOtpSecret">
         UPDATE tb_mbr_acct
@@ -226,6 +292,30 @@
           AND del_at IS NULL
     </update>
 
+    <update id="resetOtpFailureByUuid">
+        UPDATE tb_mbr_acct
+        SET
+            otp_fail_cnt = 0,
+            otp_last_failed_at = NULL,
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="resetOtpByUuid">
+        UPDATE tb_mbr_acct
+        SET
+            otp_enabled = FALSE,
+            otp_secret = NULL,
+            otp_fail_cnt = 0,
+            otp_last_failed_at = NULL,
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
     <!-- 비밀번호를 변경한다 -->
     <update id="updatePassword">
         UPDATE tb_mbr_acct
@@ -234,6 +324,36 @@
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="updatePasswordByUuid">
+        UPDATE tb_mbr_acct
+        SET
+            pwd = #{pwd},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateRole">
+        UPDATE tb_mbr_acct
+        SET
+            role = #{role},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateStatus">
+        UPDATE tb_mbr_acct
+        SET
+            acct_stat = #{acctStat},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
           AND del_at IS NULL
     </update>
 

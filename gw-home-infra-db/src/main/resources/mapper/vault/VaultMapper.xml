@@ -8,25 +8,27 @@
         SELECT
             tb_vlt_crd_idx AS idx,
             tb_vlt_crd_uuid AS uuid,
+            mbr_acct_idx AS mbrAcctIdx,
             ttl,
             lgn_id AS lgnId,
             pwd,
             memo,
-            vlt_cat_idx AS vltCatIdx,
             created_by AS createdBy,
             updated_by AS updatedBy,
             created_at AS createdAt,
             updated_at AS updatedAt,
             del_at AS delAt
         FROM tb_vlt_crd
-        WHERE created_by = #{createdBy}
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
           AND del_at IS NULL
         <if test="categoryUuid != null and categoryUuid != ''">
-            AND vlt_cat_idx = (
-                SELECT tb_vlt_cat_idx
-                FROM tb_vlt_cat
-                WHERE tb_vlt_cat_uuid = CAST(#{categoryUuid} AS UUID)
-                  AND del_at IS NULL
+            AND EXISTS (
+                SELECT 1
+                FROM tb_vlt_crd_cat vcc
+                INNER JOIN tb_vlt_cat vc ON vc.tb_vlt_cat_idx = vcc.tb_vlt_cat_idx
+                WHERE vcc.tb_vlt_crd_idx = tb_vlt_crd.tb_vlt_crd_idx
+                  AND vc.tb_vlt_cat_uuid = CAST(#{categoryUuid} AS UUID)
+                  AND vc.del_at IS NULL
             )
         </if>
         <if test="keyword != null and keyword != ''">
@@ -42,11 +44,11 @@
         SELECT
             tb_vlt_crd_idx AS idx,
             tb_vlt_crd_uuid AS uuid,
+            mbr_acct_idx AS mbrAcctIdx,
             ttl,
             lgn_id AS lgnId,
             pwd,
             memo,
-            vlt_cat_idx AS vltCatIdx,
             created_by AS createdBy,
             updated_by AS updatedBy,
             created_at AS createdAt,
@@ -61,11 +63,11 @@
         SELECT
             tb_vlt_crd_idx AS idx,
             tb_vlt_crd_uuid AS uuid,
+            mbr_acct_idx AS mbrAcctIdx,
             ttl,
             lgn_id AS lgnId,
             pwd,
             memo,
-            vlt_cat_idx AS vltCatIdx,
             created_by AS createdBy,
             updated_by AS updatedBy,
             created_at AS createdAt,
@@ -73,24 +75,24 @@
             del_at AS delAt
         FROM tb_vlt_crd
         WHERE tb_vlt_crd_uuid = CAST(#{uuid} AS UUID)
-          AND created_by = #{createdBy}
+          AND mbr_acct_idx = #{mbrAcctIdx}
           AND del_at IS NULL
     </select>
 
     <insert id="insertCredential" parameterType="CrdVo" useGeneratedKeys="true" keyProperty="idx">
         INSERT INTO tb_vlt_crd (
+            mbr_acct_idx,
             ttl,
             lgn_id,
             pwd,
             memo,
-            vlt_cat_idx,
             created_by
         ) VALUES (
+            #{mbrAcctIdx},
             #{ttl},
             #{lgnId},
             #{pwd},
             #{memo},
-            #{vltCatIdx},
             #{createdBy}
         )
     </insert>
@@ -102,11 +104,10 @@
             lgn_id = #{lgnId},
             pwd = #{pwd},
             memo = #{memo},
-            vlt_cat_idx = #{vltCatIdx},
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE tb_vlt_crd_uuid = CAST(#{uuid} AS UUID)
-          AND created_by = #{createdBy}
+          AND mbr_acct_idx = #{mbrAcctIdx}
           AND del_at IS NULL
     </update>
 
@@ -117,16 +118,7 @@
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE tb_vlt_crd_uuid = CAST(#{uuid} AS UUID)
-          AND created_by = #{createdBy}
-          AND del_at IS NULL
-    </update>
-
-    <update id="clearCredentialCategory">
-        UPDATE tb_vlt_crd
-        SET
-            vlt_cat_idx = NULL,
-            updated_at = now()
-        WHERE vlt_cat_idx = #{vltCatIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
           AND del_at IS NULL
     </update>
 

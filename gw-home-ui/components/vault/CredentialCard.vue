@@ -14,8 +14,8 @@ const memoPreview = computed(() => {
   return props.credential.memo?.trim() || '메모가 없습니다.'
 })
 
-const categoryStyle = computed(() => {
-  if (!props.credential.categoryColor) {
+function getCategoryStyle(categoryColor: string | null) {
+  if (!categoryColor) {
     return {
       background: 'rgba(110, 193, 255, 0.12)',
       color: 'var(--color-accent)'
@@ -23,10 +23,10 @@ const categoryStyle = computed(() => {
   }
 
   return {
-    background: `${props.credential.categoryColor}22`,
-    color: props.credential.categoryColor
+    background: `${categoryColor}22`,
+    color: categoryColor
   }
-})
+}
 </script>
 
 <template>
@@ -34,12 +34,15 @@ const categoryStyle = computed(() => {
     <div class="credential-card__body">
       <div class="credential-card__title-row">
         <h2 class="credential-card__title">{{ credential.title }}</h2>
+      </div>
+      <div v-if="credential.categories.length" class="credential-card__category-list">
         <p
-          v-if="credential.categoryName"
+          v-for="category in credential.categories"
+          :key="category.categoryUuid"
           class="credential-card__category"
-          :style="categoryStyle"
+          :style="getCategoryStyle(category.color)"
         >
-          {{ credential.categoryName }}
+          {{ category.name }}
         </p>
       </div>
       <p class="credential-card__description">{{ memoPreview }}</p>
@@ -71,21 +74,7 @@ const categoryStyle = computed(() => {
 
 .credential-card__title-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
   min-width: 0;
-}
-
-.credential-card__category {
-  margin: 0;
-  color: var(--color-accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-  flex: none;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(110, 193, 255, 0.12);
-  white-space: nowrap;
 }
 
 .credential-card__title {
@@ -93,6 +82,30 @@ const categoryStyle = computed(() => {
   font-size: 1.2rem;
   min-width: 0;
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.credential-card__category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.credential-card__category {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(110, 193, 255, 0.12);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

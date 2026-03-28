@@ -1,9 +1,13 @@
+export interface CredentialCategory {
+  categoryUuid: string
+  name: string
+  color: string | null
+}
+
 export interface Credential {
   credentialUuid: string
   title: string
-  categoryUuid: string | null
-  categoryName: string | null
-  categoryColor: string | null
+  categories: CredentialCategory[]
   loginId: string | null
   password: string
   memo: string | null
@@ -12,7 +16,7 @@ export interface Credential {
 
 export interface SaveCredentialPayload {
   title: string
-  categoryUuid?: string
+  categoryUuids?: string[]
   loginId?: string
   password: string
   memo?: string
