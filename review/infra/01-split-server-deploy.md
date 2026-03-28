@@ -105,7 +105,7 @@ location /api {
 ```
 SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/gw
 SPRING_DATASOURCE_USERNAME=gw
-SPRING_DATASOURCE_PASSWORD=gw1234  ← GitHub Secret으로 관리 권장
+SPRING_DATASOURCE_PASSWORD=UQTiDCsYmD5oHYDL  ← GitHub Secret으로 관리 권장
 ```
 
 ---

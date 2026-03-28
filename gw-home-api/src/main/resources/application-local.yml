@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://168.107.12.96:5432/gw?currentSchema=home
     username: ${DB_USERNAME:gw}
-    password: ${DB_PASSWORD:gw1234}
+    password: ${DB_PASSWORD:UQTiDCsYmD5oHYDL}
     driver-class-name: org.postgresql.Driver
 
 mybatis:
