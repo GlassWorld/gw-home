@@ -7,19 +7,19 @@
     <sql id="workUnitColumns">
         work_unit_idx AS idx,
         work_unit_uuid AS uuid,
-        mbr_acct_idx AS mbrAcctIdx,
+        mbr_acct_idx,
         ttl,
         dscr,
         ctgr,
         sts,
-        use_yn AS useYn,
-        use_cnt AS useCnt,
-        last_used_at AS lastUsedAt,
-        created_by AS createdBy,
-        updated_by AS updatedBy,
-        created_at AS createdAt,
-        updated_at AS updatedAt,
-        del_at AS delAt
+        use_yn,
+        use_cnt,
+        last_used_at,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at,
+        del_at
     </sql>
 
     <select id="selectWorkUnitList" resultType="WorkUnitVo">

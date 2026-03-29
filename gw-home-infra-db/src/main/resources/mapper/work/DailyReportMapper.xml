@@ -7,52 +7,52 @@
     <sql id="dailyReportColumns">
         wrk_dly_rpt_idx AS idx,
         wrk_dly_rpt_uuid AS uuid,
-        mbr_acct_idx AS mbrAcctIdx,
-        rpt_dt AS rptDt,
+        mbr_acct_idx,
+        rpt_dt,
         cntn,
         sts,
-        spcl_note AS spclNote,
-        created_by AS createdBy,
-        updated_by AS updatedBy,
-        created_at AS createdAt,
-        updated_at AS updatedAt,
-        del_at AS delAt
+        spcl_note,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at,
+        del_at
     </sql>
 
     <sql id="workUnitColumns">
         wu.work_unit_idx AS idx,
         wu.work_unit_uuid AS uuid,
-        wu.mbr_acct_idx AS mbrAcctIdx,
+        wu.mbr_acct_idx,
         wu.ttl,
         wu.dscr,
         wu.ctgr,
         wu.sts,
-        wu.use_yn AS useYn,
-        wu.use_cnt AS useCnt,
-        wu.last_used_at AS lastUsedAt,
-        wu.created_by AS createdBy,
-        wu.updated_by AS updatedBy,
-        wu.created_at AS createdAt,
-        wu.updated_at AS updatedAt,
-        wu.del_at AS delAt
+        wu.use_yn,
+        wu.use_cnt,
+        wu.last_used_at,
+        wu.created_by,
+        wu.updated_by,
+        wu.created_at,
+        wu.updated_at,
+        wu.del_at
     </sql>
 
     <sql id="weeklyReportColumns">
         wrk_wkl_rpt_idx AS idx,
         wrk_wkl_rpt_uuid AS uuid,
-        mbr_acct_idx AS mbrAcctIdx,
-        wk_strt_dt AS wkStrtDt,
-        wk_end_dt AS wkEndDt,
+        mbr_acct_idx,
+        wk_strt_dt,
+        wk_end_dt,
         ttl,
         cntn,
-        opn_yn AS opnYn,
-        pbls_at AS pblsAt,
-        gen_type AS genType,
-        created_by AS createdBy,
-        updated_by AS updatedBy,
-        created_at AS createdAt,
-        updated_at AS updatedAt,
-        del_at AS delAt
+        opn_yn,
+        pbls_at,
+        gen_type,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at,
+        del_at
     </sql>
 
     <select id="selectDailyReportList" resultType="DailyReportVo">
@@ -217,17 +217,17 @@
         SELECT
             dr.wrk_dly_rpt_idx AS idx,
             dr.wrk_dly_rpt_uuid AS uuid,
-            dr.mbr_acct_idx AS mbrAcctIdx,
-            ma.mbr_acct_uuid AS mbrAcctUuid,
+            dr.mbr_acct_idx,
+            ma.mbr_acct_uuid,
             ma.lgn_id,
             mp.nick_nm,
-            dr.rpt_dt AS rptDt,
-            dr.spcl_note AS spclNote,
-            dr.created_by AS createdBy,
-            dr.updated_by AS updatedBy,
-            dr.created_at AS createdAt,
-            dr.updated_at AS updatedAt,
-            dr.del_at AS delAt
+            dr.rpt_dt,
+            dr.spcl_note,
+            dr.created_by,
+            dr.updated_by,
+            dr.created_at,
+            dr.updated_at,
+            dr.del_at
         FROM tb_wrk_dly_rpt dr
         INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = dr.mbr_acct_idx
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = dr.mbr_acct_idx
@@ -294,8 +294,8 @@
 
     <select id="selectAdminMissingMembers" resultType="DailyReportAdmJvo">
         SELECT
-            ma.mbr_acct_idx AS mbrAcctIdx,
-            ma.mbr_acct_uuid AS mbrAcctUuid,
+            ma.mbr_acct_idx,
+            ma.mbr_acct_uuid,
             ma.lgn_id,
             mp.nick_nm
         FROM tb_mbr_acct ma

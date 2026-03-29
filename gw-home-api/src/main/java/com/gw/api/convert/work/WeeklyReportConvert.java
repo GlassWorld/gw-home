@@ -1,0 +1,38 @@
+package com.gw.api.convert.work;
+
+import com.gw.api.dto.work.WeeklyReportDailySourceResponse;
+import com.gw.api.dto.work.WeeklyReportResponse;
+import com.gw.share.vo.work.DailyReportVo;
+import com.gw.share.vo.work.WeeklyReportVo;
+
+public final class WeeklyReportConvert {
+
+    private WeeklyReportConvert() {
+    }
+
+    // 주간보고 VO를 응답 DTO로 변환한다.
+    public static WeeklyReportResponse toResponse(WeeklyReportVo weeklyReport) {
+        return new WeeklyReportResponse(
+                weeklyReport.getUuid(),
+                weeklyReport.getWkStrtDt(),
+                weeklyReport.getWkEndDt(),
+                weeklyReport.getTtl(),
+                weeklyReport.getCntn(),
+                weeklyReport.getOpnYn(),
+                weeklyReport.getPblsAt(),
+                weeklyReport.getGenType(),
+                weeklyReport.getCreatedAt(),
+                weeklyReport.getUpdatedAt()
+        );
+    }
+
+    // 주간보고 소스용 일일보고 VO를 응답 DTO로 변환한다.
+    public static WeeklyReportDailySourceResponse toDailySourceResponse(DailyReportVo dailyReport) {
+        return new WeeklyReportDailySourceResponse(
+                dailyReport.getUuid(),
+                dailyReport.getRptDt(),
+                WorkUnitConvert.toDailyReportWorkUnitResponses(dailyReport.getWorkUnits()),
+                dailyReport.getSpclNote()
+        );
+    }
+}

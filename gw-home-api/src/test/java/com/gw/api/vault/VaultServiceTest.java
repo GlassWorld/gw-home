@@ -78,7 +78,7 @@ class VaultServiceTest {
         );
 
         assertEquals(ErrorCode.NOT_FOUND, exception.getErrorCode());
-        assertEquals("자격증명 정보를 찾을 수 없습니다.", exception.getMessage());
+        assertEquals(ErrorCode.NOT_FOUND.getMessage(), exception.getMessage());
     }
 
     @Test
@@ -145,7 +145,7 @@ class VaultServiceTest {
         );
 
         assertEquals(ErrorCode.NOT_FOUND, exception.getErrorCode());
-        assertEquals("자격증명 정보를 찾을 수 없습니다.", exception.getMessage());
+        assertEquals(ErrorCode.NOT_FOUND.getMessage(), exception.getMessage());
         verify(vaultMapper, never()).updateCredential(any(CrdVo.class));
     }
 
@@ -160,7 +160,7 @@ class VaultServiceTest {
         );
 
         assertEquals(ErrorCode.NOT_FOUND, exception.getErrorCode());
-        assertEquals("자격증명 정보를 찾을 수 없습니다.", exception.getMessage());
+        assertEquals(ErrorCode.NOT_FOUND.getMessage(), exception.getMessage());
         verify(vaultMapper, never()).deleteCredential(any(), any(), any());
     }
 
