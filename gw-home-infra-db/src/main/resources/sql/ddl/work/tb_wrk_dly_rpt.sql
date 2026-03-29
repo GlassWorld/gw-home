@@ -4,18 +4,46 @@ CREATE TABLE IF NOT EXISTS tb_wrk_dly_rpt (
     mbr_acct_idx BIGINT NOT NULL,
     rpt_dt DATE NOT NULL,
     cntn TEXT,
+    sts VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS',
     spcl_note TEXT,
     created_by VARCHAR(100) NOT NULL,
     updated_by VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     del_at TIMESTAMPTZ,
+    CONSTRAINT chk_wrk_dly_rpt_sts CHECK (sts IN ('IN_PROGRESS', 'DONE', 'ON_HOLD')),
     CONSTRAINT uq_wrk_dly_rpt_owner_date UNIQUE (mbr_acct_idx, rpt_dt),
     CONSTRAINT fk_wrk_dly_rpt_mbr_acct FOREIGN KEY (mbr_acct_idx) REFERENCES tb_mbr_acct (mbr_acct_idx)
 );
 
 ALTER TABLE tb_wrk_dly_rpt
     ADD COLUMN IF NOT EXISTS cntn TEXT;
+
+ALTER TABLE tb_wrk_dly_rpt
+    ADD COLUMN IF NOT EXISTS sts VARCHAR(20);
+
+UPDATE tb_wrk_dly_rpt
+SET sts = 'IN_PROGRESS'
+WHERE sts IS NULL;
+
+ALTER TABLE tb_wrk_dly_rpt
+    ALTER COLUMN sts SET DEFAULT 'IN_PROGRESS';
+
+ALTER TABLE tb_wrk_dly_rpt
+    ALTER COLUMN sts SET NOT NULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'chk_wrk_dly_rpt_sts'
+    ) THEN
+        ALTER TABLE tb_wrk_dly_rpt
+            ADD CONSTRAINT chk_wrk_dly_rpt_sts CHECK (sts IN ('IN_PROGRESS', 'DONE', 'ON_HOLD'));
+    END IF;
+END
+$$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_wrk_dly_rpt_idx_owner ON tb_wrk_dly_rpt (wrk_dly_rpt_idx, mbr_acct_idx);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_work_unit_idx_owner ON tb_work_unit (work_unit_idx, mbr_acct_idx);
