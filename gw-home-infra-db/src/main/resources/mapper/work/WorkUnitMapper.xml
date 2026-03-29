@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.work.WorkUnitMapper">
+
+    <sql id="workUnitColumns">
+        work_unit_idx AS idx,
+        work_unit_uuid AS uuid,
+        mbr_acct_idx AS mbrAcctIdx,
+        ttl,
+        dscr,
+        ctgr,
+        sts,
+        use_yn AS useYn,
+        use_cnt AS useCnt,
+        last_used_at AS lastUsedAt,
+        created_by AS createdBy,
+        updated_by AS updatedBy,
+        created_at AS createdAt,
+        updated_at AS updatedAt,
+        del_at AS delAt
+    </sql>
+
+    <select id="selectWorkUnitList" resultType="WorkUnitVo">
+        SELECT
+            <include refid="workUnitColumns" />
+        FROM tb_work_unit wu
+        WHERE wu.mbr_acct_idx = #{req.mbrAcctIdx}
+          AND wu.del_at IS NULL
+        <if test="req.kwd != null and req.kwd != ''">
+            AND wu.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+        </if>
+        <if test="req.ctgr != null and req.ctgr != ''">
+            AND wu.ctgr = #{req.ctgr}
+        </if>
+        <if test="req.sts != null and req.sts != ''">
+            AND wu.sts = #{req.sts}
+        </if>
+        <if test="req.useYn != null and req.useYn != ''">
+            AND wu.use_yn = #{req.useYn}
+        </if>
+        ORDER BY ${req.orderByClause}
+    </select>
+
+    <select id="selectWorkUnit" resultType="WorkUnitVo">
+        SELECT
+            <include refid="workUnitColumns" />
+        FROM tb_work_unit
+        WHERE work_unit_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectWorkUnitByIdx" resultType="WorkUnitVo">
+        SELECT
+            <include refid="workUnitColumns" />
+        FROM tb_work_unit
+        WHERE work_unit_idx = #{idx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectWorkUnitOptions" resultType="WorkUnitVo">
+        SELECT
+            <include refid="workUnitColumns" />
+        FROM tb_work_unit
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+        <if test="includeInactive == false">
+            AND use_yn = 'Y'
+        </if>
+        ORDER BY
+            use_yn DESC,
+            COALESCE(last_used_at, updated_at) DESC,
+            created_at DESC
+    </select>
+
+    <insert id="insertWorkUnit" parameterType="WorkUnitVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_work_unit (
+            mbr_acct_idx,
+            ttl,
+            dscr,
+            ctgr,
+            sts,
+            use_yn,
+            created_by
+        ) VALUES (
+            #{mbrAcctIdx},
+            #{ttl},
+            #{dscr},
+            #{ctgr},
+            #{sts},
+            #{useYn},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateWorkUnit" parameterType="WorkUnitVo">
+        UPDATE tb_work_unit
+        SET
+            ttl = #{ttl},
+            dscr = #{dscr},
+            ctgr = #{ctgr},
+            sts = #{sts},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE work_unit_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateWorkUnitUse">
+        UPDATE tb_work_unit
+        SET
+            use_yn = #{useYn},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE work_unit_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <select id="existsTitle" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM tb_work_unit
+            WHERE mbr_acct_idx = #{mbrAcctIdx}
+              AND lower(trim(ttl)) = lower(trim(#{ttl}))
+              AND del_at IS NULL
+            <if test="excludeUuid != null and excludeUuid != ''">
+                AND work_unit_uuid != CAST(#{excludeUuid} AS UUID)
+            </if>
+        )
+    </select>
+
+</mapper>
