@@ -29,6 +29,7 @@
 
 | Slash Command | 위치 | 설명 |
 |---------------|------|------|
+| `/apply-searchable-select` | `.claude/skills/apply-searchable-select/SKILL.md` | 셀렉트/드롭다운을 공통 컴포넌트로 적용하고, 모달 환경 레이어 이슈까지 고려 |
 | `/create-page` | `.claude/skill/create-page/SKILL.md` | Nuxt3 페이지 + composable 생성 |
 | `/create-component` | `.claude/skill/create-component/SKILL.md` | Vue3 컴포넌트 생성 |
 
