@@ -20,7 +20,7 @@ const emit = defineEmits<{
   <Teleport to="body">
     <div v-if="visible" class="base-modal" :style="{ zIndex: String(zIndex) }">
       <div class="base-modal__backdrop" @click="emit('close')" />
-      <section class="base-modal__panel content-panel" :style="{ maxWidth: width }">
+      <section class="base-modal__panel content-panel" :style="{ width, maxWidth: width }">
         <header class="base-modal__header">
           <div class="base-modal__title-box">
             <p v-if="eyebrow" class="base-modal__eyebrow">{{ eyebrow }}</p>

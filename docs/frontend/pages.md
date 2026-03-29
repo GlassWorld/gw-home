@@ -4,30 +4,38 @@
 
 | 경로 | 파일 | 설명 | 인증 필요 |
 |------|------|------|-----------|
-| `/login` | `pages/login.vue` | 로그인 화면 (초기 진입) | X |
-| `/dashboard` | `pages/dashboard/index.vue` | 대시보드 (로그인 후 진입) | O |
+| `/` | `pages/index.vue` | 루트 진입 시 `/dashboard` 이동 | X |
+| `/login` | `pages/login.vue` | 로그인 화면 | X |
+| `/dashboard` | `pages/dashboard/index.vue` | 대시보드 | O |
 | `/board` | `pages/board/index.vue` | 게시글 목록 | O |
 | `/board/[boardUuid]` | `pages/board/[boardUuid].vue` | 게시글 상세 | O |
 | `/board/create` | `pages/board/create.vue` | 게시글 작성 | O |
-| `/profile` | `pages/profile/index.vue` | 내 프로필 조회/수정 | O |
-| `/admin` | `pages/admin/index.vue` | 관리자 대시보드 | O (관리자) |
+| `/work` | `pages/work/index.vue` | 업무 등록/조회 | O |
+| `/work/daily-reports` | `pages/work/daily-reports/index.vue` | 일일보고 작성/조회 | O |
+| `/work/weekly-reports` | `pages/work/weekly-reports/index.vue` | 주간보고 작성/조회 | O |
+| `/vault` | `pages/vault/index.vue` | 자격증명 보관함 | O |
+| `/settings` | `pages/settings/index.vue` | 계정 설정 | O |
+| `/security` | `pages/security/index.vue` | OTP 및 보안 설정 | O |
+| `/admin/accounts` | `pages/admin/accounts/index.vue` | 관리자 계정 관리 | O (관리자) |
+| `/admin/daily-reports` | `pages/admin/daily-reports/index.vue` | 관리자 일일보고 관리 | O (관리자) |
+| `/admin/vault-categories` | `pages/admin/vault-categories/index.vue` | 관리자 금고 카테고리 관리 | O (관리자) |
 
 ## 초기 진입 흐름
 
 ```
-브라우저 접속
+브라우저 접속 (`/`)
   ↓
-미들웨어: auth.ts (인증 확인)
+`pages/index.vue` 에서 `/dashboard` 이동
+  ↓
+미들웨어: auth.ts (보호 페이지 인증 확인)
   ├─ 비인증 → /login 리다이렉트
   └─ 인증됨 → 요청 경로 유지
-        ↓ (/ 루트 접속 시)
-    /dashboard 리다이렉트
 ```
 
 ## 페이지별 책임
 
 ### `login.vue`
-- 로그인 폼 (이메일 + 비밀번호)
+- 로그인 폼 (로그인 ID + 비밀번호)
 - 로그인 성공 → `/dashboard` 이동
 - 이미 로그인 상태 → `/dashboard` 자동 이동
 
@@ -45,10 +53,22 @@
 - 댓글 목록
 - 작성자 본인: 수정/삭제 버튼
 
-### `profile/index.vue`
-- 내 프로필 조회
-- 닉네임, 소개 수정
-- 프로필 이미지 업로드 (file 도메인 경유)
+### `settings/index.vue`
+- 이메일, 닉네임, 소개 수정
+- 프로필 이미지 변경 진입
+
+### `security/index.vue`
+- OTP 설정/활성화/비활성화
+- 보안 설정 관리
+
+### `work/*`
+- 업무 등록/수정/사용 여부 관리
+- 일일보고/주간보고 작성 및 조회
+
+### `admin/*`
+- 계정 관리
+- 일일보고 관리
+- 금고 카테고리 관리
 
 ## 미들웨어
 

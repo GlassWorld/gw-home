@@ -352,3 +352,140 @@ COMMENT ON COLUMN tb_fav.trgt_idx IS '대상 PK';
 COMMENT ON COLUMN tb_fav.mbr_acct_idx IS '회원 계정 PK';
 COMMENT ON COLUMN tb_fav.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_fav.created_at IS '생성 일시';
+
+CREATE TABLE tb_work_unit (
+    work_unit_idx   BIGSERIAL    PRIMARY KEY,
+    work_unit_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    mbr_acct_idx    BIGINT       NOT NULL,
+    ttl             VARCHAR(200) NOT NULL,
+    dscr            TEXT,
+    ctgr            VARCHAR(100),
+    sts             VARCHAR(20)  NOT NULL DEFAULT 'IN_PROGRESS',
+    use_yn          CHAR(1)      NOT NULL DEFAULT 'Y',
+    use_cnt         INTEGER      NOT NULL DEFAULT 0,
+    last_used_at    TIMESTAMPTZ,
+    created_by      VARCHAR(100) NOT NULL,
+    updated_by      VARCHAR(100),
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    del_at          TIMESTAMPTZ,
+    CONSTRAINT chk_work_unit_sts CHECK (sts IN ('IN_PROGRESS', 'DONE', 'ON_HOLD')),
+    CONSTRAINT chk_work_unit_use_yn CHECK (use_yn IN ('Y', 'N'))
+);
+
+CREATE INDEX idx_work_unit_mbr_acct ON tb_work_unit (mbr_acct_idx);
+CREATE INDEX idx_work_unit_listing ON tb_work_unit (mbr_acct_idx, use_yn, updated_at DESC, created_at DESC);
+CREATE INDEX idx_work_unit_last_used_at ON tb_work_unit (mbr_acct_idx, last_used_at DESC);
+CREATE UNIQUE INDEX ux_work_unit_idx_owner ON tb_work_unit (work_unit_idx, mbr_acct_idx);
+
+COMMENT ON TABLE tb_work_unit IS '업무 등록';
+COMMENT ON COLUMN tb_work_unit.work_unit_idx IS '업무 PK';
+COMMENT ON COLUMN tb_work_unit.work_unit_uuid IS '업무 UUID';
+COMMENT ON COLUMN tb_work_unit.mbr_acct_idx IS '회원 계정 PK';
+COMMENT ON COLUMN tb_work_unit.ttl IS '업무명';
+COMMENT ON COLUMN tb_work_unit.dscr IS '업무 설명';
+COMMENT ON COLUMN tb_work_unit.ctgr IS '업무 카테고리';
+COMMENT ON COLUMN tb_work_unit.sts IS '업무 상태';
+COMMENT ON COLUMN tb_work_unit.use_yn IS '사용 여부';
+COMMENT ON COLUMN tb_work_unit.use_cnt IS '업무 사용 횟수';
+COMMENT ON COLUMN tb_work_unit.last_used_at IS '최근 사용 일시';
+COMMENT ON COLUMN tb_work_unit.created_by IS '생성자 로그인 ID';
+COMMENT ON COLUMN tb_work_unit.updated_by IS '수정자 로그인 ID';
+COMMENT ON COLUMN tb_work_unit.created_at IS '생성 일시';
+COMMENT ON COLUMN tb_work_unit.updated_at IS '수정 일시';
+COMMENT ON COLUMN tb_work_unit.del_at IS '삭제 일시';
+
+CREATE TABLE tb_wrk_dly_rpt (
+    wrk_dly_rpt_idx   BIGSERIAL    PRIMARY KEY,
+    wrk_dly_rpt_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    mbr_acct_idx      BIGINT       NOT NULL,
+    rpt_dt            DATE         NOT NULL,
+    cntn              TEXT,
+    spcl_note         TEXT,
+    created_by        VARCHAR(100) NOT NULL,
+    updated_by        VARCHAR(100),
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    del_at            TIMESTAMPTZ,
+    CONSTRAINT uq_wrk_dly_rpt_owner_date UNIQUE (mbr_acct_idx, rpt_dt)
+);
+
+CREATE UNIQUE INDEX ux_wrk_dly_rpt_idx_owner ON tb_wrk_dly_rpt (wrk_dly_rpt_idx, mbr_acct_idx);
+CREATE INDEX idx_wrk_dly_rpt_owner_date ON tb_wrk_dly_rpt (mbr_acct_idx, rpt_dt DESC);
+CREATE INDEX idx_wrk_dly_rpt_date ON tb_wrk_dly_rpt (rpt_dt DESC);
+
+COMMENT ON TABLE tb_wrk_dly_rpt IS '일일보고';
+COMMENT ON COLUMN tb_wrk_dly_rpt.wrk_dly_rpt_idx IS '일일보고 PK';
+COMMENT ON COLUMN tb_wrk_dly_rpt.wrk_dly_rpt_uuid IS '일일보고 UUID';
+COMMENT ON COLUMN tb_wrk_dly_rpt.mbr_acct_idx IS '회원 계정 PK';
+COMMENT ON COLUMN tb_wrk_dly_rpt.rpt_dt IS '보고 일자';
+COMMENT ON COLUMN tb_wrk_dly_rpt.cntn IS '보고 본문';
+COMMENT ON COLUMN tb_wrk_dly_rpt.spcl_note IS '특이사항';
+COMMENT ON COLUMN tb_wrk_dly_rpt.created_by IS '생성자 로그인 ID';
+COMMENT ON COLUMN tb_wrk_dly_rpt.updated_by IS '수정자 로그인 ID';
+COMMENT ON COLUMN tb_wrk_dly_rpt.created_at IS '생성 일시';
+COMMENT ON COLUMN tb_wrk_dly_rpt.updated_at IS '수정 일시';
+COMMENT ON COLUMN tb_wrk_dly_rpt.del_at IS '삭제 일시';
+
+CREATE TABLE tb_wrk_dly_rpt_wrk_unit (
+    wrk_dly_rpt_wrk_unit_idx  BIGSERIAL    PRIMARY KEY,
+    wrk_dly_rpt_idx           BIGINT       NOT NULL,
+    mbr_acct_idx              BIGINT       NOT NULL,
+    work_unit_idx             BIGINT       NOT NULL,
+    created_by                VARCHAR(100) NOT NULL,
+    created_at                TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uq_wrk_dly_rpt_wrk_unit UNIQUE (wrk_dly_rpt_idx, work_unit_idx)
+);
+
+CREATE INDEX idx_wrk_dly_rpt_wrk_unit_rpt ON tb_wrk_dly_rpt_wrk_unit (wrk_dly_rpt_idx);
+CREATE INDEX idx_wrk_dly_rpt_wrk_unit_owner ON tb_wrk_dly_rpt_wrk_unit (mbr_acct_idx);
+CREATE INDEX idx_wrk_dly_rpt_wrk_unit_unit ON tb_wrk_dly_rpt_wrk_unit (work_unit_idx);
+CREATE UNIQUE INDEX ux_wrk_dly_rpt_wrk_unit_report_work_unit ON tb_wrk_dly_rpt_wrk_unit (wrk_dly_rpt_idx, work_unit_idx);
+
+COMMENT ON TABLE tb_wrk_dly_rpt_wrk_unit IS '일일보고-업무 연결';
+COMMENT ON COLUMN tb_wrk_dly_rpt_wrk_unit.wrk_dly_rpt_wrk_unit_idx IS '일일보고 업무 연결 PK';
+COMMENT ON COLUMN tb_wrk_dly_rpt_wrk_unit.wrk_dly_rpt_idx IS '일일보고 PK';
+COMMENT ON COLUMN tb_wrk_dly_rpt_wrk_unit.mbr_acct_idx IS '회원 계정 PK';
+COMMENT ON COLUMN tb_wrk_dly_rpt_wrk_unit.work_unit_idx IS '업무 PK';
+COMMENT ON COLUMN tb_wrk_dly_rpt_wrk_unit.created_by IS '생성자 로그인 ID';
+COMMENT ON COLUMN tb_wrk_dly_rpt_wrk_unit.created_at IS '생성 일시';
+
+CREATE TABLE tb_wrk_wkl_rpt (
+    wrk_wkl_rpt_idx   BIGSERIAL    PRIMARY KEY,
+    wrk_wkl_rpt_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    mbr_acct_idx      BIGINT       NOT NULL,
+    wk_strt_dt        DATE         NOT NULL,
+    wk_end_dt         DATE         NOT NULL,
+    ttl               VARCHAR(200) NOT NULL,
+    cntn              TEXT         NOT NULL,
+    opn_yn            CHAR(1)      NOT NULL DEFAULT 'N',
+    pbls_at           TIMESTAMPTZ,
+    gen_type          VARCHAR(20)  NOT NULL DEFAULT 'MANUAL',
+    created_by        VARCHAR(100) NOT NULL,
+    updated_by        VARCHAR(100),
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    del_at            TIMESTAMPTZ,
+    CONSTRAINT chk_wrk_wkl_rpt_opn_yn CHECK (opn_yn IN ('Y', 'N')),
+    CONSTRAINT chk_wrk_wkl_rpt_gen_type CHECK (gen_type IN ('MANUAL', 'OPENAI', 'RULE_BASED'))
+);
+
+CREATE INDEX idx_wrk_wkl_rpt_owner_week ON tb_wrk_wkl_rpt (mbr_acct_idx, wk_strt_dt DESC, wk_end_dt DESC);
+CREATE INDEX idx_wrk_wkl_rpt_open ON tb_wrk_wkl_rpt (opn_yn, pbls_at DESC);
+
+COMMENT ON TABLE tb_wrk_wkl_rpt IS '주간보고';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.wrk_wkl_rpt_idx IS '주간보고 PK';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.wrk_wkl_rpt_uuid IS '주간보고 UUID';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.mbr_acct_idx IS '회원 계정 PK';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.wk_strt_dt IS '주 시작일';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.wk_end_dt IS '주 종료일';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.ttl IS '보고 제목';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.cntn IS '보고 본문';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.opn_yn IS '공개 여부';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.pbls_at IS '공개 일시';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.gen_type IS '생성 방식';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.created_by IS '생성자 로그인 ID';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.updated_by IS '수정자 로그인 ID';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.created_at IS '생성 일시';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.updated_at IS '수정 일시';
+COMMENT ON COLUMN tb_wrk_wkl_rpt.del_at IS '삭제 일시';

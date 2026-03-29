@@ -22,11 +22,12 @@ public class GlobalExceptionHandler {
     ) {
         ErrorCode errorCode = exception.getErrorCode();
         log.warn(
-                "비즈니스 예외 발생 - method: {}, path: {}, errorCode: {}, message: {}",
+                "비즈니스 예외 발생 - method: {}, path: {}, errorCode: {}, message: {}, detailMessage: {}",
                 request.getMethod(),
                 request.getRequestURI(),
                 errorCode.name(),
-                exception.getMessage()
+                exception.getMessage(),
+                exception.getDetailMessage()
         );
         return ResponseEntity
                 .status(errorCode.getStatus())

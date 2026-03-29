@@ -23,6 +23,8 @@
 - DDL, `VO`, `JVO`는 감사 컬럼(`created_by`, `updated_by`, `created_at`, `updated_at`)을 제외하고 축약형 네이밍 사용
 - 공통 PK/UUID/감사 컬럼은 `BaseVo`로 관리
 - 기본 PK/UUID 컬럼은 `resultType` 매핑 시 `AS idx`, `AS uuid` alias 우선 사용
+- snake_case -> camelCase 자동 매핑이 가능한 컬럼은 alias를 생략한다
+- `BaseVo`의 `idx`, `uuid`처럼 구조적으로 필요한 alias만 유지한다
 - `VO` / `JVO` 필드명은 테이블 컬럼 기준 camelCase (`idx`, `uuid`, `mbrAcctIdx`)
 - `VO` / `JVO`는 Lombok(`@Getter`, `@Setter`, `@SuperBuilder`, `@NoArgsConstructor`, `@AllArgsConstructor`) 기본 사용
 - `VO` / `JVO` 필드에는 DB 컬럼 코멘트를 주석으로 남김
@@ -38,12 +40,17 @@
 - 조회 메서드: `@Transactional(readOnly = true)`
 - Service는 다른 Service를 직접 호출 가능 (순환 금지)
 - 페이징: `PageRequest` DTO 수신 → `PageResponse` 반환
+- Service는 조회/검증/저장 흐름에 집중하고, DTO 조립은 도메인별 `convert` 클래스로 위임한다
+- 서비스 메서드에는 한글 목적 주석과 진입/완료/실패 로그를 남긴다
+- 도메인 의미가 없는 기본 검증/정규화는 `share` 공통화 후보로 관리한다
+- 날짜 처리, 형변환, null 체크 같은 범용 로직은 `share.util` 공통 유틸로 관리한다
 
 ## 패키지 규칙
 
 ```
 com.gw.api.controller.{domain}   # @RestController
 com.gw.api.service.{domain}      # @Service
+com.gw.api.convert.{domain}      # DTO 변환
 com.gw.infra.db.mapper.{domain}  # MyBatis Mapper interface
 com.gw.api.dto.{domain}          # Request/Response DTO
 com.gw.share.common.{category}   # 공통

@@ -75,7 +75,7 @@ class AuthServiceTest {
         LoginResponse response = authService.login(new LoginRequest("tester_01", "password1234"));
         TokenResponse tokenResponse = response.tokenResponse();
 
-        assertEquals("SUCCESS", response.loginStatus());
+        assertEquals("OTP_SETUP_REQUIRED", response.loginStatus());
         assertNotNull(tokenResponse);
         assertNotNull(tokenResponse.accessToken());
         assertNotNull(tokenResponse.refreshToken());
@@ -120,7 +120,7 @@ class AuthServiceTest {
         );
 
         assertEquals(ErrorCode.UNAUTHORIZED, exception.getErrorCode());
-        assertEquals("로그인 정보가 올바르지 않습니다. (잔여 2회)", exception.getMessage());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), exception.getMessage());
         verify(accountMapper).incrementLoginFailCount(1L);
         verify(accountMapper, never()).lockAccount(1L);
         verify(accountMapper, never()).resetLoginFailCount(1L);
@@ -138,7 +138,7 @@ class AuthServiceTest {
         );
 
         assertEquals(ErrorCode.ACCOUNT_LOCKED, exception.getErrorCode());
-        assertEquals("계정이 잠금되었습니다. 관리자에게 문의하세요.", exception.getMessage());
+        assertEquals(ErrorCode.ACCOUNT_LOCKED.getMessage(), exception.getMessage());
         verify(accountMapper, never()).incrementLoginFailCount(1L);
         verify(accountMapper, never()).resetLoginFailCount(1L);
     }
@@ -155,7 +155,7 @@ class AuthServiceTest {
         );
 
         assertEquals(ErrorCode.UNAUTHORIZED, exception.getErrorCode());
-        assertEquals("로그인 정보가 올바르지 않습니다. (잔여 0회)", exception.getMessage());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), exception.getMessage());
         verify(accountMapper).incrementLoginFailCount(1L);
         verify(accountMapper).lockAccount(1L);
         verify(accountMapper, never()).resetLoginFailCount(1L);

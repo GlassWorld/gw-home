@@ -576,19 +576,12 @@ await loadAccounts()
         </table>
       </div>
 
-      <div class="admin-accounts-page__pagination">
-        <CommonBaseButton variant="secondary" :disabled="filters.page <= 1" @click="movePage(filters.page - 1)">
-          이전
-        </CommonBaseButton>
-        <span>{{ accountPage.page }} / {{ Math.max(accountPage.totalPages, 1) }}</span>
-        <CommonBaseButton
-          variant="secondary"
-          :disabled="filters.page >= Math.max(accountPage.totalPages, 1)"
-          @click="movePage(filters.page + 1)"
-        >
-          다음
-        </CommonBaseButton>
-      </div>
+      <CommonBasePagination
+        :page="accountPage.page"
+        :total-pages="accountPage.totalPages"
+        @previous="movePage(filters.page - 1)"
+        @next="movePage(filters.page + 1)"
+      />
     </section>
 
     <CommonBaseModal
@@ -1066,14 +1059,6 @@ await loadAccounts()
 .admin-accounts-page__empty {
   color: var(--color-text-muted);
   text-align: center;
-}
-
-.admin-accounts-page__pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
 }
 
 .admin-accounts-page__temporary-password {
