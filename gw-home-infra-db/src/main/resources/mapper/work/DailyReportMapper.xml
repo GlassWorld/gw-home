@@ -222,6 +222,7 @@
             ma.lgn_id,
             mp.nick_nm,
             dr.rpt_dt,
+            dr.cntn,
             dr.spcl_note,
             dr.created_by,
             dr.updated_by,

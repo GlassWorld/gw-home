@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS tb_wrk_dly_rpt (
     wrk_dly_rpt_uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     mbr_acct_idx BIGINT NOT NULL,
     rpt_dt DATE NOT NULL,
+    cntn TEXT,
     spcl_note TEXT,
     created_by VARCHAR(100) NOT NULL,
     updated_by VARCHAR(100),
@@ -12,6 +13,9 @@ CREATE TABLE IF NOT EXISTS tb_wrk_dly_rpt (
     CONSTRAINT uq_wrk_dly_rpt_owner_date UNIQUE (mbr_acct_idx, rpt_dt),
     CONSTRAINT fk_wrk_dly_rpt_mbr_acct FOREIGN KEY (mbr_acct_idx) REFERENCES tb_mbr_acct (mbr_acct_idx)
 );
+
+ALTER TABLE tb_wrk_dly_rpt
+    ADD COLUMN IF NOT EXISTS cntn TEXT;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_wrk_dly_rpt_idx_owner ON tb_wrk_dly_rpt (wrk_dly_rpt_idx, mbr_acct_idx);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_work_unit_idx_owner ON tb_work_unit (work_unit_idx, mbr_acct_idx);
