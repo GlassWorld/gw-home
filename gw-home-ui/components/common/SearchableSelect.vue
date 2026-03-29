@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
+
 interface SearchableSelectOption {
   value: string
   label: string
@@ -56,7 +58,7 @@ const inputValue = computed(() => {
   return selectedOption.value?.label ?? ''
 })
 
-const portalDropdownStyle = computed(() => ({
+const portalDropdownStyle = computed<CSSProperties>(() => ({
   top: `${dropdownPosition.value.top}px`,
   left: `${dropdownPosition.value.left}px`,
   width: `${dropdownPosition.value.width}px`,
