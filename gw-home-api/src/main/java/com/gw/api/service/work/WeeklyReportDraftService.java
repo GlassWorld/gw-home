@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
 import com.gw.share.vo.work.DailyReportVo;
+import com.gw.share.vo.work.WorkUnitVo;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -125,10 +126,8 @@ public class WeeklyReportDraftService {
         for (DailyReportVo dailyReport : dailyReports) {
             builder.append("- ")
                     .append(dailyReport.getRptDt().format(DATE_FORMATTER))
-                    .append(" [")
-                    .append(resolveStatusLabel(dailyReport.getSts()))
-                    .append("] ")
-                    .append(dailyReport.getCntn())
+                    .append(" ")
+                    .append(resolveWorkSummary(dailyReport))
                     .append('\n');
 
             if (dailyReport.getSpclNote() != null && !dailyReport.getSpclNote().isBlank()) {
@@ -179,8 +178,7 @@ public class WeeklyReportDraftService {
 
         for (DailyReportVo dailyReport : dailyReports) {
             builder.append("* 날짜: ").append(dailyReport.getRptDt())
-                    .append(", 상태: ").append(dailyReport.getSts())
-                    .append(", 업무내용: ").append(dailyReport.getCntn());
+                    .append(", 업무내용: ").append(resolveWorkSummary(dailyReport));
 
             if (dailyReport.getSpclNote() != null && !dailyReport.getSpclNote().isBlank()) {
                 builder.append(", 특이사항: ").append(dailyReport.getSpclNote());
@@ -196,11 +194,17 @@ public class WeeklyReportDraftService {
         return weekStartDate.format(DATE_FORMATTER) + " - " + weekEndDate.format(DATE_FORMATTER) + " 주간보고";
     }
 
-    private String resolveStatusLabel(String status) {
-        return switch (status) {
-            case "PLANNED" -> "예정";
-            case "DONE" -> "완료";
-            default -> "진행중";
-        };
+    private String resolveWorkSummary(DailyReportVo dailyReport) {
+        List<WorkUnitVo> workUnits = dailyReport.getWorkUnits();
+
+        if (workUnits == null || workUnits.isEmpty()) {
+            return "선택된 업무가 없습니다.";
+        }
+
+        return workUnits.stream()
+                .map(WorkUnitVo::getTtl)
+                .filter(title -> title != null && !title.isBlank())
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("선택된 업무가 없습니다.");
     }
 }

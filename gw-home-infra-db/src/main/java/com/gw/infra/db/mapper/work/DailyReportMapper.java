@@ -3,6 +3,7 @@ package com.gw.infra.db.mapper.work;
 import com.gw.share.jvo.work.DailyReportAdmJvo;
 import com.gw.share.vo.work.DailyReportListSearchVo;
 import com.gw.share.vo.work.DailyReportVo;
+import com.gw.share.vo.work.WorkUnitVo;
 import com.gw.share.vo.work.WeeklyReportVo;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +24,19 @@ public interface DailyReportMapper {
     void insertDailyReport(DailyReportVo dailyReport);
 
     int updateDailyReport(DailyReportVo dailyReport);
+
+    List<WorkUnitVo> selectDailyReportWorkUnits(@Param("dailyReportIdx") Long dailyReportIdx);
+
+    void insertDailyReportWorkUnit(
+            @Param("dailyReportIdx") Long dailyReportIdx,
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
+            @Param("workUnitIdx") Long workUnitIdx,
+            @Param("createdBy") String createdBy
+    );
+
+    int countDailyReportWorkUnits(@Param("dailyReportIdx") Long dailyReportIdx);
+
+    int deleteDailyReportWorkUnits(@Param("dailyReportIdx") Long dailyReportIdx);
 
     boolean existsDailyReportByDate(
             @Param("mbrAcctIdx") Long mbrAcctIdx,

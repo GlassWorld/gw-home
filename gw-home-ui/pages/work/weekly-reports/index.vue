@@ -53,12 +53,6 @@ const generationTypeLabelMap: Record<WeeklyReportGenerationType, string> = {
   RULE_BASED: '초안'
 }
 
-const statusLabelMap: Record<WeeklyReportDailySource['status'], string> = {
-  PLANNED: '예정',
-  IN_PROGRESS: '진행중',
-  DONE: '완료'
-}
-
 const defaultWeekStartDate = getWeekStartDate()
 
 const weeklyReports = ref<WeeklyReport[]>([])
@@ -303,9 +297,10 @@ await reloadAll()
           <article v-for="dailyReport in sourceDailyReports" :key="dailyReport.uuid" class="weekly-report-page__source-card">
             <header class="weekly-report-page__source-header">
               <strong>{{ formatDate(dailyReport.reportDate) }}</strong>
-              <span class="weekly-report-page__status-chip">{{ statusLabelMap[dailyReport.status] }}</span>
             </header>
-            <p class="weekly-report-page__source-content">{{ dailyReport.content }}</p>
+            <p class="weekly-report-page__source-content">
+              {{ dailyReport.workUnits.length ? dailyReport.workUnits.map((workUnit) => workUnit.title).join(', ') : '선택된 업무가 없습니다.' }}
+            </p>
             <p v-if="dailyReport.note" class="weekly-report-page__source-note">
               특이사항: {{ dailyReport.note }}
             </p>

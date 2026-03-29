@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import type { DailyReport, DailyReportMissing, DailyReportStatus, SaveDailyReportPayload, UpdateDailyReportPayload } from '~/types/work'
-import SearchableSelect from '~/components/common/SearchableSelect.vue'
-import { applySelectableValueFromOptions } from '~/utils/selectable'
+import type { DailyReport, DailyReportMissing, DailyReportWorkUnit, UpdateDailyReportPayload, WorkUnitOption } from '~/types/work'
 
 definePageMeta({
   middleware: 'auth'
 })
 
+interface DailyReportFormState {
+  reportDate: string
+  workSummary: string
+  issueNote: string
+}
+
 const { fetchDailyReports, createDailyReport, updateDailyReport, fetchMissingDailyReports } = useDailyReportApi()
+const { fetchWorkUnitOptions } = useWorkUnitApi()
 const { showToast } = useToast()
 
 function formatDateInput(date: Date): string {
@@ -15,11 +20,6 @@ function formatDateInput(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-function getMonthStartInput(): string {
-  const now = new Date()
-  return formatDateInput(new Date(now.getFullYear(), now.getMonth(), 1))
 }
 
 function getDaysAgoInput(days: number): string {
@@ -54,6 +54,19 @@ function formatDate(value: string): string {
   }).format(toLocalDate(value))
 }
 
+function formatDateWithWeekday(value: string): string {
+  if (!value) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short'
+  }).format(toLocalDate(value))
+}
+
 function toLocalDate(value?: string | null): Date {
   if (!value) {
     return new Date(1970, 0, 1)
@@ -81,29 +94,50 @@ function formatMissingDateLabel(value: string): string {
   return `${formatDate(value)} (${weekday})`
 }
 
-const statusOptions: Array<{ value: DailyReportStatus | ''; label: string }> = [
-  { value: '', label: '전체' },
-  { value: 'PLANNED', label: '예정' },
-  { value: 'IN_PROGRESS', label: '진행중' },
-  { value: 'DONE', label: '완료' }
-]
+function getWorkUnitStatusLabel(status: WorkUnitOption['status']): string {
+  if (status === 'DONE') {
+    return '완료'
+  }
 
-const statusLabelMap: Record<DailyReportStatus, string> = {
-  PLANNED: '예정',
-  IN_PROGRESS: '진행중',
-  DONE: '완료'
+  if (status === 'ON_HOLD') {
+    return '보류'
+  }
+
+  return '진행중'
 }
 
-interface DailyReportFormState {
-  reportDate: string
-  status: DailyReportStatus
-  note: string
+function extractSection(note: string | null | undefined, heading: string): string {
+  if (!note) {
+    return ''
+  }
+
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`\\[${escapedHeading}\\]\\n([\\s\\S]*?)(?=\\n\\n\\[[^\\]]+\\]\\n|$)`)
+  const match = note.match(pattern)
+  return match?.[1]?.trim() ?? ''
+}
+
+function buildNotePayload(formState: DailyReportFormState): string {
+  return formState.issueNote.trim()
+}
+
+function summarizeReport(report: DailyReport): string {
+  const summarySource = report.content || report.note || report.workUnits.map((workUnit) => workUnit.title).join(', ')
+  return summarySource.replace(/\s+/g, ' ').trim()
+}
+
+function buildSuggestionPool(reports: DailyReport[]): string[] {
+  const candidates = reports.flatMap((report) => [
+    report.content ?? '',
+    report.note ?? ''
+  ])
+
+  return Array.from(new Set(candidates.map((item) => item.trim()).filter((item) => item.length >= 8))).slice(0, 6)
 }
 
 const filters = reactive({
-  dateFrom: getMonthStartInput(),
+  dateFrom: getDaysAgoInput(14),
   dateTo: formatDateInput(new Date()),
-  status: '' as DailyReportStatus | '',
   keyword: '',
   page: 1,
   size: 10
@@ -111,16 +145,22 @@ const filters = reactive({
 
 const formState = reactive<DailyReportFormState>({
   reportDate: formatDateInput(new Date()),
-  status: 'IN_PROGRESS',
-  note: ''
+  workSummary: '',
+  issueNote: ''
 })
 
 const editingDailyReportUuid = ref('')
 const isFormVisible = ref(false)
-const isMissingPanelVisible = ref(true)
+const isMissingPanelVisible = ref(false)
 const isLoading = ref(false)
 const isSubmitting = ref(false)
-const isRecentReferenceLoading = ref(false)
+const isWorkUnitLoading = ref(false)
+const isHistoryLoading = ref(false)
+const workUnitSearchKeyword = ref('')
+const activeTaskUuid = ref('')
+const selectedTaskUuids = ref<string[]>([])
+const selectedTaskSnapshotMap = ref<Record<string, DailyReportWorkUnit>>({})
+const historyPreviewReportUuid = ref('')
 const dailyReportPage = ref({
   content: [] as DailyReport[],
   page: 1,
@@ -129,111 +169,183 @@ const dailyReportPage = ref({
   totalPages: 0
 })
 const missingDailyReports = ref<DailyReportMissing[]>([])
-const recentReferenceReports = ref<DailyReport[]>([])
-const workItems = ref<string[]>([''])
+const workUnitOptions = ref<WorkUnitOption[]>([])
+const recentDailyReports = ref<DailyReport[]>([])
 
 const visibleMissingDailyReports = computed(() =>
   missingDailyReports.value.filter((item) => !isWeekend(item.reportDate) && !isFutureDate(item.reportDate))
 )
+
 const summary = computed(() => ({
   missingCount: visibleMissingDailyReports.value.length,
   totalCount: Number.isFinite(dailyReportPage.value.totalCount) ? dailyReportPage.value.totalCount : 0
 }))
 
+const filteredWorkUnitOptions = computed(() => {
+  const keyword = workUnitSearchKeyword.value.trim().toLowerCase()
+
+  if (!keyword) {
+    return workUnitOptions.value
+  }
+
+  return workUnitOptions.value.filter((workUnit) =>
+    [workUnit.title, workUnit.category ?? '', getWorkUnitStatusLabel(workUnit.status)]
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+  )
+})
+
+function buildSelectedTaskSnapshotMap(workUnits: DailyReportWorkUnit[]): Record<string, DailyReportWorkUnit> {
+  return workUnits.reduce<Record<string, DailyReportWorkUnit>>((snapshotMap, workUnit) => {
+    snapshotMap[workUnit.workUnitUuid] = workUnit
+    return snapshotMap
+  }, {})
+}
+
+const selectedWorkUnits = computed(() => {
+  const workUnitMap = new Map(workUnitOptions.value.map((workUnit) => [workUnit.workUnitUuid, workUnit]))
+  return selectedTaskUuids.value
+    .map((workUnitUuid) => {
+      const workUnit = workUnitMap.get(workUnitUuid)
+      if (workUnit) {
+        return {
+          workUnitUuid: workUnit.workUnitUuid,
+          title: workUnit.title,
+          category: workUnit.category
+        }
+      }
+
+      return selectedTaskSnapshotMap.value[workUnitUuid] ?? null
+    })
+    .filter((workUnit): workUnit is DailyReportWorkUnit => Boolean(workUnit))
+})
+
+const activeTask = computed(() => {
+  const workUnit = workUnitOptions.value.find((item) => item.workUnitUuid === activeTaskUuid.value)
+
+  if (workUnit) {
+    return {
+      workUnitUuid: workUnit.workUnitUuid,
+      title: workUnit.title,
+      category: workUnit.category
+    }
+  }
+
+  return selectedTaskSnapshotMap.value[activeTaskUuid.value] ?? null
+})
+
+const historyReports = computed(() => {
+  if (!activeTaskUuid.value) {
+    return []
+  }
+
+  return recentDailyReports.value
+    .filter((report) => report.workUnits.some((workUnit) => workUnit.workUnitUuid === activeTaskUuid.value))
+    .sort((first, second) => second.reportDate.localeCompare(first.reportDate))
+})
+
+const historyPreviewReport = computed(() => {
+  if (!historyReports.value.length) {
+    return null
+  }
+
+  return historyReports.value.find((report) => report.uuid === historyPreviewReportUuid.value) ?? historyReports.value.at(0) ?? null
+})
+
+const reportSuggestions = computed(() => buildSuggestionPool(historyReports.value))
+
+const dailyReportContent = computed(() => {
+  const sections: string[] = []
+
+  if (selectedWorkUnits.value.length) {
+    sections.push(selectedWorkUnits.value.map((workUnit) => workUnit.title.trim()).join('\n'))
+  }
+
+  if (formState.workSummary.trim()) {
+    sections.push(formState.workSummary.trim())
+  }
+
+  if (formState.issueNote.trim()) {
+    sections.push(`[이슈 / 특이사항]\n${formState.issueNote.trim()}`)
+  }
+
+  return sections.join('\n\n')
+})
+
+const normalizedSelectedTaskUuids = computed(() =>
+  Array.from(new Set(
+    selectedTaskUuids.value
+      .filter(Boolean)
+  ))
+)
+
 function resetForm() {
   editingDailyReportUuid.value = ''
+  activeTaskUuid.value = ''
+  selectedTaskUuids.value = []
+  selectedTaskSnapshotMap.value = {}
+  historyPreviewReportUuid.value = ''
+  workUnitSearchKeyword.value = ''
   formState.reportDate = formatDateInput(new Date())
-  formState.status = 'IN_PROGRESS'
-  formState.note = ''
-  workItems.value = ['']
+  formState.workSummary = ''
+  formState.issueNote = ''
 }
 
-function parseWorkItems(content: string): string[] {
-  const normalized = content.replace(/\r\n/g, '\n').trim()
-
-  if (!normalized) {
-    return ['']
-  }
-
-  const parsedItems = normalized
-    .split(/\n{2,}/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-
-  return parsedItems.length ? parsedItems : ['']
+function selectTask(workUnitUuid: string) {
+  activeTaskUuid.value = workUnitUuid
+  historyPreviewReportUuid.value = ''
 }
 
-function buildContentFromWorkItems(): string {
-  return workItems.value
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .join('\n\n')
-}
-
-function addWorkItem() {
-  workItems.value.push('')
-}
-
-function removeWorkItem(index: number) {
-  if (workItems.value.length === 1) {
-    workItems.value[0] = ''
+function setTaskSelection(workUnitUuid: string, checked: boolean) {
+  if (!checked) {
+    selectedTaskUuids.value = selectedTaskUuids.value.filter((uuid) => uuid !== workUnitUuid)
+    if (activeTaskUuid.value === workUnitUuid) {
+      activeTaskUuid.value = selectedTaskUuids.value[0] ?? ''
+      historyPreviewReportUuid.value = ''
+    }
     return
   }
 
-  workItems.value.splice(index, 1)
-}
-
-function appendReferenceWorkItems(report: DailyReport) {
-  const referenceItems = parseWorkItems(report.content).filter((item) => item.trim())
-
-  if (!referenceItems.length) {
-    return
+  const selectedWorkUnit = workUnitOptions.value.find((workUnit) => workUnit.workUnitUuid === workUnitUuid)
+  if (selectedWorkUnit) {
+    selectedTaskSnapshotMap.value = {
+      ...selectedTaskSnapshotMap.value,
+      [workUnitUuid]: {
+        workUnitUuid: selectedWorkUnit.workUnitUuid,
+        title: selectedWorkUnit.title,
+        category: selectedWorkUnit.category
+      }
+    }
   }
 
-  const normalizedCurrentItems = workItems.value.filter((item) => item.trim())
-  workItems.value = [...normalizedCurrentItems, ...referenceItems]
-}
-
-function getReferenceWorkItems(report: DailyReport): string[] {
-  return parseWorkItems(report.content).filter((item) => item.trim())
-}
-
-async function loadRecentReferenceReports() {
-  isRecentReferenceLoading.value = true
-
-  try {
-    const response = await fetchDailyReports({
-      dateFrom: getDaysAgoInput(90),
-      dateTo: formatDateInput(new Date()),
-      status: '',
-      page: 1,
-      size: 6
-    })
-
-    recentReferenceReports.value = response.content.filter((report) => report.uuid !== editingDailyReportUuid.value)
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    recentReferenceReports.value = []
-    showToast(fetchError.data?.message ?? '최근 작성 보고를 불러오지 못했습니다.', { variant: 'error' })
-  } finally {
-    isRecentReferenceLoading.value = false
+  selectedTaskUuids.value = [...selectedTaskUuids.value, workUnitUuid]
+  if (!activeTaskUuid.value) {
+    activeTaskUuid.value = workUnitUuid
   }
 }
 
 function startCreateMode() {
   resetForm()
   isFormVisible.value = true
-  void loadRecentReferenceReports()
+  void Promise.all([loadWorkUnits(), loadRecentDailyReports()])
 }
 
 function startEditMode(report: DailyReport) {
   editingDailyReportUuid.value = report.uuid
+  workUnitSearchKeyword.value = ''
+  selectedTaskSnapshotMap.value = buildSelectedTaskSnapshotMap(report.workUnits)
+  selectedTaskUuids.value = report.workUnits.map((workUnit) => workUnit.workUnitUuid)
+  activeTaskUuid.value = selectedTaskUuids.value[0] ?? ''
   formState.reportDate = report.reportDate
-  formState.status = report.status
-  formState.note = report.note ?? ''
-  workItems.value = parseWorkItems(report.content)
+  formState.workSummary = report.content ?? ''
+  formState.issueNote = report.note ?? ''
+  if (!formState.workSummary && report.note) {
+    formState.workSummary = ''
+  }
   isFormVisible.value = true
-  void loadRecentReferenceReports()
+  historyPreviewReportUuid.value = report.uuid
+  void Promise.all([loadWorkUnits(), loadRecentDailyReports()])
 }
 
 function closeFormModal() {
@@ -241,16 +353,59 @@ function closeFormModal() {
   resetForm()
 }
 
-function updateFormStatus(status: string) {
-  applySelectableValueFromOptions(status, statusOptions.filter((option) => option.value), (validStatus) => {
-    formState.status = validStatus as DailyReportStatus
-  })
+function applyHistoryDraft(report: DailyReport) {
+  formState.workSummary = report.content || summarizeReport(report)
+  formState.issueNote = report.note ?? ''
+  historyPreviewReportUuid.value = report.uuid
 }
 
-function updateFilterStatus(status: string) {
-  applySelectableValueFromOptions(status, statusOptions, (validStatus) => {
-    filters.status = validStatus as DailyReportStatus | ''
-  })
+function insertSuggestion(value: string) {
+  if (!value.trim()) {
+    return
+  }
+
+  formState.workSummary = formState.workSummary.trim()
+    ? `${formState.workSummary.trim()}\n- ${value.trim()}`
+    : value.trim()
+}
+
+async function loadWorkUnits() {
+  isWorkUnitLoading.value = true
+
+  try {
+    workUnitOptions.value = await fetchWorkUnitOptions(true)
+
+    if (!activeTaskUuid.value && selectedTaskUuids.value.length) {
+      activeTaskUuid.value = selectedTaskUuids.value[0] ?? ''
+    }
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    workUnitOptions.value = []
+    showToast(fetchError.data?.message ?? '업무등록 목록을 불러오지 못했습니다.', { variant: 'error' })
+  } finally {
+    isWorkUnitLoading.value = false
+  }
+}
+
+async function loadRecentDailyReports() {
+  isHistoryLoading.value = true
+
+  try {
+    const response = await fetchDailyReports({
+      dateFrom: getDaysAgoInput(90),
+      dateTo: formatDateInput(new Date()),
+      page: 1,
+      size: 100
+    })
+
+    recentDailyReports.value = response.content
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    recentDailyReports.value = []
+    showToast(fetchError.data?.message ?? '이전 일일보고를 불러오지 못했습니다.', { variant: 'error' })
+  } finally {
+    isHistoryLoading.value = false
+  }
 }
 
 async function loadDailyReports() {
@@ -260,7 +415,6 @@ async function loadDailyReports() {
     dailyReportPage.value = await fetchDailyReports({
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
-      status: filters.status,
       keyword: filters.keyword.trim() || undefined,
       page: filters.page,
       size: filters.size
@@ -301,41 +455,49 @@ async function handleSubmit() {
     return
   }
 
-  const content = buildContentFromWorkItems()
-
-  if (!content) {
-    showToast('작업한 업무를 1개 이상 입력해주세요.', { variant: 'error' })
+  if (!formState.workSummary.trim() && !formState.issueNote.trim()) {
+    showToast('오늘 수행 내용 또는 이슈를 입력해주세요.', { variant: 'error' })
     return
   }
 
   isSubmitting.value = true
 
   try {
+    const payloadNote = buildNotePayload(formState)
+    const selectedWorkUnitUuids = [...normalizedSelectedTaskUuids.value]
+
     if (editingDailyReportUuid.value) {
       const payload: UpdateDailyReportPayload = {
-        content,
-        status: formState.status,
-        note: formState.note?.trim() || ''
+        workUnitUuids: selectedWorkUnitUuids,
+        note: payloadNote,
+        content: dailyReportContent.value
       }
-      await updateDailyReport(editingDailyReportUuid.value, payload)
+      const updatedReport = await updateDailyReport(editingDailyReportUuid.value, payload)
+      if (selectedWorkUnitUuids.length > 0 && updatedReport.workUnits.length === 0) {
+        throw new Error('선택한 업무가 저장되지 않았습니다. 다시 시도해주세요.')
+      }
       showToast('일일보고를 수정했습니다.', { variant: 'success' })
     } else {
-      await createDailyReport({
+      const createdReport = await createDailyReport({
         reportDate: formState.reportDate,
-        content,
-        status: formState.status,
-        note: formState.note?.trim() || ''
+        workUnitUuids: selectedWorkUnitUuids,
+        note: payloadNote,
+        content: dailyReportContent.value
       })
+      if (selectedWorkUnitUuids.length > 0 && createdReport.workUnits.length === 0) {
+        throw new Error('선택한 업무가 저장되지 않았습니다. 다시 시도해주세요.')
+      }
       showToast('일일보고를 저장했습니다.', { variant: 'success' })
     }
 
     isFormVisible.value = false
     resetForm()
     filters.page = 1
-    await reloadAll()
+    await Promise.all([reloadAll(), loadRecentDailyReports()])
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '일일보고 저장에 실패했습니다.', { variant: 'error' })
+    const errorMessage = fetchError.data?.message ?? (error instanceof Error ? error.message : '일일보고 저장에 실패했습니다.')
+    showToast(errorMessage, { variant: 'error' })
   } finally {
     isSubmitting.value = false
   }
@@ -354,6 +516,17 @@ async function movePage(nextPage: number) {
   filters.page = nextPage
   await loadDailyReports()
 }
+
+watch(historyReports, (nextReports) => {
+  if (!nextReports.length) {
+    historyPreviewReportUuid.value = ''
+    return
+  }
+
+  if (!nextReports.some((report) => report.uuid === historyPreviewReportUuid.value)) {
+    historyPreviewReportUuid.value = nextReports.at(0)?.uuid ?? ''
+  }
+})
 
 await reloadAll()
 </script>
@@ -386,7 +559,6 @@ await reloadAll()
 
     <section class="content-panel daily-report-page__panel">
       <div class="daily-report-page__panel-header">
-        <h2>목록 조회</h2>
         <span v-if="isLoading">불러오는 중...</span>
       </div>
 
@@ -399,22 +571,12 @@ await reloadAll()
           <span>종료일</span>
           <input v-model="filters.dateTo" class="input-field" type="date">
         </label>
-        <label>
-          <span>진행상태</span>
-          <SearchableSelect
-            :options="statusOptions"
-            :model-value="filters.status"
-            placeholder="진행상태"
-            input-class="input-field"
-            @update:modelValue="updateFilterStatus"
-          />
-        </label>
         <label class="daily-report-page__search-field">
           <span>내용 검색</span>
-          <input v-model="filters.keyword" class="input-field" type="search" placeholder="업무내용 또는 특이사항">
+          <input v-model="filters.keyword" class="input-field" type="search" placeholder="업무명 또는 특이사항">
         </label>
         <div class="daily-report-page__filter-actions">
-          <CommonBaseButton variant="secondary" type="button" @click="filters.dateFrom = getMonthStartInput(); filters.dateTo = formatDateInput(new Date()); filters.status = ''; filters.keyword = ''; void handleSearch()">
+          <CommonBaseButton variant="secondary" type="button" @click="filters.dateFrom = getDaysAgoInput(14); filters.dateTo = formatDateInput(new Date()); filters.keyword = ''; void handleSearch()">
             초기화
           </CommonBaseButton>
           <CommonBaseButton type="submit">
@@ -428,8 +590,7 @@ await reloadAll()
           <thead>
             <tr>
               <th>작성일자</th>
-              <th>상태</th>
-              <th>업무내용</th>
+              <th>작업 업무</th>
               <th>특이사항</th>
               <th>수정일</th>
               <th>액션</th>
@@ -437,17 +598,12 @@ await reloadAll()
           </thead>
           <tbody>
             <tr v-for="dailyReport in dailyReportPage.content" :key="dailyReport.uuid">
-              <td>{{ formatDate(dailyReport.reportDate) }}</td>
-              <td>
-                <span class="daily-report-page__status-badge">
-                  {{ statusLabelMap[dailyReport.status] }}
-                </span>
+              <td>{{ formatDateWithWeekday(dailyReport.reportDate) }}</td>
+              <td class="daily-report-page__content-cell">
+                {{ dailyReport.workUnits.length ? dailyReport.workUnits.map((workUnit) => workUnit.title).join(', ') : '-' }}
               </td>
               <td class="daily-report-page__content-cell">
-                {{ dailyReport.content }}
-              </td>
-              <td class="daily-report-page__content-cell">
-                {{ dailyReport.note || '-' }}
+                {{ summarizeReport(dailyReport) || '-' }}
               </td>
               <td>{{ formatDateTime(dailyReport.updatedAt) }}</td>
               <td>
@@ -457,7 +613,7 @@ await reloadAll()
               </td>
             </tr>
             <tr v-if="!isLoading && dailyReportPage.content.length === 0">
-              <td colspan="6" class="daily-report-page__empty">
+              <td colspan="5" class="daily-report-page__empty">
                 조회된 일일보고가 없습니다.
               </td>
             </tr>
@@ -518,112 +674,43 @@ await reloadAll()
       :visible="isFormVisible"
       eyebrow="Daily Report"
       :title="editingDailyReportUuid ? '일일보고 수정' : '일일보고 작성'"
-      width="1120px"
+      width="98vw"
       @close="closeFormModal"
     >
       <div class="daily-report-page__modal-layout">
-        <form class="daily-report-page__form" @submit.prevent="handleSubmit">
-          <div class="daily-report-page__form-row">
-            <label>
-              <span>작성일자</span>
-              <input
-                v-model="formState.reportDate"
-                class="input-field"
-                type="date"
-                :disabled="Boolean(editingDailyReportUuid)"
-              >
-            </label>
+        <WorkTaskListPanel
+          :tasks="filteredWorkUnitOptions"
+          :selected-task-uuids="selectedTaskUuids"
+          :active-task-uuid="activeTaskUuid"
+          :search-keyword="workUnitSearchKeyword"
+          :is-loading="isWorkUnitLoading"
+          @update:search-keyword="workUnitSearchKeyword = $event"
+          @select-task="selectTask"
+          @set-task-selection="setTaskSelection($event.workUnitUuid, $event.checked)"
+        />
 
-            <label>
-              <span>진행상태</span>
-              <SearchableSelect
-                :options="statusOptions.filter((option) => option.value)"
-                :model-value="formState.status"
-                placeholder="진행상태"
-                input-class="input-field"
-                @update:modelValue="updateFormStatus"
-              />
-            </label>
-          </div>
+        <WorkReportHistoryPanel
+          :active-task="activeTask"
+          :reports="historyReports"
+          :selected-report-uuid="historyPreviewReportUuid"
+          :preview-report="historyPreviewReport"
+          :is-loading="isHistoryLoading"
+          @select-report="historyPreviewReportUuid = $event"
+          @use-as-draft="applyHistoryDraft"
+        />
 
-          <div class="daily-report-page__work-header">
-            <div>
-              <span class="daily-report-page__work-label">작성내용</span>
-              <p class="daily-report-page__work-description">작업한 업무를 항목별로 나눠 기록합니다.</p>
-            </div>
-            <CommonBaseButton variant="secondary" type="button" @click="addWorkItem">
-              업무 추가
-            </CommonBaseButton>
-          </div>
-
-          <div class="daily-report-page__work-list">
-            <article
-              v-for="(workItem, workItemIndex) in workItems"
-              :key="`work-item-${workItemIndex}`"
-              class="daily-report-page__work-item"
-            >
-              <div class="daily-report-page__work-item-header">
-                <strong>업무 {{ workItemIndex + 1 }}</strong>
-                <CommonBaseButton variant="secondary" size="small" type="button" @click="removeWorkItem(workItemIndex)">
-                  삭제
-                </CommonBaseButton>
-              </div>
-              <textarea
-                v-model="workItems[workItemIndex]"
-                class="daily-report-page__textarea"
-                rows="4"
-                placeholder="수행한 업무 내용을 입력하세요."
-              />
-            </article>
-          </div>
-
-          <label>
-            <span>특이사항</span>
-            <textarea v-model="formState.note" class="daily-report-page__textarea" rows="3" />
-          </label>
-        </form>
-
-        <aside class="daily-report-page__reference-panel">
-          <div class="daily-report-page__reference-header">
-            <div>
-              <span class="daily-report-page__work-label">최근 작성 보고</span>
-              <p class="daily-report-page__work-description">최근 보고의 업무 항목을 보면서 현재 보고에 필요한 내용만 가져올 수 있습니다.</p>
-            </div>
-          </div>
-
-          <div v-if="isRecentReferenceLoading" class="daily-report-page__reference-empty">
-            최근 보고를 불러오는 중입니다.
-          </div>
-          <div v-else-if="recentReferenceReports.length" class="daily-report-page__reference-list">
-            <article
-              v-for="referenceReport in recentReferenceReports"
-              :key="referenceReport.uuid"
-              class="daily-report-page__reference-item"
-            >
-              <div class="daily-report-page__reference-meta">
-                <strong>{{ formatDate(referenceReport.reportDate) }}</strong>
-                <span class="daily-report-page__status-badge">
-                  {{ statusLabelMap[referenceReport.status] }}
-                </span>
-              </div>
-              <ul class="daily-report-page__reference-work-list">
-                <li
-                  v-for="(referenceWorkItem, referenceWorkItemIndex) in getReferenceWorkItems(referenceReport)"
-                  :key="`${referenceReport.uuid}-item-${referenceWorkItemIndex}`"
-                  class="daily-report-page__reference-work-item"
-                >
-                  {{ referenceWorkItem }}
-                </li>
-              </ul>
-              <CommonBaseButton variant="secondary" size="small" type="button" @click="appendReferenceWorkItems(referenceReport)">
-                업무에 가져오기
-              </CommonBaseButton>
-            </article>
-          </div>
-          <div v-else class="daily-report-page__reference-empty">
-            최근에 작성한 보고가 없습니다.
-          </div>
-        </aside>
+        <WorkReportEditorPanel
+          :report-date="formState.reportDate"
+          :selected-work-units="selectedWorkUnits"
+          :work-summary="formState.workSummary"
+          :issue-note="formState.issueNote"
+          :suggestions="reportSuggestions"
+          :is-editing="Boolean(editingDailyReportUuid)"
+          @update:report-date="formState.reportDate = $event"
+          @update:work-summary="formState.workSummary = $event"
+          @update:issue-note="formState.issueNote = $event"
+          @insert-suggestion="insertSuggestion"
+        />
       </div>
 
       <template #actions>
@@ -631,7 +718,7 @@ await reloadAll()
           취소
         </CommonBaseButton>
         <CommonBaseButton type="button" :disabled="isSubmitting" @click="handleSubmit">
-          {{ editingDailyReportUuid ? '수정 저장' : '저장' }}
+          {{ editingDailyReportUuid ? '수정 저장' : '작성 완료' }}
         </CommonBaseButton>
       </template>
     </CommonBaseModal>
@@ -710,7 +797,6 @@ await reloadAll()
   align-items: center;
 }
 
-.daily-report-page__form-actions,
 .daily-report-page__filter-actions {
   display: flex;
   gap: 10px;
@@ -719,7 +805,7 @@ await reloadAll()
 
 .daily-report-page__filters {
   display: grid;
-  grid-template-columns: minmax(132px, 0.9fr) minmax(132px, 0.9fr) minmax(150px, 0.9fr) minmax(220px, 1.4fr) auto;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(150px, 0.9fr) minmax(260px, 1.6fr) auto;
   align-items: end;
   gap: 14px 16px;
 }
@@ -729,20 +815,12 @@ await reloadAll()
   white-space: nowrap;
 }
 
-.daily-report-page__form label,
 .daily-report-page__filters label {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
 
-.daily-report-page__form-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.daily-report-page__form label span,
 .daily-report-page__filters label span {
   color: var(--color-text-muted);
   font-size: 0.9rem;
@@ -779,12 +857,6 @@ await reloadAll()
   border-radius: 999px;
   background: #ff8b8b;
   flex-shrink: 0;
-}
-
-.daily-report-page__missing-more {
-  margin: 2px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.92rem;
 }
 
 .daily-report-page__missing-toggle {
@@ -835,90 +907,16 @@ await reloadAll()
   font: inherit;
 }
 
-.daily-report-page__textarea {
-  min-height: 120px;
-  padding: 14px 16px;
-  border-radius: var(--radius-small);
-  border: 1px solid rgba(143, 208, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--color-text);
-  resize: vertical;
-  font: inherit;
-}
-
-.daily-report-page__textarea:focus {
-  outline: 2px solid rgba(110, 193, 255, 0.22);
-  border-color: var(--color-primary);
-}
-
-.daily-report-page__form {
-  display: grid;
-  gap: 16px;
-}
-
 .daily-report-page__modal-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-  gap: 20px;
-  min-height: 0;
+  grid-template-columns: minmax(240px, 0.82fr) minmax(280px, 0.96fr) minmax(0, 1.52fr);
+  gap: 16px;
+  min-height: calc(100vh - 180px);
+  min-width: 0;
 }
 
-.daily-report-page__work-header,
-.daily-report-page__work-item-header,
-.daily-report-page__reference-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.daily-report-page__work-label {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.daily-report-page__work-description {
-  margin: 6px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.86rem;
-}
-
-.daily-report-page__work-list,
-.daily-report-page__reference-list {
-  display: grid;
-  gap: 12px;
-}
-
-.daily-report-page__work-item,
-.daily-report-page__reference-item {
-  display: grid;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
-  border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.daily-report-page__reference-panel {
-  display: grid;
-  align-content: start;
-  gap: 14px;
-  min-height: 0;
-}
-
-.daily-report-page__reference-work-list {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding-left: 18px;
-}
-
-.daily-report-page__reference-work-item,
-.daily-report-page__reference-empty {
-  margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.6;
+:deep(.base-modal) {
+  padding: 12px;
 }
 
 .daily-report-page__table {
@@ -938,16 +936,6 @@ await reloadAll()
   white-space: pre-wrap;
 }
 
-.daily-report-page__status-badge {
-  display: inline-flex;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(110, 193, 255, 0.12);
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
 .daily-report-page__empty {
   text-align: center;
   color: var(--color-text-muted);
@@ -964,19 +952,25 @@ await reloadAll()
   background: rgba(6, 14, 24, 0.44);
 }
 
-:deep(.base-modal__panel) {
-  width: min(100%, 720px);
-  max-width: min(100%, 720px) !important;
+:deep(.base-modal__panel.content-panel) {
+  width: 98vw !important;
+  max-width: 98vw !important;
+  min-width: 98vw !important;
   height: 100vh;
   max-height: 100vh;
   margin-left: auto;
   border-radius: 0;
   border-left: 1px solid rgba(147, 210, 255, 0.16);
   box-shadow: -24px 0 60px rgba(2, 8, 18, 0.34);
+  overflow: hidden;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 :deep(.base-modal__body) {
   min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 :deep(.base-modal__actions) {
@@ -986,9 +980,20 @@ await reloadAll()
   background: linear-gradient(180deg, rgba(6, 18, 34, 0), rgba(6, 18, 34, 0.96) 28%);
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1400px) {
+  .daily-report-page__modal-layout {
+    grid-template-columns: minmax(220px, 0.78fr) minmax(250px, 0.9fr) minmax(0, 1.2fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1100px) {
   .daily-report-page__filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .daily-report-page__modal-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1001,9 +1006,7 @@ await reloadAll()
     justify-items: stretch;
   }
 
-  .daily-report-page__filters,
-  .daily-report-page__form-row,
-  .daily-report-page__modal-layout {
+  .daily-report-page__filters {
     grid-template-columns: 1fr;
   }
 
@@ -1031,17 +1034,13 @@ await reloadAll()
     bottom: 12px;
   }
 
+  :deep(.base-modal) {
+    padding: 0;
+  }
+
   :deep(.base-modal__panel) {
     width: 100%;
     max-width: 100% !important;
-  }
-
-  .daily-report-page__filter-actions {
-    justify-content: stretch;
-  }
-
-  .daily-report-page__filter-actions :deep(.base-button) {
-    width: 100%;
   }
 }
 </style>

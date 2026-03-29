@@ -2,7 +2,6 @@ import type { PageResponse } from '~/types/api/common'
 
 export type WorkUnitStatus = 'IN_PROGRESS' | 'DONE' | 'ON_HOLD'
 export type WorkUnitSort = 'updated' | 'recent' | 'frequent'
-export type DailyReportStatus = 'PLANNED' | 'IN_PROGRESS' | 'DONE'
 export type WeeklyReportGenerationType = 'MANUAL' | 'OPENAI' | 'RULE_BASED'
 
 export interface WorkUnit {
@@ -44,31 +43,36 @@ export interface WorkUnitListParams {
 export interface DailyReport {
   uuid: string
   reportDate: string
-  content: string
-  status: DailyReportStatus
+  workUnits: DailyReportWorkUnit[]
+  content: string | null
   note: string | null
   createdAt: string
   updatedAt: string
 }
 
+export interface DailyReportWorkUnit {
+  workUnitUuid: string
+  title: string
+  category: string | null
+}
+
 export interface SaveDailyReportPayload {
   reportDate: string
-  content: string
-  status: DailyReportStatus
+  workUnitUuids: string[]
   note?: string
+  content?: string
 }
 
 export interface UpdateDailyReportPayload {
-  content: string
-  status: DailyReportStatus
+  workUnitUuids: string[]
   note?: string
+  content?: string
 }
 
 export interface DailyReportListParams {
   memberUuid?: string
   dateFrom?: string
   dateTo?: string
-  status?: DailyReportStatus | ''
   keyword?: string
   page?: number
   size?: number
@@ -118,8 +122,7 @@ export interface SaveWeeklyReportPayload {
 export interface WeeklyReportDailySource {
   uuid: string
   reportDate: string
-  status: DailyReportStatus
-  content: string
+  workUnits: DailyReportWorkUnit[]
   note: string | null
 }
 

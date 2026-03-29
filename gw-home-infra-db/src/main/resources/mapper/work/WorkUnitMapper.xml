@@ -75,6 +75,18 @@
             created_at DESC
     </select>
 
+    <select id="selectWorkUnitsByUuids" resultType="WorkUnitVo">
+        SELECT
+            <include refid="workUnitColumns" />
+        FROM tb_work_unit
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+          AND work_unit_uuid IN
+          <foreach collection="uuids" item="uuid" open="(" separator="," close=")">
+              CAST(#{uuid} AS UUID)
+          </foreach>
+    </select>
+
     <insert id="insertWorkUnit" parameterType="WorkUnitVo" useGeneratedKeys="true" keyProperty="idx">
         INSERT INTO tb_work_unit (
             mbr_acct_idx,

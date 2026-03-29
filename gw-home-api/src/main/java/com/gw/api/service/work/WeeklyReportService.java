@@ -1,6 +1,7 @@
 package com.gw.api.service.work;
 
 import com.gw.api.dto.work.CreateWeeklyReportRequest;
+import com.gw.api.dto.work.DailyReportWorkUnitResponse;
 import com.gw.api.dto.work.UpdateWeeklyReportRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
@@ -12,6 +13,7 @@ import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.work.DailyReportVo;
+import com.gw.share.vo.work.WorkUnitVo;
 import com.gw.share.vo.work.WeeklyReportVo;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -105,6 +107,7 @@ public class WeeklyReportService {
         validateWeekRange(normalizedWeekStartDate, normalizedWeekEndDate);
 
         return dailyReportMapper.selectWeeklySourceDailyReports(account.getIdx(), normalizedWeekStartDate, normalizedWeekEndDate).stream()
+                .map(this::enrichDailyReport)
                 .map(this::toDailySourceResponse)
                 .toList();
     }
@@ -115,7 +118,9 @@ public class WeeklyReportService {
         LocalDate weekStartDate = requireDate(request.weekStartDate(), "weekStartDate");
         LocalDate weekEndDate = requireDate(request.weekEndDate(), "weekEndDate");
         validateWeekRange(weekStartDate, weekEndDate);
-        List<DailyReportVo> sourceReports = dailyReportMapper.selectWeeklySourceDailyReports(account.getIdx(), weekStartDate, weekEndDate);
+        List<DailyReportVo> sourceReports = dailyReportMapper.selectWeeklySourceDailyReports(account.getIdx(), weekStartDate, weekEndDate).stream()
+                .map(this::enrichDailyReport)
+                .toList();
 
         return weeklyReportDraftService.generateDraft(
                 weekStartDate,
@@ -241,9 +246,27 @@ public class WeeklyReportService {
         return new WeeklyReportDailySourceResponse(
                 dailyReport.getUuid(),
                 dailyReport.getRptDt(),
-                dailyReport.getSts(),
-                dailyReport.getCntn(),
+                toWorkUnitResponses(dailyReport.getWorkUnits()),
                 dailyReport.getSpclNote()
         );
+    }
+
+    private DailyReportVo enrichDailyReport(DailyReportVo dailyReport) {
+        dailyReport.setWorkUnits(dailyReportMapper.selectDailyReportWorkUnits(dailyReport.getIdx()));
+        return dailyReport;
+    }
+
+    private List<DailyReportWorkUnitResponse> toWorkUnitResponses(List<WorkUnitVo> workUnits) {
+        if (workUnits == null || workUnits.isEmpty()) {
+            return List.of();
+        }
+
+        return workUnits.stream()
+                .map(workUnit -> new DailyReportWorkUnitResponse(
+                        workUnit.getUuid(),
+                        workUnit.getTtl(),
+                        workUnit.getCtgr()
+                ))
+                .toList();
     }
 }

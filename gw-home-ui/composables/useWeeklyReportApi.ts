@@ -56,8 +56,7 @@ export function useWeeklyReportApi() {
     return {
       uuid: source.uuid ?? '',
       reportDate: source.reportDate ?? '',
-      status: source.status === 'PLANNED' || source.status === 'DONE' ? source.status : 'IN_PROGRESS',
-      content: source.content ?? '',
+      workUnits: source.workUnits ?? [],
       note: source.note ?? null
     }
   }

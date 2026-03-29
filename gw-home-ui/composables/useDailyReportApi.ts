@@ -3,6 +3,7 @@ import type {
   AdminDailyReport,
   AdminDailyReportMissing,
   DailyReport,
+  DailyReportWorkUnit,
   DailyReportListParams,
   DailyReportMissing,
   SaveDailyReportPayload,
@@ -12,13 +13,27 @@ import type {
 export function useDailyReportApi() {
   const { authorizedFetch } = useAuth()
 
-  interface DailyReportApi extends Partial<DailyReport> {
+  interface DailyReportApi {
+    uuid?: string
+    reportDate?: string
+    content?: string | null
+    note?: string | null
+    createdAt?: string
+    updatedAt?: string
+    workUnits?: DailyReportWorkUnitApi[]
+    work_units?: DailyReportWorkUnitApi[]
     report_date?: string
+    cntn?: string | null
     created_at?: string
     updated_at?: string
   }
 
-  interface AdminDailyReportApi extends Partial<AdminDailyReport> {
+  interface AdminDailyReportApi extends DailyReportApi {
+    memberUuid?: string
+    loginId?: string
+    nickname?: string | null
+    workUnits?: DailyReportWorkUnitApi[]
+    work_units?: DailyReportWorkUnitApi[]
     member_uuid?: string
     login_id?: string
     report_date?: string
@@ -38,38 +53,41 @@ export function useDailyReportApi() {
     last_written_date?: string | null
   }
 
-  function toCreateBody(payload: SaveDailyReportPayload): Record<string, string> {
+  interface DailyReportWorkUnitApi extends Partial<DailyReportWorkUnit> {
+    work_unit_uuid?: string
+  }
+
+  function toCreateBody(payload: SaveDailyReportPayload): Record<string, string | string[]> {
     return {
-      reportDate: payload.reportDate,
-      rptDt: payload.reportDate,
-      content: payload.content,
-      status: payload.status,
-      note: payload.note ?? ''
+      report_date: payload.reportDate,
+      work_unit_uuids: payload.workUnitUuids,
+      note: payload.note ?? '',
+      content: payload.content ?? ''
     }
   }
 
-  function toUpdateBody(payload: UpdateDailyReportPayload): Record<string, string> {
+  function toUpdateBody(payload: UpdateDailyReportPayload): Record<string, string | string[]> {
     return {
-      content: payload.content,
-      status: payload.status,
-      note: payload.note ?? ''
+      work_unit_uuids: payload.workUnitUuids,
+      note: payload.note ?? '',
+      content: payload.content ?? ''
     }
   }
 
-  function normalizeStatus(status: string | undefined): DailyReport['status'] {
-    if (status === 'PLANNED' || status === 'DONE') {
-      return status
+  function toDailyReportWorkUnit(workUnit: DailyReportWorkUnitApi): DailyReportWorkUnit {
+    return {
+      workUnitUuid: workUnit.workUnitUuid ?? workUnit.work_unit_uuid ?? '',
+      title: workUnit.title ?? '',
+      category: workUnit.category ?? null
     }
-
-    return 'IN_PROGRESS'
   }
 
   function toDailyReport(report: DailyReportApi): DailyReport {
     return {
       uuid: report.uuid ?? '',
       reportDate: report.reportDate ?? report.report_date ?? '',
-      content: report.content ?? '',
-      status: normalizeStatus(report.status),
+      workUnits: (report.workUnits ?? report.work_units ?? []).map(toDailyReportWorkUnit),
+      content: report.content ?? report.cntn ?? null,
       note: report.note ?? null,
       createdAt: report.createdAt ?? report.created_at ?? '',
       updatedAt: report.updatedAt ?? report.updated_at ?? ''
@@ -91,7 +109,6 @@ export function useDailyReportApi() {
       query: {
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
-        status: params.status || undefined,
         keyword: params.keyword,
         page: params.page,
         size: params.size
@@ -151,7 +168,6 @@ export function useDailyReportApi() {
         memberUuid: params.memberUuid,
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
-        status: params.status || undefined,
         keyword: params.keyword,
         page: params.page,
         size: params.size

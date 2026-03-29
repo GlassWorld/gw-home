@@ -2,6 +2,7 @@ package com.gw.share.vo.work;
 
 import com.gw.share.vo.common.BaseVo;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,12 +22,15 @@ public class DailyReportVo extends BaseVo {
     // 보고 일자
     private LocalDate rptDt;
 
-    // 업무내용
+    // 본문 내용
     private String cntn;
 
-    // 진행상태
+    // 진행 상태
     private String sts;
 
     // 특이사항
     private String spclNote;
+
+    // 연결된 업무 목록
+    private List<WorkUnitVo> workUnits;
 }

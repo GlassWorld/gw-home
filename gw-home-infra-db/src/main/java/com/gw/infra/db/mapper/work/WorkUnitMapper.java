@@ -20,6 +20,11 @@ public interface WorkUnitMapper {
             @Param("includeInactive") boolean includeInactive
     );
 
+    List<WorkUnitVo> selectWorkUnitsByUuids(
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
+            @Param("uuids") List<String> uuids
+    );
+
     void insertWorkUnit(WorkUnitVo workUnit);
 
     int updateWorkUnit(WorkUnitVo workUnit);

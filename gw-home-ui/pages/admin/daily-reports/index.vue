@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { AdminDailyReport, AdminDailyReportMissing, DailyReportStatus } from '~/types/work'
-import SearchableSelect from '~/components/common/SearchableSelect.vue'
-import { applySelectableValueFromOptions } from '~/utils/selectable'
+import type { AdminDailyReport, AdminDailyReportMissing } from '~/types/work'
 
 definePageMeta({
   middleware: 'admin'
@@ -34,23 +32,9 @@ function formatDate(value: string | null): string {
   }).format(new Date(value))
 }
 
-const statusOptions: Array<{ value: DailyReportStatus | ''; label: string }> = [
-  { value: '', label: '전체' },
-  { value: 'PLANNED', label: '예정' },
-  { value: 'IN_PROGRESS', label: '진행중' },
-  { value: 'DONE', label: '완료' }
-]
-
-const statusLabelMap: Record<DailyReportStatus, string> = {
-  PLANNED: '예정',
-  IN_PROGRESS: '진행중',
-  DONE: '완료'
-}
-
 const filters = reactive({
   dateFrom: getMonthStartInput(),
   dateTo: formatDateInput(new Date()),
-  status: '' as DailyReportStatus | '',
   keyword: '',
   page: 1,
   size: 20
@@ -66,12 +50,6 @@ const dailyReportPage = ref({
 const missingMembers = ref<AdminDailyReportMissing[]>([])
 const isLoading = ref(false)
 
-function updateFilterStatus(status: string) {
-  applySelectableValueFromOptions(status, statusOptions, (validStatus) => {
-    filters.status = validStatus as DailyReportStatus | ''
-  })
-}
-
 async function loadDailyReports() {
   isLoading.value = true
 
@@ -79,7 +57,6 @@ async function loadDailyReports() {
     dailyReportPage.value = await fetchAdminDailyReports({
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
-      status: filters.status,
       keyword: filters.keyword.trim() || undefined,
       page: filters.page,
       size: filters.size
@@ -147,21 +124,11 @@ await reloadAll()
           <input v-model="filters.dateTo" class="input-field" type="date">
         </label>
         <label>
-          <span>상태</span>
-          <SearchableSelect
-            :options="statusOptions"
-            :model-value="filters.status"
-            placeholder="상태"
-            input-class="input-field"
-            @update:modelValue="updateFilterStatus"
-          />
-        </label>
-        <label>
           <span>검색</span>
-          <input v-model="filters.keyword" class="input-field" type="search" placeholder="내용, 로그인 ID, 닉네임">
+          <input v-model="filters.keyword" class="input-field" type="search" placeholder="업무명, 로그인 ID, 닉네임">
         </label>
         <div class="admin-daily-report-page__filter-actions">
-          <CommonBaseButton variant="secondary" type="button" @click="filters.dateFrom = getMonthStartInput(); filters.dateTo = formatDateInput(new Date()); filters.status = ''; filters.keyword = ''; void handleSearch()">
+          <CommonBaseButton variant="secondary" type="button" @click="filters.dateFrom = getMonthStartInput(); filters.dateTo = formatDateInput(new Date()); filters.keyword = ''; void handleSearch()">
             초기화
           </CommonBaseButton>
           <CommonBaseButton type="submit">
@@ -206,8 +173,7 @@ await reloadAll()
             <tr>
               <th>작성자</th>
               <th>작성일자</th>
-              <th>상태</th>
-              <th>업무내용</th>
+              <th>선택 업무</th>
               <th>특이사항</th>
             </tr>
           </thead>
@@ -218,12 +184,11 @@ await reloadAll()
                 <p>{{ dailyReport.loginId }}</p>
               </td>
               <td>{{ formatDate(dailyReport.reportDate) }}</td>
-              <td>{{ statusLabelMap[dailyReport.status] }}</td>
-              <td>{{ dailyReport.content }}</td>
+              <td>{{ dailyReport.workUnits.length ? dailyReport.workUnits.map((workUnit) => workUnit.title).join(', ') : '-' }}</td>
               <td>{{ dailyReport.note || '-' }}</td>
             </tr>
             <tr v-if="!isLoading && dailyReportPage.content.length === 0">
-              <td colspan="5" class="admin-daily-report-page__empty">
+              <td colspan="4" class="admin-daily-report-page__empty">
                 조회된 보고가 없습니다.
               </td>
             </tr>
@@ -271,7 +236,7 @@ await reloadAll()
 
 .admin-daily-report-page__filters {
   display: grid;
-  grid-template-columns: minmax(160px, 0.9fr) minmax(160px, 0.9fr) minmax(140px, 0.8fr) minmax(220px, 1.4fr) auto;
+  grid-template-columns: minmax(160px, 0.9fr) minmax(160px, 0.9fr) minmax(260px, 1.4fr) auto;
   align-items: end;
   gap: 16px;
 }

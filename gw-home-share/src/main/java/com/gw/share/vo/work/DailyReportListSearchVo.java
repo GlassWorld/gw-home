@@ -22,8 +22,6 @@ public class DailyReportListSearchVo {
 
     private LocalDate dateTo;
 
-    private String sts;
-
     private String kwd;
 
     private Integer page;

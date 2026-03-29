@@ -19,6 +19,24 @@
         del_at AS delAt
     </sql>
 
+    <sql id="workUnitColumns">
+        wu.work_unit_idx AS idx,
+        wu.work_unit_uuid AS uuid,
+        wu.mbr_acct_idx AS mbrAcctIdx,
+        wu.ttl,
+        wu.dscr,
+        wu.ctgr,
+        wu.sts,
+        wu.use_yn AS useYn,
+        wu.use_cnt AS useCnt,
+        wu.last_used_at AS lastUsedAt,
+        wu.created_by AS createdBy,
+        wu.updated_by AS updatedBy,
+        wu.created_at AS createdAt,
+        wu.updated_at AS updatedAt,
+        wu.del_at AS delAt
+    </sql>
+
     <sql id="weeklyReportColumns">
         wrk_wkl_rpt_idx AS idx,
         wrk_wkl_rpt_uuid AS uuid,
@@ -49,13 +67,16 @@
         <if test="req.dateTo != null">
             AND rpt_dt <![CDATA[<=]]> #{req.dateTo}
         </if>
-        <if test="req.sts != null and req.sts != ''">
-            AND sts = #{req.sts}
-        </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                cntn ILIKE CONCAT('%', #{req.kwd}, '%')
-                OR spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR EXISTS (
+                    SELECT 1
+                    FROM tb_wrk_dly_rpt_wrk_unit drwu
+                    INNER JOIN tb_work_unit wu ON wu.work_unit_idx = drwu.work_unit_idx
+                    WHERE drwu.wrk_dly_rpt_idx = tb_wrk_dly_rpt.wrk_dly_rpt_idx
+                      AND wu.ttl ILIKE CONCAT('%', #{req.kwd}, '%')
+                )
             )
         </if>
         ORDER BY rpt_dt DESC, updated_at DESC
@@ -73,13 +94,16 @@
         <if test="req.dateTo != null">
             AND rpt_dt <![CDATA[<=]]> #{req.dateTo}
         </if>
-        <if test="req.sts != null and req.sts != ''">
-            AND sts = #{req.sts}
-        </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                cntn ILIKE CONCAT('%', #{req.kwd}, '%')
-                OR spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR EXISTS (
+                    SELECT 1
+                    FROM tb_wrk_dly_rpt_wrk_unit drwu
+                    INNER JOIN tb_work_unit wu ON wu.work_unit_idx = drwu.work_unit_idx
+                    WHERE drwu.wrk_dly_rpt_idx = tb_wrk_dly_rpt.wrk_dly_rpt_idx
+                      AND wu.ttl ILIKE CONCAT('%', #{req.kwd}, '%')
+                )
             )
         </if>
     </select>
@@ -132,6 +156,40 @@
           AND del_at IS NULL
     </update>
 
+    <select id="selectDailyReportWorkUnits" resultType="WorkUnitVo">
+        SELECT
+            <include refid="workUnitColumns" />
+        FROM tb_wrk_dly_rpt_wrk_unit drwu
+        INNER JOIN tb_work_unit wu ON wu.work_unit_idx = drwu.work_unit_idx
+        WHERE drwu.wrk_dly_rpt_idx = #{dailyReportIdx}
+        ORDER BY wu.ttl ASC
+    </select>
+
+    <insert id="insertDailyReportWorkUnit">
+        INSERT INTO tb_wrk_dly_rpt_wrk_unit (
+            wrk_dly_rpt_idx,
+            mbr_acct_idx,
+            work_unit_idx,
+            created_by
+        ) VALUES (
+            #{dailyReportIdx},
+            #{mbrAcctIdx},
+            #{workUnitIdx},
+            #{createdBy}
+        )
+    </insert>
+
+    <delete id="deleteDailyReportWorkUnits">
+        DELETE FROM tb_wrk_dly_rpt_wrk_unit
+        WHERE wrk_dly_rpt_idx = #{dailyReportIdx}
+    </delete>
+
+    <select id="countDailyReportWorkUnits" resultType="int">
+        SELECT COUNT(*)
+        FROM tb_wrk_dly_rpt_wrk_unit
+        WHERE wrk_dly_rpt_idx = #{dailyReportIdx}
+    </select>
+
     <select id="existsDailyReportByDate" resultType="boolean">
         SELECT EXISTS (
             SELECT 1
@@ -164,8 +222,6 @@
             ma.lgn_id,
             mp.nick_nm,
             dr.rpt_dt AS rptDt,
-            dr.cntn,
-            dr.sts,
             dr.spcl_note AS spclNote,
             dr.created_by AS createdBy,
             dr.updated_by AS updatedBy,
@@ -186,15 +242,18 @@
         <if test="req.dateTo != null">
             AND dr.rpt_dt <![CDATA[<=]]> #{req.dateTo}
         </if>
-        <if test="req.sts != null and req.sts != ''">
-            AND dr.sts = #{req.sts}
-        </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                dr.cntn ILIKE CONCAT('%', #{req.kwd}, '%')
-                OR dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR ma.lgn_id ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR mp.nick_nm ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR EXISTS (
+                    SELECT 1
+                    FROM tb_wrk_dly_rpt_wrk_unit drwu
+                    INNER JOIN tb_work_unit wu ON wu.work_unit_idx = drwu.work_unit_idx
+                    WHERE drwu.wrk_dly_rpt_idx = dr.wrk_dly_rpt_idx
+                      AND wu.ttl ILIKE CONCAT('%', #{req.kwd}, '%')
+                )
             )
         </if>
         ORDER BY dr.rpt_dt DESC, dr.updated_at DESC
@@ -217,15 +276,18 @@
         <if test="req.dateTo != null">
             AND dr.rpt_dt <![CDATA[<=]]> #{req.dateTo}
         </if>
-        <if test="req.sts != null and req.sts != ''">
-            AND dr.sts = #{req.sts}
-        </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                dr.cntn ILIKE CONCAT('%', #{req.kwd}, '%')
-                OR dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR ma.lgn_id ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR mp.nick_nm ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR EXISTS (
+                    SELECT 1
+                    FROM tb_wrk_dly_rpt_wrk_unit drwu
+                    INNER JOIN tb_work_unit wu ON wu.work_unit_idx = drwu.work_unit_idx
+                    WHERE drwu.wrk_dly_rpt_idx = dr.wrk_dly_rpt_idx
+                      AND wu.ttl ILIKE CONCAT('%', #{req.kwd}, '%')
+                )
             )
         </if>
     </select>
