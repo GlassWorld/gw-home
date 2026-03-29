@@ -76,5 +76,6 @@ CREATE INDEX idx_brd_pst_uuid ON tb_brd_pst (brd_pst_uuid);
 {project}-infra-db/src/main/resources/sql/ddl/{domain}/{table}.sql
 ```
 
-전체 스키마 재생성: `sql/ddl/all-ddl.sql`
-(`DROP TABLE IF EXISTS ... CASCADE` + `CREATE TABLE` + `COMMENT ON COLUMN` 포함, 재실행 가능)
+- 도메인별 개별 DDL 파일이 우선 기준이다.
+- 문서용 집계 스크립트는 [docs/all-ddl.sql](../all-ddl.sql) 이다.
+- 집계 스크립트는 로컬 초기화/참고용으로 유지하되, 개별 DDL 변경 시 함께 최신화한다.

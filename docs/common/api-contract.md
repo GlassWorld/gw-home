@@ -23,7 +23,7 @@ record ApiResponse<T>(
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `success` | `boolean` | 성공 여부 |
-| `data` | `T \| null` | 실제 데이터 (실패 시 `null`) |
+| `data` | `T \| null` | 실제 데이터 (`ApiResponse.ok()` 또는 실패 응답에서는 `null` 가능) |
 | `message` | `string \| null` | 에러 메시지 (성공 시 `null`) |
 
 #### 성공 응답 예시
@@ -64,7 +64,7 @@ record PageResponse<T>(
   "success": true,
   "data": {
     "content": [ { "uuid": "...", "title": "..." }, ... ],
-    "page": 0,
+    "page": 1,
     "size": 20,
     "totalCount": 150,
     "totalPages": 8
@@ -97,7 +97,7 @@ record PageResponse<T>(
 
 export interface ApiResponse<T> {
   success: boolean
-  data: T | null
+  data: T
   message: string | null
 }
 
@@ -120,7 +120,8 @@ export type PageApiResponse<T> = ApiResponse<PageResponse<T>>
 ### 기본 패턴 — `$fetch` 사용
 
 `$fetch`는 4xx/5xx 상태에서 자동으로 throw 한다.
-성공 응답에서는 `data` 필드를 직접 꺼내 반환한다.
+현재 프론트 공통 타입은 성공 경로 기준으로 `data: T`를 사용한다.
+실패 응답의 `data: null`은 `FetchError.data`에서 별도로 처리한다.
 
 ```typescript
 // composables/use-board.ts
@@ -134,7 +135,7 @@ export function useBoard() {
     const response = await $fetch<ApiResponse<BoardResponse>>(
       `/api/v1/boards/${boardUuid}`
     )
-    if (!response.success || response.data === null) {
+    if (!response.success) {
       throw new Error(response.message ?? '조회 실패')
     }
     return response.data
@@ -148,7 +149,7 @@ export function useBoard() {
       '/api/v1/boards',
       { query: params }
     )
-    if (!response.success || response.data === null) {
+    if (!response.success) {
       throw new Error(response.message ?? '목록 조회 실패')
     }
     return response.data
@@ -186,12 +187,10 @@ export function useAuth() {
         '/api/v1/auth/login',
         { method: 'POST', body: { loginId, password } }
       )
-      if (!response.success || response.data === null) {
+      if (!response.success) {
         throw new Error(response.message ?? '로그인 실패')
       }
-      const authStore = useAuthStore()
-      authStore.setToken(response.data.accessToken)
-      authStore.setUser(response.data.user)
+      // 성공 응답의 실제 데이터 구조는 도메인별 DTO를 따른다.
     } catch (error) {
       const fetchError = error as FetchError<ApiResponse<null>>
       throw new Error(fetchError.data?.message ?? '로그인 실패')
