@@ -36,6 +36,11 @@ public interface WorkUnitMapper {
             @Param("updatedBy") String updatedBy
     );
 
+    int refreshWorkUnitUsageStats(
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
+            @Param("workUnitIdxs") List<Long> workUnitIdxs
+    );
+
     boolean existsTitle(
             @Param("mbrAcctIdx") Long mbrAcctIdx,
             @Param("ttl") String ttl,

@@ -132,6 +132,33 @@
           AND del_at IS NULL
     </update>
 
+    <update id="refreshWorkUnitUsageStats">
+        UPDATE tb_work_unit wu
+        SET
+            use_cnt = (
+                SELECT COUNT(*)::INTEGER
+                FROM tb_wrk_dly_rpt_wrk_unit drwu
+                INNER JOIN tb_wrk_dly_rpt dr ON dr.wrk_dly_rpt_idx = drwu.wrk_dly_rpt_idx
+                WHERE drwu.work_unit_idx = wu.work_unit_idx
+                  AND drwu.mbr_acct_idx = #{mbrAcctIdx}
+                  AND dr.del_at IS NULL
+            ),
+            last_used_at = (
+                SELECT MAX(dr.updated_at)
+                FROM tb_wrk_dly_rpt_wrk_unit drwu
+                INNER JOIN tb_wrk_dly_rpt dr ON dr.wrk_dly_rpt_idx = drwu.wrk_dly_rpt_idx
+                WHERE drwu.work_unit_idx = wu.work_unit_idx
+                  AND drwu.mbr_acct_idx = #{mbrAcctIdx}
+                  AND dr.del_at IS NULL
+            )
+        WHERE wu.mbr_acct_idx = #{mbrAcctIdx}
+          AND wu.del_at IS NULL
+          AND wu.work_unit_idx IN
+          <foreach collection="workUnitIdxs" item="workUnitIdx" open="(" separator="," close=")">
+              #{workUnitIdx}
+          </foreach>
+    </update>
+
     <select id="existsTitle" resultType="boolean">
         SELECT EXISTS (
             SELECT 1

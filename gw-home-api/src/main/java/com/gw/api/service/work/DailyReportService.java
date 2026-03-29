@@ -436,11 +436,21 @@ public class DailyReportService {
 
     // 일일보고와 선택 업무 연결 정보를 동기화한다.
     private void syncDailyReportWorkUnits(Long dailyReportIdx, Long mbrAcctIdx, List<WorkUnitVo> workUnits, String loginId) {
+        List<Long> previousWorkUnitIdxs = dailyReportMapper.selectDailyReportWorkUnits(dailyReportIdx).stream()
+                .map(WorkUnitVo::getIdx)
+                .toList();
+        List<Long> requestedWorkUnitIdxs = workUnits.stream()
+                .map(WorkUnitVo::getIdx)
+                .toList();
+        List<Long> affectedWorkUnitIdxs = new ArrayList<>(new LinkedHashSet<>());
+        affectedWorkUnitIdxs.addAll(previousWorkUnitIdxs);
+        affectedWorkUnitIdxs.addAll(requestedWorkUnitIdxs);
         log.info(
-                "syncDailyReportWorkUnits start: dailyReportIdx={}, memberAccountIdx={}, workUnitIdxs={}",
+                "syncDailyReportWorkUnits start: dailyReportIdx={}, memberAccountIdx={}, previousWorkUnitIdxs={}, requestedWorkUnitIdxs={}",
                 dailyReportIdx,
                 mbrAcctIdx,
-                workUnits.stream().map(WorkUnitVo::getIdx).toList()
+                previousWorkUnitIdxs,
+                requestedWorkUnitIdxs
         );
         dailyReportMapper.deleteDailyReportWorkUnits(dailyReportIdx);
 
@@ -465,6 +475,17 @@ public class DailyReportService {
                     savedCount
             );
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "선택한 업무 연결 저장에 실패했습니다.");
+        }
+
+        if (!affectedWorkUnitIdxs.isEmpty()) {
+            int refreshedCount = workUnitMapper.refreshWorkUnitUsageStats(mbrAcctIdx, affectedWorkUnitIdxs);
+            log.info(
+                    "syncDailyReportWorkUnits usage stats refreshed: dailyReportIdx={}, memberAccountIdx={}, affectedWorkUnitIdxs={}, refreshedCount={}",
+                    dailyReportIdx,
+                    mbrAcctIdx,
+                    affectedWorkUnitIdxs,
+                    refreshedCount
+            );
         }
     }
 
