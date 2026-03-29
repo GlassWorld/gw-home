@@ -164,75 +164,95 @@
 
 ### 1. 예외 공통화 기준 확정
 
-- [ ] `ErrorCode` 공통 메시지를 API 응답 기준 메시지로 확정
-- [ ] `BusinessException` 생성자 정책 확정
-- [ ] 상세 메시지 유지 방식 결정
-- [ ] `GlobalExceptionHandler` 응답/로그 정책 정리
+- [x] `ErrorCode` 공통 메시지를 API 응답 기준 메시지로 확정
+- [x] `BusinessException` 생성자 정책 확정
+- [x] 상세 메시지 유지 방식 결정
+- [x] `GlobalExceptionHandler` 응답/로그 정책 정리
 
 ### 2. 공통 검증 함수 후보 정리
 
-- [ ] `work` 서비스 내부의 `normalizeText`, `require*`, `validate*` 메서드 목록 정리
-- [ ] 도메인 중립 함수와 도메인 종속 함수를 분리
-- [ ] `share`로 올릴 공통 검증/support 클래스 위치 확정
-- [ ] 함수명/예외 처리 방식 통일
-- [ ] 공통화 후 서비스 가독성 개선 기준 확인
+- [x] `work` 서비스 내부의 `normalizeText`, `require*`, `validate*` 메서드 목록 정리
+- [x] 도메인 중립 함수와 도메인 종속 함수를 분리
+- [x] `share`로 올릴 공통 검증/support 클래스 위치 확정
+- [x] 함수명/예외 처리 방식 통일
+- [x] 공통화 후 서비스 가독성 개선 기준 확인
 
 ### 3. `share.util` 공통 유틸 후보 정리
 
-- [ ] 날짜 처리 유틸 후보 목록 정리
-- [ ] 기본 형변환 유틸 후보 목록 정리
-- [ ] null 체크 유틸 후보 목록 정리
-- [ ] `share.util` 패키지 구조 확정
-- [ ] 도메인 정책이 섞이지 않도록 경계 기준 정리
+- [x] 날짜 처리 유틸 후보 목록 정리
+- [x] 기본 형변환 유틸 후보 목록 정리
+- [x] null 체크 유틸 후보 목록 정리
+- [x] `share.util` 패키지 구조 확정
+- [x] 도메인 정책이 섞이지 않도록 경계 기준 정리
 
 ### 4. work 도메인 변환기 분리
 
-- [ ] `DailyReportService`의 `toResponse`, `toAdminResponse`, `toWorkUnitResponses` 분리
-- [ ] `WeeklyReportService`의 `toWeeklyResponse`, `toDailySourceResponse`, `toWorkUnitResponses` 분리
-- [ ] `WorkUnitService`의 `toResponse`, `toOptionResponse` 분리
-- [ ] 서비스는 convert 호출만 하도록 정리
+- [x] `DailyReportService`의 `toResponse`, `toAdminResponse`, `toWorkUnitResponses` 분리
+- [x] `WeeklyReportService`의 `toWeeklyResponse`, `toDailySourceResponse`, `toWorkUnitResponses` 분리
+- [x] `WorkUnitService`의 `toResponse`, `toOptionResponse` 분리
+- [x] 서비스는 convert 호출만 하도록 정리
 
 ### 5. 서비스 주석 및 로그 정리
 
-- [ ] `work` 도메인 서비스 메서드 상단 한글 주석 정리
-- [ ] 진입 로그 형식 통일
-- [ ] 정상 완료 로그 형식 통일
-- [ ] 예외 실패 로그 형식 통일
-- [ ] 공통화된 검증/변환 흐름이 로그에서 드러나도록 정리
+- [x] `work` 도메인 서비스 메서드 상단 한글 주석 정리
+- [x] 진입 로그 형식 통일
+- [x] 정상 완료 로그 형식 통일
+- [x] 예외 실패 로그 형식 통일
+- [x] 공통화된 검증/변환 흐름이 로그에서 드러나도록 정리
 
 ### 6. Mapper alias 정리
 
-- [ ] `work` 도메인 mapper XML에서 자동 매핑 가능한 alias 목록 정리
-- [ ] `idx`, `uuid`처럼 유지해야 하는 alias 기준 확정
-- [ ] 불필요한 alias 제거 후 가독성 확인
-- [ ] mapper 규칙을 문서화할지 검토
+- [x] `work` 도메인 mapper XML에서 자동 매핑 가능한 alias 목록 정리
+- [x] `idx`, `uuid`처럼 유지해야 하는 alias 기준 확정
+- [x] 불필요한 alias 제거 후 가독성 확인
+- [x] mapper 규칙을 문서화할지 검토
 
 ### 7. 패키지 구조 정리
 
-- [ ] `com.gw.api.convert.work` 패키지 추가 여부 확정
-- [ ] 공통 검증 클래스의 `share` 패키지 위치 확정
-- [ ] 공통 유틸 클래스의 `share.util` 패키지 위치 확정
-- [ ] 파일명/클래스명 규칙 통일
-- [ ] 주입 방식(`static util` vs `@Component`) 결정
+- [x] `com.gw.api.convert.work` 패키지 추가 여부 확정
+- [x] 공통 검증 클래스의 `share` 패키지 위치 확정
+- [x] 공통 유틸 클래스의 `share.util` 패키지 위치 확정
+- [x] 파일명/클래스명 규칙 통일
+- [x] 주입 방식(`static util` vs `@Component`) 결정
 
 ### 8. 테스트 정리
 
-- [ ] 예외 메시지 공통화에 맞춰 테스트 기대값 수정
-- [ ] 공통 검증 함수 적용 후 테스트 기대값 영향 확인
-- [ ] `share.util` 공통 유틸 적용 후 테스트 영향 확인
-- [ ] mapper alias 정리 후 조회 결과 회귀 확인
-- [ ] 변환기 분리 후 서비스 테스트 회귀 확인
-- [ ] 가능하면 share/api 테스트 우선 수행
+- [x] 예외 메시지 공통화에 맞춰 테스트 기대값 수정
+- [x] 공통 검증 함수 적용 후 테스트 기대값 영향 확인
+- [x] `share.util` 공통 유틸 적용 후 테스트 영향 확인
+- [x] mapper alias 정리 후 조회 결과 회귀 확인
+- [x] 변환기 분리 후 서비스 테스트 회귀 확인
+- [x] 가능하면 share/api 테스트 우선 수행
 
 ### 9. 후속 확장 메모
 
-- [ ] 다른 도메인 확장 대상 목록 정리
-- [ ] `toResponse` 잔존 서비스 목록 정리
-- [ ] `validate`/`normalize` 잔존 서비스 목록 정리
-- [ ] `share.util`로 올릴 유틸 잔존 목록 정리
-- [ ] 주석/로그 정비가 필요한 서비스 목록 정리
-- [ ] alias 정리가 필요한 mapper 목록 정리
-- [ ] 공통 리팩토링 패턴 문서화 여부 검토
+- [x] 다른 도메인 확장 대상 목록 정리
+- [x] `toResponse` 잔존 서비스 목록 정리
+- [x] `validate`/`normalize` 잔존 서비스 목록 정리
+- [x] `share.util`로 올릴 유틸 잔존 목록 정리
+- [x] 주석/로그 정비가 필요한 서비스 목록 정리
+- [x] alias 정리가 필요한 mapper 목록 정리
+- [x] 공통 리팩토링 패턴 문서화 여부 검토
+
+---
+
+## 진행 결과
+
+- `work` 도메인 서비스의 응답 변환 책임을 `com.gw.api.convert.work` 패키지로 분리했다.
+- `BusinessException`은 외부 응답 메시지를 `ErrorCode` 기준으로 통일하고, 상세 문구는 로그용으로 분리했다.
+- `share.util`에 문자열 정리, 기본 검증, 날짜 검증, 형변환 유틸을 추가했다.
+- `DailyReportService`, `WeeklyReportService`, `WorkUnitService`의 한글 주석과 진입/완료/실패 로그를 정리했다.
+- `work` mapper XML에서 snake_case -> camelCase 자동 매핑 가능한 alias를 제거하고 `idx`, `uuid` alias만 유지했다.
+- 관련 테스트 기대값을 현재 정책에 맞게 정리했다.
+- Mapper alias 기준과 `convert`/`share.util` 리팩토링 패턴을 공통 문서에 반영했다.
+
+## 검증 결과
+
+- [x] `:gw-home-api:compileJava`
+- [x] `:gw-home-infra-db:compileJava`
+- [x] `:gw-home-share:compileJava`
+- [x] `:gw-home-share:test --tests com.gw.share.common.handler.GlobalExceptionHandlerTest`
+- [x] `:gw-home-api:test --tests com.gw.api.auth.AuthServiceTest --tests com.gw.api.vault.VaultServiceTest`
 
 ---
 

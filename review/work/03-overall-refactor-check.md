@@ -172,6 +172,13 @@
 - `work` 도메인 DDL이 개별 파일에는 존재하지만 집계 DDL에는 누락되어 있다.
 - 운영/로컬 초기화 기준으로 `all-ddl.sql`을 계속 쓸 계획이라면 반드시 최신 상태로 맞춰야 한다.
 
+## 후속 처리 메모
+
+- `todo/work/03-overall-refactor-batch.md` 작업은 완료되었고, mapper alias 기준 및 `convert`/`share.util` 패턴은 공통 문서에 반영했다.
+- 문서/DDL 정합성은 `todo/work/04-docs-ddl-alignment.md` 기준으로 반영했다.
+- 인증 계약과 관리자 일일보고 정합성은 `todo/work/05-auth-admin-alignment.md` 기준으로 반영했다.
+- 업무 사용 이력 정렬 기준은 `todo/work/06-work-usage-sort.md` 기준으로 반영했다.
+
 ---
 
 ## 우선순위 제안
@@ -204,7 +211,9 @@
 ## 검증 메모
 
 - 프론트 `gw-home-ui` 기준 `npm run typecheck` 통과
-- 전체 Gradle 테스트는 현재 환경에서 `Could not determine a usable wildcard IP for this machine.` 오류로 완료하지 못함
+- 초기에는 sandbox 환경 제약으로 `Could not determine a usable wildcard IP for this machine.` 오류가 발생했음
+- 권한 상승 후 `:gw-home-api:test --tests com.gw.api.auth.AuthServiceTest --tests com.gw.api.vault.VaultServiceTest` 재실행 통과
+- `:gw-home-share:test --tests com.gw.share.common.handler.GlobalExceptionHandlerTest` 통과
 
 ---
 
