@@ -1,31 +1,46 @@
 import type { UserProfile } from '~/types/api/user'
 
-export const useAuthStore = defineStore('auth', () => {
-  const currentUser = ref<UserProfile | null>(null)
-  const accessToken = ref<string | null>(null)
-  const isAuthenticated = computed(() => {
-    return currentUser.value !== null && accessToken.value !== null
-  })
+interface AuthState {
+  currentUser: UserProfile | null
+  accessToken: string | null
+}
 
-  function setUser(user: UserProfile | null) {
-    currentUser.value = user ? { ...user } : null
-  }
-
-  function setToken(token: string | null) {
-    accessToken.value = token
-  }
-
-  function clearAuth() {
-    currentUser.value = null
-    accessToken.value = null
-  }
-
+function toPlainUserProfile(user: UserProfile): UserProfile {
   return {
-    currentUser,
-    accessToken,
-    isAuthenticated,
-    setUser,
-    setToken,
-    clearAuth
+    memberAccountUuid: user.memberAccountUuid,
+    memberProfileUuid: user.memberProfileUuid,
+    loginId: user.loginId,
+    email: user.email,
+    role: user.role,
+    nickname: user.nickname,
+    introduction: user.introduction,
+    profileImageUrl: user.profileImageUrl,
+    createdAt: user.createdAt
+  }
+}
+
+export const useAuthStore = defineStore('auth', {
+  state: (): AuthState => ({
+    currentUser: null,
+    accessToken: null
+  }),
+
+  getters: {
+    isAuthenticated: (state) => state.currentUser !== null && state.accessToken !== null
+  },
+
+  actions: {
+    setUser(user: UserProfile | null) {
+      this.currentUser = user ? toPlainUserProfile(user) : null
+    },
+
+    setToken(token: string | null) {
+      this.accessToken = token
+    },
+
+    clearAuth() {
+      this.currentUser = null
+      this.accessToken = null
+    }
   }
 })

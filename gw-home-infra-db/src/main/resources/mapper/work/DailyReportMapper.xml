@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.work.DailyReportMapper">
+
+    <sql id="dailyReportColumns">
+        wrk_dly_rpt_idx AS idx,
+        wrk_dly_rpt_uuid AS uuid,
+        mbr_acct_idx AS mbrAcctIdx,
+        rpt_dt AS rptDt,
+        cntn,
+        sts,
+        spcl_note AS spclNote,
+        created_by AS createdBy,
+        updated_by AS updatedBy,
+        created_at AS createdAt,
+        updated_at AS updatedAt,
+        del_at AS delAt
+    </sql>
+
+    <sql id="weeklyReportColumns">
+        wrk_wkl_rpt_idx AS idx,
+        wrk_wkl_rpt_uuid AS uuid,
+        mbr_acct_idx AS mbrAcctIdx,
+        wk_strt_dt AS wkStrtDt,
+        wk_end_dt AS wkEndDt,
+        ttl,
+        cntn,
+        opn_yn AS opnYn,
+        pbls_at AS pblsAt,
+        gen_type AS genType,
+        created_by AS createdBy,
+        updated_by AS updatedBy,
+        created_at AS createdAt,
+        updated_at AS updatedAt,
+        del_at AS delAt
+    </sql>
+
+    <select id="selectDailyReportList" resultType="DailyReportVo">
+        SELECT
+            <include refid="dailyReportColumns" />
+        FROM tb_wrk_dly_rpt
+        WHERE mbr_acct_idx = #{req.mbrAcctIdx}
+          AND del_at IS NULL
+        <if test="req.dateFrom != null">
+            AND rpt_dt <![CDATA[>=]]> #{req.dateFrom}
+        </if>
+        <if test="req.dateTo != null">
+            AND rpt_dt <![CDATA[<=]]> #{req.dateTo}
+        </if>
+        <if test="req.sts != null and req.sts != ''">
+            AND sts = #{req.sts}
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+        ORDER BY rpt_dt DESC, updated_at DESC
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <select id="countDailyReportList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_wrk_dly_rpt
+        WHERE mbr_acct_idx = #{req.mbrAcctIdx}
+          AND del_at IS NULL
+        <if test="req.dateFrom != null">
+            AND rpt_dt <![CDATA[>=]]> #{req.dateFrom}
+        </if>
+        <if test="req.dateTo != null">
+            AND rpt_dt <![CDATA[<=]]> #{req.dateTo}
+        </if>
+        <if test="req.sts != null and req.sts != ''">
+            AND sts = #{req.sts}
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+    </select>
+
+    <select id="selectDailyReport" resultType="DailyReportVo">
+        SELECT
+            <include refid="dailyReportColumns" />
+        FROM tb_wrk_dly_rpt
+        WHERE wrk_dly_rpt_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectDailyReportByIdx" resultType="DailyReportVo">
+        SELECT
+            <include refid="dailyReportColumns" />
+        FROM tb_wrk_dly_rpt
+        WHERE wrk_dly_rpt_idx = #{idx}
+          AND del_at IS NULL
+    </select>
+
+    <insert id="insertDailyReport" parameterType="DailyReportVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_wrk_dly_rpt (
+            mbr_acct_idx,
+            rpt_dt,
+            cntn,
+            sts,
+            spcl_note,
+            created_by
+        ) VALUES (
+            #{mbrAcctIdx},
+            #{rptDt},
+            #{cntn},
+            #{sts},
+            #{spclNote},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateDailyReport" parameterType="DailyReportVo">
+        UPDATE tb_wrk_dly_rpt
+        SET
+            cntn = #{cntn},
+            sts = #{sts},
+            spcl_note = #{spclNote},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_dly_rpt_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <select id="existsDailyReportByDate" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM tb_wrk_dly_rpt
+            WHERE mbr_acct_idx = #{mbrAcctIdx}
+              AND rpt_dt = #{rptDt}
+              AND del_at IS NULL
+            <if test="excludeUuid != null and excludeUuid != ''">
+                AND wrk_dly_rpt_uuid != CAST(#{excludeUuid} AS UUID)
+            </if>
+        )
+    </select>
+
+    <select id="selectWrittenDates" resultType="java.time.LocalDate">
+        SELECT rpt_dt
+        FROM tb_wrk_dly_rpt
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+          AND rpt_dt <![CDATA[>=]]> #{dateFrom}
+          AND rpt_dt <![CDATA[<=]]> #{dateTo}
+        ORDER BY rpt_dt ASC
+    </select>
+
+    <select id="selectAdminDailyReportList" resultType="DailyReportAdmJvo">
+        SELECT
+            dr.wrk_dly_rpt_idx AS idx,
+            dr.wrk_dly_rpt_uuid AS uuid,
+            dr.mbr_acct_idx AS mbrAcctIdx,
+            ma.mbr_acct_uuid AS mbrAcctUuid,
+            ma.lgn_id,
+            mp.nick_nm,
+            dr.rpt_dt AS rptDt,
+            dr.cntn,
+            dr.sts,
+            dr.spcl_note AS spclNote,
+            dr.created_by AS createdBy,
+            dr.updated_by AS updatedBy,
+            dr.created_at AS createdAt,
+            dr.updated_at AS updatedAt,
+            dr.del_at AS delAt
+        FROM tb_wrk_dly_rpt dr
+        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = dr.mbr_acct_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = dr.mbr_acct_idx
+        WHERE dr.del_at IS NULL
+          AND ma.del_at IS NULL
+        <if test="req.mbrAcctUuid != null and req.mbrAcctUuid != ''">
+            AND ma.mbr_acct_uuid = CAST(#{req.mbrAcctUuid} AS UUID)
+        </if>
+        <if test="req.dateFrom != null">
+            AND dr.rpt_dt <![CDATA[>=]]> #{req.dateFrom}
+        </if>
+        <if test="req.dateTo != null">
+            AND dr.rpt_dt <![CDATA[<=]]> #{req.dateTo}
+        </if>
+        <if test="req.sts != null and req.sts != ''">
+            AND dr.sts = #{req.sts}
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                dr.cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR ma.lgn_id ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR mp.nick_nm ILIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+        ORDER BY dr.rpt_dt DESC, dr.updated_at DESC
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <select id="countAdminDailyReportList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_wrk_dly_rpt dr
+        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = dr.mbr_acct_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = dr.mbr_acct_idx
+        WHERE dr.del_at IS NULL
+          AND ma.del_at IS NULL
+        <if test="req.mbrAcctUuid != null and req.mbrAcctUuid != ''">
+            AND ma.mbr_acct_uuid = CAST(#{req.mbrAcctUuid} AS UUID)
+        </if>
+        <if test="req.dateFrom != null">
+            AND dr.rpt_dt <![CDATA[>=]]> #{req.dateFrom}
+        </if>
+        <if test="req.dateTo != null">
+            AND dr.rpt_dt <![CDATA[<=]]> #{req.dateTo}
+        </if>
+        <if test="req.sts != null and req.sts != ''">
+            AND dr.sts = #{req.sts}
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                dr.cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR ma.lgn_id ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR mp.nick_nm ILIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+    </select>
+
+    <select id="selectAdminMissingMembers" resultType="DailyReportAdmJvo">
+        SELECT
+            ma.mbr_acct_idx AS mbrAcctIdx,
+            ma.mbr_acct_uuid AS mbrAcctUuid,
+            ma.lgn_id,
+            mp.nick_nm
+        FROM tb_mbr_acct ma
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = ma.mbr_acct_idx
+        WHERE ma.del_at IS NULL
+          AND ma.acct_stat = 'ACTIVE'
+        <if test="mbrAcctUuid != null and mbrAcctUuid != ''">
+            AND ma.mbr_acct_uuid = CAST(#{mbrAcctUuid} AS UUID)
+        </if>
+        ORDER BY ma.lgn_id ASC
+    </select>
+
+    <select id="selectWeeklyReportList" resultType="WeeklyReportVo">
+        SELECT
+            <include refid="weeklyReportColumns" />
+        FROM tb_wrk_wkl_rpt
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+        ORDER BY wk_strt_dt DESC, updated_at DESC
+    </select>
+
+    <select id="selectWeeklyReport" resultType="WeeklyReportVo">
+        SELECT
+            <include refid="weeklyReportColumns" />
+        FROM tb_wrk_wkl_rpt
+        WHERE wrk_wkl_rpt_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectWeeklyReportByIdx" resultType="WeeklyReportVo">
+        SELECT
+            <include refid="weeklyReportColumns" />
+        FROM tb_wrk_wkl_rpt
+        WHERE wrk_wkl_rpt_idx = #{idx}
+          AND del_at IS NULL
+    </select>
+
+    <insert id="insertWeeklyReport" parameterType="WeeklyReportVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_wrk_wkl_rpt (
+            mbr_acct_idx,
+            wk_strt_dt,
+            wk_end_dt,
+            ttl,
+            cntn,
+            opn_yn,
+            pbls_at,
+            gen_type,
+            created_by
+        ) VALUES (
+            #{mbrAcctIdx},
+            #{wkStrtDt},
+            #{wkEndDt},
+            #{ttl},
+            #{cntn},
+            #{opnYn},
+            #{pblsAt},
+            #{genType},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateWeeklyReport" parameterType="WeeklyReportVo">
+        UPDATE tb_wrk_wkl_rpt
+        SET
+            wk_strt_dt = #{wkStrtDt},
+            wk_end_dt = #{wkEndDt},
+            ttl = #{ttl},
+            cntn = #{cntn},
+            opn_yn = #{opnYn},
+            pbls_at = #{pblsAt},
+            gen_type = #{genType},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_wkl_rpt_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <select id="selectWeeklySourceDailyReports" resultType="DailyReportVo">
+        SELECT
+            <include refid="dailyReportColumns" />
+        FROM tb_wrk_dly_rpt
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+          AND rpt_dt <![CDATA[>=]]> #{weekStartDate}
+          AND rpt_dt <![CDATA[<=]]> #{weekEndDate}
+        ORDER BY rpt_dt ASC, updated_at DESC
+    </select>
+
+</mapper>
