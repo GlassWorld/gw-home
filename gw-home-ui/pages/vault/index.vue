@@ -19,15 +19,53 @@ const isLoading = ref(false)
 const isFormVisible = ref(false)
 const isDetailVisible = ref(false)
 const keyword = ref(typeof route.query.keyword === 'string' ? route.query.keyword : '')
-const selectedCategoryUuid = ref(typeof route.query.categoryUuid === 'string' ? route.query.categoryUuid : '')
+
+function normalizeCategoryUuids(categoryUuids: readonly string[]): string[] {
+  const normalizedCategoryUuids = new Set<string>()
+
+  for (const categoryUuid of categoryUuids) {
+    const normalizedCategoryUuid = categoryUuid.trim()
+
+    if (normalizedCategoryUuid) {
+      normalizedCategoryUuids.add(normalizedCategoryUuid)
+    }
+  }
+
+  return [...normalizedCategoryUuids]
+}
+
+function getCategoryUuidsFromQuery(): string[] {
+  const queryCategoryUuids = route.query.categoryUuids
+  const legacyCategoryUuid = route.query.categoryUuid
+
+  if (Array.isArray(queryCategoryUuids)) {
+    return normalizeCategoryUuids(queryCategoryUuids.filter((value): value is string => typeof value === 'string'))
+  }
+
+  if (typeof queryCategoryUuids === 'string') {
+    return normalizeCategoryUuids(queryCategoryUuids.split(','))
+  }
+
+  if (typeof legacyCategoryUuid === 'string') {
+    return normalizeCategoryUuids([legacyCategoryUuid])
+  }
+
+  return []
+}
+
+const selectedCategoryUuids = ref<string[]>(getCategoryUuidsFromQuery())
+
+function normalizeKeyword(value: string): string {
+  return value.trim().replace(/\s+/g, ' ')
+}
 
 async function loadCredentialList() {
   isLoading.value = true
 
   try {
     credentialList.value = await fetchCredentialList({
-      keyword: keyword.value || undefined,
-      categoryUuid: selectedCategoryUuid.value || undefined
+      keyword: normalizeKeyword(keyword.value) || undefined,
+      categoryUuids: selectedCategoryUuids.value
     })
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
@@ -59,22 +97,46 @@ function openEditModal(credential: Credential) {
 }
 
 function handleSearch() {
+  keyword.value = normalizeKeyword(keyword.value)
+
   router.push({
     query: {
       ...route.query,
       keyword: keyword.value || undefined,
-      categoryUuid: selectedCategoryUuid.value || undefined
+      categoryUuids: selectedCategoryUuids.value.length ? selectedCategoryUuids.value : undefined,
+      categoryUuid: undefined
     }
   })
 }
 
 function handleCategorySelect(categoryUuid: string) {
-  selectedCategoryUuid.value = categoryUuid
+  const selectedCategoryUuidSet = new Set(selectedCategoryUuids.value)
+
+  if (selectedCategoryUuidSet.has(categoryUuid)) {
+    selectedCategoryUuidSet.delete(categoryUuid)
+  } else {
+    selectedCategoryUuidSet.add(categoryUuid)
+  }
+
+  selectedCategoryUuids.value = [...selectedCategoryUuidSet]
   router.push({
     query: {
       ...route.query,
       keyword: keyword.value || undefined,
-      categoryUuid: categoryUuid || undefined
+      categoryUuids: selectedCategoryUuids.value.length ? selectedCategoryUuids.value : undefined,
+      categoryUuid: undefined
+    }
+  })
+}
+
+function clearCategoryFilter() {
+  selectedCategoryUuids.value = []
+  router.push({
+    query: {
+      ...route.query,
+      keyword: keyword.value || undefined,
+      categoryUuids: undefined,
+      categoryUuid: undefined
     }
   })
 }
@@ -102,10 +164,10 @@ async function copyCredential(credential: Credential) {
 }
 
 watch(
-  () => [route.query.keyword, route.query.categoryUuid],
-  async ([queryKeyword, queryCategoryUuid]) => {
+  () => [route.query.keyword, route.query.categoryUuids, route.query.categoryUuid],
+  async ([queryKeyword]) => {
     keyword.value = typeof queryKeyword === 'string' ? queryKeyword : ''
-    selectedCategoryUuid.value = typeof queryCategoryUuid === 'string' ? queryCategoryUuid : ''
+    selectedCategoryUuids.value = getCategoryUuidsFromQuery()
     await loadCredentialList()
   },
   { immediate: true }
@@ -145,7 +207,7 @@ await loadCategoryList()
           v-model="keyword"
           class="input-field"
           type="search"
-          placeholder="제목 또는 설명 검색"
+          placeholder="제목, 아이디, 메모를 여러 단어로 검색"
         >
         <CommonBaseButton variant="secondary" type="submit">
           검색
@@ -154,16 +216,16 @@ await loadCategoryList()
 
       <div v-if="categoryList.length" class="vault-page__category-filter">
         <CommonBaseButton
-          :variant="selectedCategoryUuid ? 'secondary' : 'primary'"
+          :variant="selectedCategoryUuids.length ? 'secondary' : 'primary'"
           size="small"
-          @click="handleCategorySelect('')"
+          @click="clearCategoryFilter"
         >
           전체
         </CommonBaseButton>
         <CommonBaseButton
           v-for="category in categoryList"
           :key="category.categoryUuid"
-          :variant="selectedCategoryUuid === category.categoryUuid ? 'primary' : 'secondary'"
+          :variant="selectedCategoryUuids.includes(category.categoryUuid) ? 'primary' : 'secondary'"
           size="small"
           @click="handleCategorySelect(category.categoryUuid)"
         >

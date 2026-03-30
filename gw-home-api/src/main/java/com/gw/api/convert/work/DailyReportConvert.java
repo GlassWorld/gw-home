@@ -17,7 +17,7 @@ public final class DailyReportConvert {
                 dailyReport.getRptDt(),
                 WorkUnitConvert.toDailyReportWorkUnitResponses(dailyReport.getWorkUnits()),
                 dailyReport.getCntn(),
-                resolveNote(dailyReport.getSpclNote(), dailyReport.getCntn()),
+                dailyReport.getSpclNote(),
                 dailyReport.getCreatedAt(),
                 dailyReport.getUpdatedAt()
         );
@@ -33,14 +33,9 @@ public final class DailyReportConvert {
                 dailyReport.getRptDt(),
                 WorkUnitConvert.toDailyReportWorkUnitResponses(dailyReport.getWorkUnits()),
                 dailyReport.getCntn(),
-                resolveNote(dailyReport.getSpclNote(), dailyReport.getCntn()),
+                dailyReport.getSpclNote(),
                 dailyReport.getCreatedAt(),
                 dailyReport.getUpdatedAt()
         );
-    }
-
-    // 특이사항이 없으면 본문으로 대체해 응답 값을 맞춘다.
-    private static String resolveNote(String spclNote, String content) {
-        return spclNote != null ? spclNote : content;
     }
 }

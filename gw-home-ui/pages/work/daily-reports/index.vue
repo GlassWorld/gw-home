@@ -117,6 +117,16 @@ function extractSection(note: string | null | undefined, heading: string): strin
   return match?.[1]?.trim() ?? ''
 }
 
+function removeSection(note: string | null | undefined, heading: string): string {
+  if (!note) {
+    return ''
+  }
+
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`\\n?\\[${escapedHeading}\\]\\n([\\s\\S]*?)(?=\\n\\n\\[[^\\]]+\\]\\n|$)`, 'g')
+  return note.replace(pattern, '').trim()
+}
+
 function buildNotePayload(formState: DailyReportFormState): string {
   return formState.issueNote.trim()
 }
@@ -124,15 +134,6 @@ function buildNotePayload(formState: DailyReportFormState): string {
 function summarizeReport(report: DailyReport): string {
   const summarySource = report.content || report.note || report.workUnits.map((workUnit) => workUnit.title).join(', ')
   return summarySource.replace(/\s+/g, ' ').trim()
-}
-
-function buildSuggestionPool(reports: DailyReport[]): string[] {
-  const candidates = reports.flatMap((report) => [
-    report.content ?? '',
-    report.note ?? ''
-  ])
-
-  return Array.from(new Set(candidates.map((item) => item.trim()).filter((item) => item.length >= 8))).slice(0, 6)
 }
 
 const filters = reactive({
@@ -151,9 +152,13 @@ const formState = reactive<DailyReportFormState>({
 
 const editingDailyReportUuid = ref('')
 const isFormVisible = ref(false)
+const isDetailVisible = ref(false)
 const isMissingPanelVisible = ref(false)
 const isLoading = ref(false)
 const isSubmitting = ref(false)
+const isTaskPanelCollapsed = ref(false)
+const isHistoryPanelCollapsed = ref(false)
+const viewportWidth = ref<number>(Number.POSITIVE_INFINITY)
 const isWorkUnitLoading = ref(false)
 const isHistoryLoading = ref(false)
 const workUnitSearchKeyword = ref('')
@@ -168,6 +173,7 @@ const dailyReportPage = ref({
   totalCount: 0,
   totalPages: 0
 })
+const selectedDetailReport = ref<DailyReport | null>(null)
 const missingDailyReports = ref<DailyReportMissing[]>([])
 const workUnitOptions = ref<WorkUnitOption[]>([])
 const recentDailyReports = ref<DailyReport[]>([])
@@ -253,25 +259,38 @@ const historyPreviewReport = computed(() => {
   return historyReports.value.find((report) => report.uuid === historyPreviewReportUuid.value) ?? historyReports.value.at(0) ?? null
 })
 
-const reportSuggestions = computed(() => buildSuggestionPool(historyReports.value))
-
 const dailyReportContent = computed(() => {
-  const sections: string[] = []
-
-  if (selectedWorkUnits.value.length) {
-    sections.push(selectedWorkUnits.value.map((workUnit) => workUnit.title.trim()).join('\n'))
-  }
-
-  if (formState.workSummary.trim()) {
-    sections.push(formState.workSummary.trim())
-  }
-
-  if (formState.issueNote.trim()) {
-    sections.push(`[이슈 / 특이사항]\n${formState.issueNote.trim()}`)
-  }
-
-  return sections.join('\n\n')
+  return formState.workSummary.trim()
 })
+
+const isDesktopModalLayout = computed(() => viewportWidth.value > 1100)
+
+const modalLayoutColumns = computed(() => {
+  const taskColumn = isTaskPanelCollapsed.value ? '44px' : '280px'
+  const historyColumn = isHistoryPanelCollapsed.value ? '44px' : 'minmax(0, 4fr)'
+  const editorColumn = isHistoryPanelCollapsed.value ? 'minmax(0, 1fr)' : 'minmax(0, 6fr)'
+
+  return `${taskColumn} ${historyColumn} ${editorColumn}`
+})
+
+const modalLayoutStyle = computed(() =>
+  isDesktopModalLayout.value
+    ? { gridTemplateColumns: modalLayoutColumns.value }
+    : {}
+)
+
+function syncViewportWidth() {
+  if (!import.meta.client) {
+    return
+  }
+
+  viewportWidth.value = window.innerWidth
+
+  if (viewportWidth.value <= 1100) {
+    isTaskPanelCollapsed.value = false
+    isHistoryPanelCollapsed.value = false
+  }
+}
 
 const normalizedSelectedTaskUuids = computed(() =>
   Array.from(new Set(
@@ -290,6 +309,8 @@ function resetForm() {
   formState.reportDate = formatDateInput(new Date())
   formState.workSummary = ''
   formState.issueNote = ''
+  isTaskPanelCollapsed.value = false
+  isHistoryPanelCollapsed.value = false
 }
 
 function selectTask(workUnitUuid: string) {
@@ -327,25 +348,46 @@ function setTaskSelection(workUnitUuid: string, checked: boolean) {
 
 function startCreateMode() {
   resetForm()
+  isDetailVisible.value = false
+  selectedDetailReport.value = null
   isFormVisible.value = true
   void Promise.all([loadWorkUnits(), loadRecentDailyReports()])
 }
 
+function toggleTaskPanel() {
+  isTaskPanelCollapsed.value = !isTaskPanelCollapsed.value
+}
+
+function toggleHistoryPanel() {
+  isHistoryPanelCollapsed.value = !isHistoryPanelCollapsed.value
+}
+
 function startEditMode(report: DailyReport) {
+  const legacyIssueNote = report.note ?? extractSection(report.content, '이슈 / 특이사항')
+
+  isDetailVisible.value = false
+  selectedDetailReport.value = null
   editingDailyReportUuid.value = report.uuid
   workUnitSearchKeyword.value = ''
   selectedTaskSnapshotMap.value = buildSelectedTaskSnapshotMap(report.workUnits)
   selectedTaskUuids.value = report.workUnits.map((workUnit) => workUnit.workUnitUuid)
   activeTaskUuid.value = selectedTaskUuids.value[0] ?? ''
   formState.reportDate = report.reportDate
-  formState.workSummary = report.content ?? ''
-  formState.issueNote = report.note ?? ''
-  if (!formState.workSummary && report.note) {
-    formState.workSummary = ''
-  }
+  formState.workSummary = removeSection(report.content, '이슈 / 특이사항')
+  formState.issueNote = legacyIssueNote ?? ''
   isFormVisible.value = true
   historyPreviewReportUuid.value = report.uuid
   void Promise.all([loadWorkUnits(), loadRecentDailyReports()])
+}
+
+function openDetailMode(report: DailyReport) {
+  selectedDetailReport.value = report
+  isDetailVisible.value = true
+}
+
+function closeDetailModal() {
+  isDetailVisible.value = false
+  selectedDetailReport.value = null
 }
 
 function closeFormModal() {
@@ -354,19 +396,9 @@ function closeFormModal() {
 }
 
 function applyHistoryDraft(report: DailyReport) {
-  formState.workSummary = report.content || summarizeReport(report)
-  formState.issueNote = report.note ?? ''
+  formState.workSummary = removeSection(report.content, '이슈 / 특이사항') || summarizeReport(report)
+  formState.issueNote = report.note ?? extractSection(report.content, '이슈 / 특이사항')
   historyPreviewReportUuid.value = report.uuid
-}
-
-function insertSuggestion(value: string) {
-  if (!value.trim()) {
-    return
-  }
-
-  formState.workSummary = formState.workSummary.trim()
-    ? `${formState.workSummary.trim()}\n- ${value.trim()}`
-    : value.trim()
 }
 
 async function loadWorkUnits() {
@@ -528,6 +560,19 @@ watch(historyReports, (nextReports) => {
   }
 })
 
+onMounted(() => {
+  syncViewportWidth()
+  window.addEventListener('resize', syncViewportWidth)
+})
+
+onBeforeUnmount(() => {
+  if (!import.meta.client) {
+    return
+  }
+
+  window.removeEventListener('resize', syncViewportWidth)
+})
+
 await reloadAll()
 </script>
 
@@ -603,13 +648,18 @@ await reloadAll()
                 {{ dailyReport.workUnits.length ? dailyReport.workUnits.map((workUnit) => workUnit.title).join(', ') : '-' }}
               </td>
               <td class="daily-report-page__content-cell">
-                {{ summarizeReport(dailyReport) || '-' }}
+                {{ dailyReport.note || extractSection(dailyReport.content, '이슈 / 특이사항') || '-' }}
               </td>
               <td>{{ formatDateTime(dailyReport.updatedAt) }}</td>
               <td>
-                <CommonBaseButton variant="secondary" size="small" @click="startEditMode(dailyReport)">
+                <div class="daily-report-page__row-actions">
+                  <CommonBaseButton variant="secondary" size="small" @click="openDetailMode(dailyReport)">
+                    상세
+                  </CommonBaseButton>
+                  <CommonBaseButton variant="secondary" size="small" @click="startEditMode(dailyReport)">
                   수정
-                </CommonBaseButton>
+                  </CommonBaseButton>
+                </div>
               </td>
             </tr>
             <tr v-if="!isLoading && dailyReportPage.content.length === 0">
@@ -670,46 +720,89 @@ await reloadAll()
       </section>
     </aside>
 
+    <WorkDailyReportDetailModal
+      :visible="isDetailVisible"
+      :report="selectedDetailReport"
+      @close="closeDetailModal"
+      @edit="startEditMode"
+    />
+
     <CommonBaseModal
       :visible="isFormVisible"
       eyebrow="Daily Report"
       :title="editingDailyReportUuid ? '일일보고 수정' : '일일보고 작성'"
-      width="98vw"
+      width="100vw"
       @close="closeFormModal"
     >
-      <div class="daily-report-page__modal-layout">
-        <WorkTaskListPanel
-          :tasks="filteredWorkUnitOptions"
-          :selected-task-uuids="selectedTaskUuids"
-          :active-task-uuid="activeTaskUuid"
-          :search-keyword="workUnitSearchKeyword"
-          :is-loading="isWorkUnitLoading"
-          @update:search-keyword="workUnitSearchKeyword = $event"
-          @select-task="selectTask"
-          @set-task-selection="setTaskSelection($event.workUnitUuid, $event.checked)"
-        />
+      <template #title-extra>
+        <div class="daily-report-page__title-actions">
+          <button
+            v-if="isDesktopModalLayout"
+            type="button"
+            class="daily-report-page__title-toggle"
+            :class="{ 'daily-report-page__title-toggle--inactive': isTaskPanelCollapsed }"
+            :aria-expanded="!isTaskPanelCollapsed"
+            aria-label="업무목록 열기/닫기"
+            @click="toggleTaskPanel"
+          >
+            <span aria-hidden="true">{{ isTaskPanelCollapsed ? '>' : '<' }}</span>
+            <span class="daily-report-page__title-toggle-text">업무</span>
+          </button>
 
-        <WorkReportHistoryPanel
-          :active-task="activeTask"
-          :reports="historyReports"
-          :selected-report-uuid="historyPreviewReportUuid"
-          :preview-report="historyPreviewReport"
-          :is-loading="isHistoryLoading"
-          @select-report="historyPreviewReportUuid = $event"
-          @use-as-draft="applyHistoryDraft"
-        />
+          <button
+            v-if="isDesktopModalLayout"
+            type="button"
+            class="daily-report-page__title-toggle"
+            :class="{ 'daily-report-page__title-toggle--inactive': isHistoryPanelCollapsed }"
+            :aria-expanded="!isHistoryPanelCollapsed"
+            aria-label="지난 일일보고 열기/닫기"
+            @click="toggleHistoryPanel"
+          >
+            <span aria-hidden="true">{{ isHistoryPanelCollapsed ? '>' : '<' }}</span>
+            <span class="daily-report-page__title-toggle-text">히스토리</span>
+          </button>
+        </div>
+      </template>
+
+      <div class="daily-report-page__modal-layout" :style="modalLayoutStyle">
+        <div class="daily-report-page__panel-shell" :class="{ 'daily-report-page__panel-shell--collapsed': isTaskPanelCollapsed }">
+          <div class="daily-report-page__panel-content">
+            <WorkTaskListPanel
+              :tasks="filteredWorkUnitOptions"
+              :selected-task-uuids="selectedTaskUuids"
+              :active-task-uuid="activeTaskUuid"
+              :search-keyword="workUnitSearchKeyword"
+              :is-loading="isWorkUnitLoading"
+              @update:search-keyword="workUnitSearchKeyword = $event"
+              @select-task="selectTask"
+              @set-task-selection="setTaskSelection($event.workUnitUuid, $event.checked)"
+            />
+          </div>
+        </div>
+
+        <div class="daily-report-page__panel-shell" :class="{ 'daily-report-page__panel-shell--collapsed': isHistoryPanelCollapsed }">
+          <div class="daily-report-page__panel-content">
+            <WorkReportHistoryPanel
+              :active-task="activeTask"
+              :reports="historyReports"
+              :selected-report-uuid="historyPreviewReportUuid"
+              :preview-report="historyPreviewReport"
+              :is-loading="isHistoryLoading"
+              @select-report="historyPreviewReportUuid = $event"
+              @use-as-draft="applyHistoryDraft"
+            />
+          </div>
+        </div>
 
         <WorkReportEditorPanel
           :report-date="formState.reportDate"
           :selected-work-units="selectedWorkUnits"
           :work-summary="formState.workSummary"
           :issue-note="formState.issueNote"
-          :suggestions="reportSuggestions"
           :is-editing="Boolean(editingDailyReportUuid)"
           @update:report-date="formState.reportDate = $event"
           @update:work-summary="formState.workSummary = $event"
           @update:issue-note="formState.issueNote = $event"
-          @insert-suggestion="insertSuggestion"
         />
       </div>
 
@@ -909,10 +1002,75 @@ await reloadAll()
 
 .daily-report-page__modal-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 0.82fr) minmax(280px, 0.96fr) minmax(0, 1.52fr);
   gap: 16px;
   min-height: calc(100vh - 180px);
   min-width: 0;
+}
+
+.daily-report-page__panel-shell {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  transition: transform 0.28s ease, opacity 0.22s ease, filter 0.22s ease;
+}
+
+.daily-report-page__panel-content {
+  min-width: 0;
+  height: 100%;
+  transition: transform 0.28s ease, opacity 0.22s ease;
+}
+
+.daily-report-page__panel-shell--collapsed .daily-report-page__panel-content {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-20px) scale(0.98);
+}
+
+.daily-report-page__panel-shell:not(.daily-report-page__panel-shell--collapsed) .daily-report-page__panel-content {
+  transform: translateX(0);
+}
+
+.daily-report-page__title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.daily-report-page__title-toggle {
+  min-width: auto;
+  min-height: auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(147, 210, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(7, 21, 39, 0.72);
+  color: rgba(226, 240, 255, 0.92);
+  font: inherit;
+  font-size: 0.76rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.daily-report-page__title-toggle:hover {
+  background: rgba(18, 46, 77, 0.9);
+  border-color: rgba(147, 210, 255, 0.28);
+}
+
+.daily-report-page__title-toggle--inactive {
+  opacity: 0.72;
+}
+
+.daily-report-page__title-toggle span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.daily-report-page__title-toggle-text {
+  color: var(--color-text-muted);
 }
 
 :deep(.base-modal) {
@@ -936,6 +1094,12 @@ await reloadAll()
   white-space: pre-wrap;
 }
 
+.daily-report-page__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .daily-report-page__empty {
   text-align: center;
   color: var(--color-text-muted);
@@ -953,9 +1117,9 @@ await reloadAll()
 }
 
 :deep(.base-modal__panel.content-panel) {
-  width: 98vw !important;
-  max-width: 98vw !important;
-  min-width: 98vw !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  min-width: 100vw !important;
   height: 100vh;
   max-height: 100vh;
   margin-left: auto;
@@ -982,7 +1146,7 @@ await reloadAll()
 
 @media (max-width: 1400px) {
   .daily-report-page__modal-layout {
-    grid-template-columns: minmax(220px, 0.78fr) minmax(250px, 0.9fr) minmax(0, 1.2fr);
+    grid-template-columns: 240px minmax(0, 4fr) minmax(0, 6fr);
     gap: 14px;
   }
 }
@@ -995,6 +1159,17 @@ await reloadAll()
   .daily-report-page__modal-layout {
     grid-template-columns: 1fr;
   }
+
+  .daily-report-page__panel-shell,
+  .daily-report-page__panel-shell--collapsed {
+    overflow: visible;
+  }
+
+  .daily-report-page__panel-shell--collapsed .daily-report-page__panel-content {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
 }
 
 @media (max-width: 768px) {

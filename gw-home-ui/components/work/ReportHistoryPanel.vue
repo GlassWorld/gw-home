@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 import type { DailyReport } from '~/types/work'
 
 interface SelectedWorkUnitItem {
@@ -33,9 +35,28 @@ function formatDate(value: string): string {
 }
 
 function extractSummary(report: DailyReport): string {
-  const source = report.note || report.workUnits.map((workUnit) => workUnit.title).join(', ')
+  const source = report.content || report.note || report.workUnits.map((workUnit) => workUnit.title).join(', ')
   return source.replace(/\s+/g, ' ').trim()
 }
+
+function renderMarkdown(rawValue: string | null | undefined): string {
+  const normalizedValue = rawValue?.trim()
+
+  if (!normalizedValue) {
+    return '<p>상세 내용이 없습니다.</p>'
+  }
+
+  const parsedHtml = marked.parse(normalizedValue, { async: false })
+
+  if (!import.meta.client) {
+    return parsedHtml
+  }
+
+  return DOMPurify.sanitize(parsedHtml)
+}
+
+const previewContentHtml = computed(() => renderMarkdown(props.previewReport?.content))
+const previewNoteHtml = computed(() => renderMarkdown(props.previewReport?.note))
 </script>
 
 <template>
@@ -83,8 +104,16 @@ function extractSummary(report: DailyReport): string {
               연결 업무: {{ previewReport.workUnits.map((workUnit) => workUnit.title).join(', ') || '-' }}
             </p>
 
-            <div class="report-history-panel__preview-body">
-              {{ previewReport.note || '상세 내용이 없습니다.' }}
+            <div class="report-history-panel__preview-sections">
+              <section class="report-history-panel__preview-section">
+                <strong>오늘 수행 내용</strong>
+                <div class="report-history-panel__preview-body" v-html="previewContentHtml" />
+              </section>
+
+              <section class="report-history-panel__preview-section">
+                <strong>특이사항</strong>
+                <div class="report-history-panel__preview-body" v-html="previewNoteHtml" />
+              </section>
             </div>
           </div>
         </div>
@@ -106,6 +135,9 @@ function extractSummary(report: DailyReport): string {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   border: 1px solid rgba(147, 210, 255, 0.14);
   border-radius: var(--radius-large);
   background: rgba(255, 255, 255, 0.04);
@@ -206,12 +238,69 @@ function extractSummary(report: DailyReport): string {
   font-size: 0.84rem;
 }
 
+.report-history-panel__preview-sections {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+
+.report-history-panel__preview-section {
+  display: grid;
+  gap: 8px;
+}
+
+.report-history-panel__preview-section > strong {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
 .report-history-panel__preview-body {
   min-height: 0;
   overflow-y: auto;
   color: var(--color-text);
   line-height: 1.6;
-  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.report-history-panel__preview-body:deep(p:first-child) {
+  margin-top: 0;
+}
+
+.report-history-panel__preview-body:deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.report-history-panel__preview-body:deep(code) {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(147, 210, 255, 0.12);
+  color: #a9dcff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.report-history-panel__preview-body:deep(pre) {
+  margin: 12px 0 0;
+  padding: 14px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: rgba(3, 12, 24, 0.82);
+  border: 1px solid rgba(147, 210, 255, 0.14);
+}
+
+.report-history-panel__preview-body:deep(pre code) {
+  padding: 0;
+  background: transparent;
+}
+
+.report-history-panel__preview-body:deep(a) {
+  color: #8bd0ff;
+  text-decoration: underline;
+}
+
+.report-history-panel__preview-body:deep(ul),
+.report-history-panel__preview-body:deep(ol) {
+  padding-left: 20px;
 }
 
 .report-history-panel__empty {
@@ -240,6 +329,14 @@ function extractSummary(report: DailyReport): string {
 
   100% {
     background-position: -100% 0;
+  }
+}
+
+@media (max-width: 1100px) {
+  .report-history-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 }
 </style>

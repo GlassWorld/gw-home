@@ -64,7 +64,7 @@ watch(() => props.visible, async (visible) => {
     :visible="props.visible"
     title="빠른 메모"
     eyebrow="Header"
-    width="680px"
+    width="min(1040px, 92vw)"
     @close="emit('close')"
   >
     <div class="header-memo-modal">
@@ -108,17 +108,18 @@ watch(() => props.visible, async (visible) => {
 .header-memo-modal {
   display: grid;
   gap: 14px;
+  min-height: min(72vh, 760px);
 }
 
 .header-memo-modal__textarea {
   width: 100%;
-  min-height: 220px;
+  min-height: min(56vh, 560px);
   resize: vertical;
   border: 1px solid rgba(147, 210, 255, 0.18);
   border-radius: 20px;
   background: rgba(7, 21, 39, 0.72);
   color: #eff8ff;
-  padding: 18px 20px;
+  padding: 20px 22px;
   font: inherit;
   line-height: 1.6;
 }
@@ -136,5 +137,15 @@ watch(() => props.visible, async (visible) => {
   text-align: right;
   color: var(--color-text-muted);
   font-size: 0.84rem;
+}
+
+@media (max-width: 768px) {
+  .header-memo-modal {
+    min-height: auto;
+  }
+
+  .header-memo-modal__textarea {
+    min-height: min(46vh, 360px);
+  }
 }
 </style>

@@ -29,7 +29,7 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
 </script>
 
 <template>
-  <section class="task-list-panel">
+  <section class="task-list-panel" style="width: 280px;">
     <header class="task-list-panel__header">
       <div>
         <p class="task-list-panel__eyebrow">Task List</p>
@@ -71,8 +71,10 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
               >
               <span />
             </label>
-            <strong>{{ task.title }}</strong>
-            <span class="task-list-panel__meta">{{ task.category || '프로젝트 미지정' }}</span>
+            <div class="task-list-panel__text">
+              <strong>{{ task.title }}</strong>
+              <span class="task-list-panel__meta">{{ task.category || '프로젝트 미지정' }}</span>
+            </div>
           </div>
 
           <div class="task-list-panel__item-side">
@@ -98,6 +100,10 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  justify-self: start;
   border: 1px solid rgba(147, 210, 255, 0.14);
   border-radius: var(--radius-large);
   background: rgba(255, 255, 255, 0.04);
@@ -180,9 +186,16 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
 }
 
 .task-list-panel__item-main {
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  column-gap: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.task-list-panel__text {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 
 .task-list-panel__item-main strong {
@@ -190,7 +203,6 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
 }
 
 .task-list-panel__meta {
-  grid-column: 2;
   color: var(--color-text-muted);
   font-size: 0.85rem;
 }
@@ -220,6 +232,7 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
 .task-list-panel__check {
   position: relative;
   display: inline-flex;
+  flex: 0 0 20px;
   width: 20px;
   height: 20px;
   margin-top: 1px;
@@ -267,6 +280,22 @@ function getStatusLabel(status: WorkUnitOption['status']): string {
 
   100% {
     background-position: -100% 0;
+  }
+}
+
+@media (max-width: 1400px) {
+  .task-list-panel {
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .task-list-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 }
 </style>

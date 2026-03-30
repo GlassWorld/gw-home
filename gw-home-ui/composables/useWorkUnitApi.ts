@@ -113,7 +113,7 @@ export function useWorkUnitApi() {
   async function updateWorkUnitUse(workUnitUuid: string, useYn: 'Y' | 'N'): Promise<WorkUnit> {
     const response = await authorizedFetch<ApiResponse<WorkUnitApi>>(`/api/v1/work-units/${workUnitUuid}/use`, {
       method: 'PUT',
-      body: { useYn }
+      body: { use_yn: useYn }
     })
 
     return toWorkUnit(response.data)

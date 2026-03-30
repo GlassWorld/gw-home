@@ -258,6 +258,39 @@ gw-home-api/
 gw-home-ui/
   types/work.ts
   composables/useWorkUnitApi.ts
+
+---
+
+## 추가 검토 요청 (2026-03-30)
+
+운영 중 확인된 후속 수정 사항으로 `업무등록 사용안함 처리 시 에러 발생` 이슈를 범위에 추가 검토한다.
+
+### 이슈 개요
+
+- 업무 목록 또는 상세 액션에서 `사용안함` 처리 실행 시 서버 오류 또는 화면 예외가 발생한다.
+- 기능 의도상 물리 삭제가 아니라 `use_yn = 'N'` 갱신이어야 하므로, 현재 구현이 이 정책과 어긋났는지 확인이 필요하다.
+
+### 우선 점검 포인트
+
+1. `PUT /api/v1/work-units/{uuid}/use` 요청 payload 와 검증 규칙이 현재 화면 전송값과 일치하는지
+2. `useYn` 값 허용 범위가 `Y/N` 으로 고정돼 있는지
+3. 사용안함 처리 후 목록 재조회 또는 정렬 로직에서 비활성 데이터가 예외를 만드는지
+4. 일일보고와 연결된 업무를 비활성화할 때 제약 충돌이 발생하는지
+
+### 예상 영향 범위
+
+| 구분 | 변경 내용 |
+|------|-----------|
+| Backend - work | `WorkUnitController`, `WorkUnitService`, `UpdateWorkUnitUseRequest` 검증/처리 점검 |
+| Backend - infra-db | `WorkUnitMapper.xml` 의 사용여부 업데이트 및 조회 조건 점검 |
+| Frontend - work | `/work` 화면의 사용안함 액션 payload 및 후처리 점검 |
+
+### 리스크 분석
+
+| 리스크 | 대응 |
+|--------|------|
+| 비활성화 실패 원인이 요청값 mismatch 인데 UI만 수정하면 API 재호출 시 다시 실패 | 프론트와 백엔드 계약을 함께 검증 |
+| 비활성화 이후 기본 목록에서 숨김 처리되며 사용자는 실패로 오인할 수 있음 | 성공 토스트와 목록 갱신 규칙을 명확히 확인 |
   pages/work/index.vue
   components/work/
     WorkUnitForm.vue

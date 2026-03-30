@@ -139,3 +139,34 @@ gw-home-infra-db/.../sql/ddl/profile/tb_mbr_prfl_add_memo.sql
 - `gw-home-api/.../controller/profile/ProfileController.java`
 - `gw-home-api/.../service/profile/ProfileService.java`
 - `gw-home-ui/components/common/AppHeader.vue`
+
+---
+
+## 추가 검토 요청 (2026-03-30)
+
+기존 헤더 메모 기능에 대해 `메모 모달 화면 크기 확대` 요청을 추가 검토한다.
+
+### 변경 목적
+
+- 현재 모달 크기에서 장문 메모 작성/열람이 답답하므로, 더 넓은 작업 공간을 제공한다.
+- 헤더 진입형 빠른 메모라는 성격은 유지하되, 실제 사용성은 일시 메모창 수준을 넘도록 보정한다.
+
+### 예상 영향 범위
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `gw-home-ui/components/common/HeaderMemoModal.vue` | 모달 최대 너비, 높이, textarea 높이 확대 |
+| 공통 모달 컴포넌트 | 필요 시 size prop 또는 content width 확장 여부 점검 |
+
+### 검토 포인트
+
+1. 화면별 개별 스타일만으로 해결 가능한지
+2. 공통 모달의 크기 옵션 확장이 필요한지
+3. 모바일/저해상도에서 현재보다 불편해지지 않는지
+
+### 리스크 분석
+
+| 리스크 | 대응 |
+|--------|------|
+| 헤더 메모 전용 요구 때문에 공통 모달을 과도하게 변경할 위험 | 우선 `HeaderMemoModal.vue` 국소 스타일로 해결 검토 |
+| 폭만 키우고 높이가 그대로면 실제 작성성 개선이 제한적 | width + min-height + textarea height 를 함께 조정 |

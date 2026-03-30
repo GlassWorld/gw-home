@@ -8,6 +8,11 @@ interface CredentialCategoryApi extends Partial<CredentialCategory> {
 export function useVaultApi() {
   const { authorizedFetch } = useAuth()
 
+  function normalizeKeyword(keyword?: string): string | undefined {
+    const normalizedKeyword = keyword?.trim().replace(/\s+/g, ' ')
+    return normalizedKeyword ? normalizedKeyword : undefined
+  }
+
   function toCredential(credential: Partial<Credential> & {
     credential_uuid?: string
     categories?: CredentialCategoryApi[]
@@ -45,8 +50,8 @@ export function useVaultApi() {
     const response = await authorizedFetch<ApiResponse<Credential[]>>('/api/v1/vault/credentials', {
       method: 'GET',
       query: {
-        keyword: params.keyword,
-        categoryUuid: params.categoryUuid
+        keyword: normalizeKeyword(params.keyword),
+        categoryUuids: params.categoryUuids?.length ? params.categoryUuids.join(',') : undefined
       }
     })
 

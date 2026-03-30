@@ -379,15 +379,9 @@ public class DailyReportService {
         return StringUtil.normalizeBlank(value);
     }
 
-    // 본문과 특이사항 중 우선순위에 따라 저장 본문을 결정한다.
+    // 본문 입력값만 저장용 본문으로 사용한다.
     private String resolveReportContent(String content, String note) {
-        String normalizedContent = normalizeText(content);
-
-        if (normalizedContent != null) {
-            return normalizedContent;
-        }
-
-        return normalizeText(note);
+        return normalizeText(content);
     }
 
     // 선택된 업무 UUID 목록을 실제 업무 VO 목록으로 변환한다.

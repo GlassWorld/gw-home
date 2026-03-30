@@ -60,11 +60,11 @@ class VaultServiceTest {
     void getCredentialListUsesMemberAccountIndex() {
         when(accountMapper.selectAccountByLoginId("tester_a")).thenReturn(createAccount(7L, "tester_a"));
         when(vaultCategoryMapper.selectCategoryList()).thenReturn(List.of());
-        when(vaultMapper.selectCredentialList("mail", "category-uuid", 7L)).thenReturn(List.of());
+        when(vaultMapper.selectCredentialList(List.of("mail"), List.of("category-uuid"), 7L)).thenReturn(List.of());
 
-        vaultService.getCredentialList("mail", "category-uuid", "tester_a");
+        vaultService.getCredentialList("mail", List.of("category-uuid"), "tester_a");
 
-        verify(vaultMapper).selectCredentialList("mail", "category-uuid", 7L);
+        verify(vaultMapper).selectCredentialList(List.of("mail"), List.of("category-uuid"), 7L);
     }
 
     @Test

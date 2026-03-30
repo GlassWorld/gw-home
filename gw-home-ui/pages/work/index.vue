@@ -374,10 +374,19 @@ await reloadAll()
                 </div>
               </div>
 
-              <div class="meta-row">
-                <span>카테고리 {{ workUnit.category || '-' }}</span>
-                <span>사용횟수 {{ workUnit.useCount }}</span>
-                <span>최근수정 {{ workUnit.updatedAt.slice(0, 10) }}</span>
+              <div class="work-page__meta-row">
+                <span class="work-page__meta-item">
+                  <em>카테고리</em>
+                  <strong>{{ workUnit.category || '-' }}</strong>
+                </span>
+                <span class="work-page__meta-item">
+                  <em>사용횟수</em>
+                  <strong>{{ workUnit.useCount }}</strong>
+                </span>
+                <span class="work-page__meta-item">
+                  <em>최근수정</em>
+                  <strong>{{ workUnit.updatedAt.slice(0, 10) }}</strong>
+                </span>
               </div>
 
               <p class="work-page__description">
@@ -603,6 +612,41 @@ await reloadAll()
 .work-page__badge--inactive {
   background: rgba(224, 92, 92, 0.16);
   color: #ff8b8b;
+}
+
+.work-page__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(8, 23, 42, 0.42);
+}
+
+.work-page__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-muted);
+  font-size: 0.83rem;
+  line-height: 1;
+}
+
+.work-page__meta-item em {
+  color: rgba(147, 210, 255, 0.7);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.work-page__meta-item strong {
+  color: var(--color-text);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .work-page__description {
