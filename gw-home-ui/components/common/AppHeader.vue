@@ -44,9 +44,6 @@ function closeMemo() {
         <NuxtLink v-if="authStore.currentUser?.role === 'ADMIN'" to="/admin/accounts">
           계정관리
         </NuxtLink>
-        <NuxtLink v-if="authStore.currentUser?.role === 'ADMIN'" to="/admin/daily-reports">
-          보고관리
-        </NuxtLink>
       </nav>
 
       <div class="app-header__actions">
