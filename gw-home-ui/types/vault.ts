@@ -24,7 +24,7 @@ export interface SaveCredentialPayload {
 
 export interface CredentialListParams {
   keyword?: string
-  categoryUuid?: string
+  categoryUuids?: string[]
 }
 
 export interface VaultCategory {

@@ -51,7 +51,7 @@ export function useVaultApi() {
       method: 'GET',
       query: {
         keyword: normalizeKeyword(params.keyword),
-        categoryUuid: params.categoryUuid
+        categoryUuids: params.categoryUuids?.length ? params.categoryUuids.join(',') : undefined
       }
     })
 

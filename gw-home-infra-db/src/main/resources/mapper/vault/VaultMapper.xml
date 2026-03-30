@@ -21,13 +21,17 @@
         FROM tb_vlt_crd
         WHERE mbr_acct_idx = #{mbrAcctIdx}
           AND del_at IS NULL
-        <if test="categoryUuid != null and categoryUuid != ''">
+        <if test="categoryUuids != null and categoryUuids.size() > 0">
             AND EXISTS (
                 SELECT 1
                 FROM tb_vlt_crd_cat vcc
                 INNER JOIN tb_vlt_cat vc ON vc.tb_vlt_cat_idx = vcc.tb_vlt_cat_idx
                 WHERE vcc.tb_vlt_crd_idx = tb_vlt_crd.tb_vlt_crd_idx
-                  AND vc.tb_vlt_cat_uuid = CAST(#{categoryUuid} AS UUID)
+                  AND vc.tb_vlt_cat_uuid IN (
+                    <foreach collection="categoryUuids" item="categoryUuid" separator=",">
+                        CAST(#{categoryUuid} AS UUID)
+                    </foreach>
+                  )
                   AND vc.del_at IS NULL
             )
         </if>

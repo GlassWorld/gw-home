@@ -10,7 +10,7 @@ public interface VaultMapper {
 
     List<CrdVo> selectCredentialList(
             @Param("keywordTokens") List<String> keywordTokens,
-            @Param("categoryUuid") String categoryUuid,
+            @Param("categoryUuids") List<String> categoryUuids,
             @Param("mbrAcctIdx") Long mbrAcctIdx
     );
 

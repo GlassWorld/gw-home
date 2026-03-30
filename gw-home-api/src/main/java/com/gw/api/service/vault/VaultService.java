@@ -47,10 +47,14 @@ public class VaultService {
     }
 
     @Transactional(readOnly = true)
-    public List<CredentialResponse> getCredentialList(String keyword, String categoryUuid, String loginId) {
+    public List<CredentialResponse> getCredentialList(String keyword, List<String> categoryUuids, String loginId) {
         AcctVo account = getAccountByLoginId(loginId);
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
-        List<CrdVo> credentialList = vaultMapper.selectCredentialList(normalizeKeywordTokens(keyword), categoryUuid, account.getIdx());
+        List<CrdVo> credentialList = vaultMapper.selectCredentialList(
+                normalizeKeywordTokens(keyword),
+                normalizeCategoryUuids(categoryUuids),
+                account.getIdx()
+        );
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(credentialList, categoryByIdx);
 
         return credentialList.stream()
@@ -150,6 +154,18 @@ public class VaultService {
         return MULTI_WHITESPACE_PATTERN.splitAsStream(keyword.trim())
                 .map(String::trim)
                 .filter(token -> !token.isEmpty())
+                .distinct()
+                .toList();
+    }
+
+    private List<String> normalizeCategoryUuids(List<String> categoryUuids) {
+        if (categoryUuids == null || categoryUuids.isEmpty()) {
+            return List.of();
+        }
+
+        return categoryUuids.stream()
+                .filter(categoryUuid -> categoryUuid != null && !categoryUuid.isBlank())
+                .map(String::trim)
                 .distinct()
                 .toList();
     }

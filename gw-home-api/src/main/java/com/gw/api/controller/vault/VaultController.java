@@ -10,7 +10,9 @@ import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/vault")
 public class VaultController {
 
+    private static final Pattern COMMA_PATTERN = Pattern.compile(",");
+
     private final VaultService vaultService;
     private final VaultCategoryService vaultCategoryService;
 
@@ -37,9 +41,30 @@ public class VaultController {
     public ApiResponse<List<CredentialResponse>> getCredentialList(
             Principal principal,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String categoryUuid
+            @RequestParam(required = false) String categoryUuid,
+            @RequestParam(required = false) List<String> categoryUuids
     ) {
-        return ApiResponse.ok(vaultService.getCredentialList(keyword, categoryUuid, getLoginId(principal)));
+        List<String> requestedCategoryUuids = new ArrayList<>();
+
+        if (categoryUuids != null) {
+            for (String categoryValue : categoryUuids) {
+                if (categoryValue == null || categoryValue.isBlank()) {
+                    continue;
+                }
+
+                for (String categoryToken : COMMA_PATTERN.split(categoryValue)) {
+                    if (!categoryToken.isBlank()) {
+                        requestedCategoryUuids.add(categoryToken);
+                    }
+                }
+            }
+        }
+
+        if (categoryUuid != null && !categoryUuid.isBlank()) {
+            requestedCategoryUuids.add(categoryUuid);
+        }
+
+        return ApiResponse.ok(vaultService.getCredentialList(keyword, requestedCategoryUuids, getLoginId(principal)));
     }
 
     @GetMapping("/categories")
