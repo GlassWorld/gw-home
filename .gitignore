@@ -1,6 +1,8 @@
 # Gradle
 .gradle/
 **/build/
+**/out/
+!**/out/.gitkeep
 
 # Java
 *.class
