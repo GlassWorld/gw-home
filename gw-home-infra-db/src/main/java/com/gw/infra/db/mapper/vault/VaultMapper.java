@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 public interface VaultMapper {
 
     List<CrdVo> selectCredentialList(
-            @Param("keyword") String keyword,
+            @Param("keywordTokens") List<String> keywordTokens,
             @Param("categoryUuid") String categoryUuid,
             @Param("mbrAcctIdx") Long mbrAcctIdx
     );

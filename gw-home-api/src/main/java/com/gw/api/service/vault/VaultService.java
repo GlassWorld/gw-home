@@ -19,12 +19,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
 public class VaultService {
+
+    private static final Pattern MULTI_WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     private final VaultMapper vaultMapper;
     private final VaultCategoryMapper vaultCategoryMapper;
@@ -47,7 +50,7 @@ public class VaultService {
     public List<CredentialResponse> getCredentialList(String keyword, String categoryUuid, String loginId) {
         AcctVo account = getAccountByLoginId(loginId);
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
-        List<CrdVo> credentialList = vaultMapper.selectCredentialList(keyword, categoryUuid, account.getIdx());
+        List<CrdVo> credentialList = vaultMapper.selectCredentialList(normalizeKeywordTokens(keyword), categoryUuid, account.getIdx());
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(credentialList, categoryByIdx);
 
         return credentialList.stream()
@@ -137,6 +140,18 @@ public class VaultService {
         }
 
         return account;
+    }
+
+    private List<String> normalizeKeywordTokens(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+
+        return MULTI_WHITESPACE_PATTERN.splitAsStream(keyword.trim())
+                .map(String::trim)
+                .filter(token -> !token.isEmpty())
+                .distinct()
+                .toList();
     }
 
     private List<Long> getCategoryIndexes(List<String> categoryUuids) {

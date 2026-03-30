@@ -13,6 +13,16 @@ import type {
 export function useDailyReportApi() {
   const { authorizedFetch } = useAuth()
 
+  interface PageResponseApi<T> {
+    content?: T[]
+    page?: number
+    size?: number
+    totalCount?: number
+    totalPages?: number
+    total_count?: number
+    total_pages?: number
+  }
+
   interface DailyReportApi {
     uuid?: string
     reportDate?: string
@@ -94,6 +104,19 @@ export function useDailyReportApi() {
     }
   }
 
+  function toPageResponse<TInput, TOutput>(
+    pageResponse: PageResponseApi<TInput>,
+    mapItem: (item: TInput) => TOutput
+  ): PageResponse<TOutput> {
+    return {
+      content: (pageResponse.content ?? []).map(mapItem),
+      page: Number(pageResponse.page ?? 1),
+      size: Number(pageResponse.size ?? 10),
+      totalCount: Number(pageResponse.totalCount ?? pageResponse.total_count ?? 0),
+      totalPages: Number(pageResponse.totalPages ?? pageResponse.total_pages ?? 0)
+    }
+  }
+
   function toAdminDailyReport(report: AdminDailyReportApi): AdminDailyReport {
     return {
       ...toDailyReport(report),
@@ -104,7 +127,7 @@ export function useDailyReportApi() {
   }
 
   async function fetchDailyReports(params: DailyReportListParams): Promise<PageResponse<DailyReport>> {
-    const response = await authorizedFetch<ApiResponse<PageResponse<DailyReportApi>>>('/api/v1/daily-reports', {
+    const response = await authorizedFetch<ApiResponse<PageResponseApi<DailyReportApi>>>('/api/v1/daily-reports', {
       method: 'GET',
       query: {
         dateFrom: params.dateFrom,
@@ -115,10 +138,7 @@ export function useDailyReportApi() {
       }
     })
 
-    return {
-      ...response.data,
-      content: response.data.content.map(toDailyReport)
-    }
+    return toPageResponse(response.data, toDailyReport)
   }
 
   async function fetchDailyReport(uuid: string): Promise<DailyReport> {
@@ -162,7 +182,7 @@ export function useDailyReportApi() {
   }
 
   async function fetchAdminDailyReports(params: DailyReportListParams): Promise<PageResponse<AdminDailyReport>> {
-    const response = await authorizedFetch<ApiResponse<PageResponse<AdminDailyReportApi>>>('/api/v1/admin/daily-reports', {
+    const response = await authorizedFetch<ApiResponse<PageResponseApi<AdminDailyReportApi>>>('/api/v1/admin/daily-reports', {
       method: 'GET',
       query: {
         memberUuid: params.memberUuid,
@@ -174,10 +194,7 @@ export function useDailyReportApi() {
       }
     })
 
-    return {
-      ...response.data,
-      content: response.data.content.map(toAdminDailyReport)
-    }
+    return toPageResponse(response.data, toAdminDailyReport)
   }
 
   async function fetchAdminMissingDailyReports(params: Pick<DailyReportListParams, 'memberUuid' | 'dateFrom' | 'dateTo'>): Promise<AdminDailyReportMissing[]> {

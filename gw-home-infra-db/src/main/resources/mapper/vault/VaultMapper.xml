@@ -31,11 +31,14 @@
                   AND vc.del_at IS NULL
             )
         </if>
-        <if test="keyword != null and keyword != ''">
-            AND (
-                ttl LIKE CONCAT('%', #{keyword}, '%')
-                OR COALESCE(memo, '') LIKE CONCAT('%', #{keyword}, '%')
-            )
+        <if test="keywordTokens != null and keywordTokens.size() > 0">
+            <foreach collection="keywordTokens" item="keywordToken">
+                AND (
+                    ttl ILIKE CONCAT('%', #{keywordToken}, '%')
+                    OR COALESCE(lgn_id, '') ILIKE CONCAT('%', #{keywordToken}, '%')
+                    OR COALESCE(memo, '') ILIKE CONCAT('%', #{keywordToken}, '%')
+                )
+            </foreach>
         </if>
         ORDER BY created_at DESC
     </select>

@@ -21,12 +21,16 @@ const isDetailVisible = ref(false)
 const keyword = ref(typeof route.query.keyword === 'string' ? route.query.keyword : '')
 const selectedCategoryUuid = ref(typeof route.query.categoryUuid === 'string' ? route.query.categoryUuid : '')
 
+function normalizeKeyword(value: string): string {
+  return value.trim().replace(/\s+/g, ' ')
+}
+
 async function loadCredentialList() {
   isLoading.value = true
 
   try {
     credentialList.value = await fetchCredentialList({
-      keyword: keyword.value || undefined,
+      keyword: normalizeKeyword(keyword.value) || undefined,
       categoryUuid: selectedCategoryUuid.value || undefined
     })
   } catch (error) {
@@ -59,6 +63,8 @@ function openEditModal(credential: Credential) {
 }
 
 function handleSearch() {
+  keyword.value = normalizeKeyword(keyword.value)
+
   router.push({
     query: {
       ...route.query,
@@ -145,7 +151,7 @@ await loadCategoryList()
           v-model="keyword"
           class="input-field"
           type="search"
-          placeholder="제목 또는 설명 검색"
+          placeholder="제목, 아이디, 메모를 여러 단어로 검색"
         >
         <CommonBaseButton variant="secondary" type="submit">
           검색

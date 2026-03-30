@@ -69,7 +69,8 @@
         </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR EXISTS (
                     SELECT 1
                     FROM tb_wrk_dly_rpt_wrk_unit drwu
@@ -96,7 +97,8 @@
         </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR EXISTS (
                     SELECT 1
                     FROM tb_wrk_dly_rpt_wrk_unit drwu
@@ -245,7 +247,8 @@
         </if>
         <if test="req.kwd != null and req.kwd != ''">
             AND (
-                dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
+                dr.cntn ILIKE CONCAT('%', #{req.kwd}, '%')
+                OR dr.spcl_note ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR ma.lgn_id ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR mp.nick_nm ILIKE CONCAT('%', #{req.kwd}, '%')
                 OR EXISTS (

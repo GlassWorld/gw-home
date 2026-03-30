@@ -87,3 +87,21 @@
   - 계정정보(`.app-header__profile`) 옆에 메모 버튼 추가
   - `isMemoVisible` ref 제어
   - `CommonHeaderMemoModal` 추가
+
+---
+
+## 추가 계획 (2026-03-30)
+
+### Step 10. Frontend — 메모 모달 크기 확대
+
+- [x] `HeaderMemoModal.vue` 의 최대 너비 확대
+- [x] 모달 본문 최소 높이 또는 viewport 기준 높이 재조정
+- [x] textarea 높이와 내부 여백 확대
+- [x] 작은 화면에서 과도하게 커지지 않도록 반응형 max-width 확인
+- [x] 필요 시 공통 모달 크기 prop 확장 여부 검토
+
+### Step 11. 검증
+
+- [x] 데스크탑에서 기존보다 넓은 작성 공간이 확보되는지 확인
+- [x] 저장/닫기 버튼 배치가 깨지지 않는지 확인
+- [x] 모바일/태블릿에서 viewport overflow 문제가 없는지 확인
