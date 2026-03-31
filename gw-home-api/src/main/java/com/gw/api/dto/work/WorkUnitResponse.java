@@ -1,6 +1,7 @@
 package com.gw.api.dto.work;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record WorkUnitResponse(
         String workUnitUuid,
@@ -12,6 +13,7 @@ public record WorkUnitResponse(
         Integer useCount,
         OffsetDateTime lastUsedAt,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        List<WorkGitProjectResponse> gitProjects
 ) {
 }

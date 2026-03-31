@@ -1,6 +1,7 @@
 package com.gw.infra.db.mapper.work;
 
 import com.gw.share.vo.work.WorkUnitListSearchVo;
+import com.gw.share.vo.work.WorkUnitGitCfgVo;
 import com.gw.share.vo.work.WorkUnitVo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
@@ -25,9 +26,30 @@ public interface WorkUnitMapper {
             @Param("uuids") List<String> uuids
     );
 
+    List<WorkUnitGitCfgVo> selectWorkUnitGitConfigs(
+            @Param("workUnitIdx") Long workUnitIdx,
+            @Param("mbrAcctIdx") Long mbrAcctIdx
+    );
+
+    List<WorkUnitGitCfgVo> selectWorkUnitGitConfigsByWorkUnitIdxs(
+            @Param("workUnitIdxs") List<Long> workUnitIdxs,
+            @Param("mbrAcctIdx") Long mbrAcctIdx
+    );
+
     void insertWorkUnit(WorkUnitVo workUnit);
 
+    void insertWorkUnitGitConfig(WorkUnitGitCfgVo workUnitGitCfg);
+
     int updateWorkUnit(WorkUnitVo workUnit);
+
+    int updateWorkUnitGitConfig(WorkUnitGitCfgVo workUnitGitCfg);
+
+    int deleteWorkUnitGitConfig(
+            @Param("uuid") String uuid,
+            @Param("workUnitIdx") Long workUnitIdx,
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
+            @Param("updatedBy") String updatedBy
+    );
 
     int updateWorkUnitUse(
             @Param("uuid") String uuid,

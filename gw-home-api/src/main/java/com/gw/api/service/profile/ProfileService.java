@@ -33,6 +33,7 @@ public class ProfileService {
             "/notices",
             "/board",
             "/work",
+            "/work/git-accounts",
             "/work/daily-reports",
             "/work/weekly-reports",
             "/vault",

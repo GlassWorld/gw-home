@@ -2,6 +2,7 @@ package com.gw.share.vo.work;
 
 import com.gw.share.vo.common.BaseVo;
 import java.time.OffsetDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,4 +39,7 @@ public class WorkUnitVo extends BaseVo {
 
     // 마지막 사용 일시
     private OffsetDateTime lastUsedAt;
+
+    // 연결된 Git 프로젝트 목록
+    private List<WorkGitPrjVo> gitProjects;
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public record UpdateWorkUnitRequest(
         @NotBlank(message = "title은 필수입니다.")
@@ -17,6 +18,8 @@ public record UpdateWorkUnitRequest(
                 regexp = "IN_PROGRESS|DONE|ON_HOLD",
                 message = "status는 IN_PROGRESS, DONE, ON_HOLD 중 하나여야 합니다."
         )
-        String status
+        String status,
+        @JsonAlias({"gitProjectUuids", "git_project_uuids"})
+        List<@NotBlank(message = "gitProjectUuids 항목은 비어 있을 수 없습니다.") String> gitProjectUuids
 ) {
 }

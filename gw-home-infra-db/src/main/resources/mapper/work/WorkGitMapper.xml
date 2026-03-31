@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.work.WorkGitMapper">
+
+    <sql id="gitAccountColumns">
+        wrk_git_acct_idx AS idx,
+        wrk_git_acct_uuid AS uuid,
+        mbr_acct_idx,
+        prvd_cd,
+        acct_lbl,
+        auth_nm,
+        acs_tokn_enc,
+        use_yn,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at,
+        del_at
+    </sql>
+
+    <sql id="gitProjectColumns">
+        p.wrk_git_prj_idx AS idx,
+        p.wrk_git_prj_uuid AS uuid,
+        p.wrk_git_acct_idx,
+        p.mbr_acct_idx,
+        p.prj_nm,
+        p.repo_url,
+        p.use_yn,
+        p.created_by,
+        p.updated_by,
+        p.created_at,
+        p.updated_at,
+        p.del_at,
+        a.wrk_git_acct_uuid AS git_account_uuid,
+        a.acct_lbl AS git_account_label,
+        a.prvd_cd,
+        a.auth_nm,
+        a.acs_tokn_enc
+    </sql>
+
+    <select id="selectGitAccounts" resultType="WorkGitAcctVo">
+        SELECT <include refid="gitAccountColumns" />
+        FROM tb_wrk_git_acct
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+        ORDER BY use_yn DESC, updated_at DESC, created_at DESC
+    </select>
+
+    <select id="selectGitAccount" resultType="WorkGitAcctVo">
+        SELECT <include refid="gitAccountColumns" />
+        FROM tb_wrk_git_acct
+        WHERE wrk_git_acct_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectGitAccountByIdx" resultType="WorkGitAcctVo">
+        SELECT <include refid="gitAccountColumns" />
+        FROM tb_wrk_git_acct
+        WHERE wrk_git_acct_idx = #{idx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </select>
+
+    <insert id="insertGitAccount" parameterType="WorkGitAcctVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_wrk_git_acct (
+            mbr_acct_idx, prvd_cd, acct_lbl, auth_nm, acs_tokn_enc, use_yn, created_by
+        ) VALUES (
+            #{mbrAcctIdx}, #{prvdCd}, #{acctLbl}, #{authNm}, #{acsToknEnc}, #{useYn}, #{createdBy}
+        )
+    </insert>
+
+    <update id="updateGitAccount" parameterType="WorkGitAcctVo">
+        UPDATE tb_wrk_git_acct
+        SET prvd_cd = #{prvdCd},
+            acct_lbl = #{acctLbl},
+            auth_nm = #{authNm},
+            acs_tokn_enc = #{acsToknEnc},
+            use_yn = #{useYn},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_git_acct_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteGitAccount">
+        UPDATE tb_wrk_git_acct
+        SET del_at = now(),
+            updated_at = now(),
+            updated_by = #{updatedBy}
+        WHERE wrk_git_acct_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <select id="selectGitProjects" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />
+        FROM tb_wrk_git_prj p
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE p.mbr_acct_idx = #{mbrAcctIdx}
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+        <if test="gitAccountUuid != null and gitAccountUuid != ''">
+            AND a.wrk_git_acct_uuid = CAST(#{gitAccountUuid} AS UUID)
+        </if>
+        ORDER BY p.use_yn DESC, p.updated_at DESC, p.created_at DESC
+    </select>
+
+    <select id="selectGitProjectOptions" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />
+        FROM tb_wrk_git_prj p
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE p.mbr_acct_idx = #{mbrAcctIdx}
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+          AND p.use_yn = 'Y'
+          AND a.use_yn = 'Y'
+        ORDER BY a.acct_lbl ASC, p.prj_nm ASC
+    </select>
+
+    <select id="selectGitProject" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />
+        FROM tb_wrk_git_prj p
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE p.wrk_git_prj_uuid = CAST(#{uuid} AS UUID)
+          AND p.mbr_acct_idx = #{mbrAcctIdx}
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+    </select>
+
+    <select id="selectGitProjectByIdx" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />
+        FROM tb_wrk_git_prj p
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE p.wrk_git_prj_idx = #{idx}
+          AND p.mbr_acct_idx = #{mbrAcctIdx}
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+    </select>
+
+    <select id="selectGitProjectsByUuids" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />
+        FROM tb_wrk_git_prj p
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE p.mbr_acct_idx = #{mbrAcctIdx}
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+          AND p.wrk_git_prj_uuid IN
+          <foreach collection="uuids" item="uuid" open="(" separator="," close=")">
+              CAST(#{uuid} AS UUID)
+          </foreach>
+    </select>
+
+    <insert id="insertGitProject" parameterType="WorkGitPrjVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_wrk_git_prj (
+            wrk_git_acct_idx, mbr_acct_idx, prj_nm, repo_url, use_yn, created_by
+        ) VALUES (
+            #{wrkGitAcctIdx}, #{mbrAcctIdx}, #{prjNm}, #{repoUrl}, #{useYn}, #{createdBy}
+        )
+    </insert>
+
+    <update id="updateGitProject" parameterType="WorkGitPrjVo">
+        UPDATE tb_wrk_git_prj
+        SET wrk_git_acct_idx = #{wrkGitAcctIdx},
+            prj_nm = #{prjNm},
+            repo_url = #{repoUrl},
+            use_yn = #{useYn},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_git_prj_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteGitProject">
+        UPDATE tb_wrk_git_prj
+        SET del_at = now(),
+            updated_at = now(),
+            updated_by = #{updatedBy}
+        WHERE wrk_git_prj_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteGitProjectsByAccount">
+        UPDATE tb_wrk_git_prj
+        SET del_at = now(),
+            updated_at = now(),
+            updated_by = #{updatedBy}
+        WHERE wrk_git_acct_idx = #{wrkGitAcctIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <select id="selectWorkUnitGitProjects" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />
+        FROM tb_wrk_unit_git_prj wgp
+        INNER JOIN tb_wrk_git_prj p ON p.wrk_git_prj_idx = wgp.wrk_git_prj_idx
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE wgp.work_unit_idx = #{workUnitIdx}
+          AND wgp.mbr_acct_idx = #{mbrAcctIdx}
+          AND wgp.del_at IS NULL
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+        ORDER BY a.acct_lbl ASC, p.prj_nm ASC
+    </select>
+
+    <select id="selectWorkUnitGitProjectsByWorkUnitIdxs" resultType="WorkGitPrjVo">
+        SELECT <include refid="gitProjectColumns" />,
+               wgp.work_unit_idx
+        FROM tb_wrk_unit_git_prj wgp
+        INNER JOIN tb_wrk_git_prj p ON p.wrk_git_prj_idx = wgp.wrk_git_prj_idx
+        INNER JOIN tb_wrk_git_acct a ON a.wrk_git_acct_idx = p.wrk_git_acct_idx
+        WHERE wgp.mbr_acct_idx = #{mbrAcctIdx}
+          AND wgp.del_at IS NULL
+          AND p.del_at IS NULL
+          AND a.del_at IS NULL
+          AND wgp.work_unit_idx IN
+          <foreach collection="workUnitIdxs" item="workUnitIdx" open="(" separator="," close=")">
+              #{workUnitIdx}
+          </foreach>
+        ORDER BY wgp.work_unit_idx ASC, a.acct_lbl ASC, p.prj_nm ASC
+    </select>
+
+    <insert id="insertWorkUnitGitProject">
+        INSERT INTO tb_wrk_unit_git_prj (
+            work_unit_idx, wrk_git_prj_idx, mbr_acct_idx, created_by
+        ) VALUES (
+            #{workUnitIdx}, #{gitProjectIdx}, #{mbrAcctIdx}, #{createdBy}
+        )
+        ON CONFLICT (work_unit_idx, wrk_git_prj_idx)
+        DO UPDATE SET
+            del_at = NULL,
+            updated_at = now(),
+            updated_by = #{createdBy}
+    </insert>
+
+    <update id="deleteWorkUnitGitProjects">
+        UPDATE tb_wrk_unit_git_prj
+        SET del_at = now(),
+            updated_at = now(),
+            updated_by = #{updatedBy}
+        WHERE work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteWorkUnitGitProjectsByGitProject">
+        UPDATE tb_wrk_unit_git_prj
+        SET del_at = now(),
+            updated_at = now(),
+            updated_by = #{updatedBy}
+        WHERE wrk_git_prj_idx = #{gitProjectIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteWorkUnitGitProjectsByGitAccount">
+        UPDATE tb_wrk_unit_git_prj wugp
+        SET del_at = now(),
+            updated_at = now(),
+            updated_by = #{updatedBy}
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+          AND wrk_git_prj_idx IN (
+              SELECT wrk_git_prj_idx
+              FROM tb_wrk_git_prj
+              WHERE wrk_git_acct_idx = #{wrkGitAcctIdx}
+                AND mbr_acct_idx = #{mbrAcctIdx}
+                AND del_at IS NULL
+          )
+    </update>
+
+</mapper>

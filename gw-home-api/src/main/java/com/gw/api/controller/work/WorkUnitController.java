@@ -3,6 +3,7 @@ package com.gw.api.controller.work;
 import com.gw.api.dto.work.CreateWorkUnitRequest;
 import com.gw.api.dto.work.UpdateWorkUnitRequest;
 import com.gw.api.dto.work.UpdateWorkUnitUseRequest;
+import com.gw.api.dto.work.WorkUnitGitCommitResponse;
 import com.gw.api.dto.work.WorkUnitListRequest;
 import com.gw.api.dto.work.WorkUnitOptionResponse;
 import com.gw.api.dto.work.WorkUnitResponse;
@@ -11,6 +12,7 @@ import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.response.ApiResponse;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.security.Principal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +45,20 @@ public class WorkUnitController {
             @RequestParam(required = false) Boolean includeInactive
     ) {
         return ApiResponse.ok(workUnitService.getWorkUnitOptions(getLoginId(principal), includeInactive));
+    }
+
+    @GetMapping("/{uuid}")
+    public ApiResponse<WorkUnitResponse> getWorkUnit(Principal principal, @PathVariable String uuid) {
+        return ApiResponse.ok(workUnitService.getWorkUnit(getLoginId(principal), uuid));
+    }
+
+    @GetMapping("/{uuid}/git-commits")
+    public ApiResponse<List<WorkUnitGitCommitResponse>> getWorkUnitGitCommits(
+            Principal principal,
+            @PathVariable String uuid,
+            @RequestParam LocalDate reportDate
+    ) {
+        return ApiResponse.ok(workUnitService.getWorkUnitGitCommits(getLoginId(principal), uuid, reportDate));
     }
 
     @PostMapping

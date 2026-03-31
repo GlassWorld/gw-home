@@ -22,6 +22,22 @@
         del_at
     </sql>
 
+    <sql id="workUnitGitConfigColumns">
+        wrk_unit_git_cfg_idx AS idx,
+        wrk_unit_git_cfg_uuid AS uuid,
+        work_unit_idx,
+        mbr_acct_idx,
+        prvd_cd,
+        repo_url,
+        auth_nm,
+        acs_tokn_enc,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at,
+        del_at
+    </sql>
+
     <select id="selectWorkUnitList" resultType="WorkUnitVo">
         SELECT
             <include refid="workUnitColumns" />
@@ -107,6 +123,49 @@
         )
     </insert>
 
+    <select id="selectWorkUnitGitConfigs" resultType="WorkUnitGitCfgVo">
+        SELECT
+            <include refid="workUnitGitConfigColumns" />
+        FROM tb_wrk_unit_git_cfg
+        WHERE work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="selectWorkUnitGitConfigsByWorkUnitIdxs" resultType="WorkUnitGitCfgVo">
+        SELECT
+            <include refid="workUnitGitConfigColumns" />
+        FROM tb_wrk_unit_git_cfg
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+          AND work_unit_idx IN
+          <foreach collection="workUnitIdxs" item="workUnitIdx" open="(" separator="," close=")">
+              #{workUnitIdx}
+          </foreach>
+        ORDER BY work_unit_idx ASC, created_at ASC
+    </select>
+
+    <insert id="insertWorkUnitGitConfig" parameterType="WorkUnitGitCfgVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_wrk_unit_git_cfg (
+            work_unit_idx,
+            mbr_acct_idx,
+            prvd_cd,
+            repo_url,
+            auth_nm,
+            acs_tokn_enc,
+            created_by
+        ) VALUES (
+            #{workUnitIdx},
+            #{mbrAcctIdx},
+            #{prvdCd},
+            #{repoUrl},
+            #{authNm},
+            #{acsToknEnc},
+            #{createdBy}
+        )
+    </insert>
+
     <update id="updateWorkUnit" parameterType="WorkUnitVo">
         UPDATE tb_work_unit
         SET
@@ -117,6 +176,33 @@
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE work_unit_uuid = CAST(#{uuid} AS UUID)
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateWorkUnitGitConfig" parameterType="WorkUnitGitCfgVo">
+        UPDATE tb_wrk_unit_git_cfg
+        SET
+            prvd_cd = #{prvdCd},
+            repo_url = #{repoUrl},
+            auth_nm = #{authNm},
+            acs_tokn_enc = #{acsToknEnc},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_unit_git_cfg_uuid = CAST(#{uuid} AS UUID)
+          AND work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteWorkUnitGitConfig">
+        UPDATE tb_wrk_unit_git_cfg
+        SET
+            updated_by = #{updatedBy},
+            updated_at = now(),
+            del_at = now()
+        WHERE wrk_unit_git_cfg_uuid = CAST(#{uuid} AS UUID)
+          AND work_unit_idx = #{workUnitIdx}
           AND mbr_acct_idx = #{mbrAcctIdx}
           AND del_at IS NULL
     </update>

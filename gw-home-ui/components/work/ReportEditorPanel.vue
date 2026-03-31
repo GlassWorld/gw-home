@@ -8,34 +8,20 @@ interface SelectedWorkUnitItem {
   category: string | null
 }
 
-function formatReportDateLabel(value: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const [year = 1970, month = 1, day = 1] = value.split('-').map((item) => Number(item))
-  const date = new Date(year, month - 1, day)
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    weekday: 'short'
-  }).format(date)
-}
-
 const props = defineProps<{
   reportDate: string
   selectedWorkUnits: SelectedWorkUnitItem[]
   workSummary: string
   issueNote: string
   isEditing: boolean
+  selectedCommitSummary?: string
 }>()
 
 const emit = defineEmits<{
   'update:report-date': [value: string]
   'update:work-summary': [value: string]
   'update:issue-note': [value: string]
+  'open-work-import': []
 }>()
 
 function renderMarkdown(rawValue: string): string {
@@ -71,20 +57,29 @@ const selectedWorkUnitSummary = computed(() => {
       <div class="report-editor-panel__header-copy">
         <p class="report-editor-panel__eyebrow">Editor</p>
         <h3>일일보고 작성</h3>
+        <p class="report-editor-panel__header-description">
+          업무불러오기 모달에서 업무와 커밋을 선택하면 본문 초안을 빠르게 세팅할 수 있습니다.
+        </p>
       </div>
 
-      <label class="report-editor-panel__header-date">
-        <span>작성일자</span>
-        <div class="report-editor-panel__header-date-field">
-          <input
-            :value="reportDate"
-            class="input-field report-editor-panel__header-date-input"
-            type="date"
-            :disabled="isEditing"
-            @input="emit('update:report-date', ($event.target as HTMLInputElement).value)"
-          >
-        </div>
-      </label>
+      <div class="report-editor-panel__header-actions">
+        <label class="report-editor-panel__header-date">
+          <span>작성일자</span>
+          <div class="report-editor-panel__header-date-field">
+            <input
+              :value="reportDate"
+              class="input-field report-editor-panel__header-date-input"
+              type="date"
+              :disabled="isEditing"
+              @input="emit('update:report-date', ($event.target as HTMLInputElement).value)"
+            >
+          </div>
+        </label>
+
+        <CommonBaseButton type="button" @click="emit('open-work-import')">
+          업무불러오기
+        </CommonBaseButton>
+      </div>
     </header>
 
     <div class="report-editor-panel__body">
@@ -96,6 +91,12 @@ const selectedWorkUnitSummary = computed(() => {
           </p>
         </div>
 
+        <div class="report-editor-panel__inline-field">
+          <span>불러온 커밋</span>
+          <p class="report-editor-panel__inline-value">
+            {{ selectedCommitSummary || '선택된 커밋 없음' }}
+          </p>
+        </div>
       </div>
 
       <div class="report-editor-panel__workspace">
@@ -193,6 +194,19 @@ const selectedWorkUnitSummary = computed(() => {
   margin: 0;
 }
 
+.report-editor-panel__header-description {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.report-editor-panel__header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
 .report-editor-panel__header-date {
   display: grid;
   gap: 6px;
@@ -208,7 +222,6 @@ const selectedWorkUnitSummary = computed(() => {
 
 .report-editor-panel__header-date-field {
   display: grid;
-  gap: 6px;
   justify-items: end;
 }
 
@@ -223,40 +236,23 @@ const selectedWorkUnitSummary = computed(() => {
   min-height: 0;
   overflow-y: auto;
   padding: 18px;
-  align-content: start;
-  align-items: start;
 }
 
 .report-editor-panel__meta-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  align-self: start;
-  align-items: start;
-  align-content: start;
-}
-
-.report-editor-panel__field {
-  display: grid;
-  gap: 8px;
-}
-
-.report-editor-panel__field--full {
-  grid-column: 1 / -1;
 }
 
 .report-editor-panel__inline-field {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
   align-items: center;
-  align-content: center;
   gap: 10px;
-  min-height: 0;
-  height: auto;
-  align-self: start;
 }
 
-.report-editor-panel__inline-field > span {
+.report-editor-panel__inline-field > span,
+.report-editor-panel__field > span {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   font-weight: 600;
@@ -264,25 +260,14 @@ const selectedWorkUnitSummary = computed(() => {
 
 .report-editor-panel__inline-value {
   margin: 0;
-  min-width: 0;
-  color: var(--color-text);
-  line-height: 1.4;
-  min-height: 0;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.report-editor-panel__field > span {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.report-editor-panel__empty {
-  margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.6;
+.report-editor-panel__field {
+  display: grid;
+  gap: 8px;
 }
 
 .report-editor-panel__textarea {
@@ -312,64 +297,34 @@ const selectedWorkUnitSummary = computed(() => {
   min-height: 0;
 }
 
-.report-editor-panel__workspace-column {
+.report-editor-panel__workspace-column,
+.report-editor-panel__preview-grid {
   display: grid;
-  align-content: start;
   gap: 14px;
   min-height: 0;
 }
 
-.report-editor-panel__workspace-header {
+.report-editor-panel__workspace-header,
+.report-editor-panel__preview-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: var(--radius-medium);
-  border: 1px solid rgba(147, 210, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.report-editor-panel__workspace-header span {
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.report-editor-panel__preview-grid {
-  display: grid;
-  gap: 12px;
-  align-content: start;
+  align-items: center;
 }
 
 .report-editor-panel__preview-card {
   display: grid;
   gap: 10px;
+  min-height: 0;
   padding: 16px;
-  border: 1px solid rgba(147, 210, 255, 0.12);
   border-radius: var(--radius-medium);
-  background: rgba(5, 18, 34, 0.36);
-}
-
-.report-editor-panel__preview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.report-editor-panel__preview-header span {
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  border: 1px solid rgba(147, 210, 255, 0.14);
+  background: rgba(5, 18, 34, 0.34);
 }
 
 .report-editor-panel__preview-body {
-  color: var(--color-text);
+  min-height: 120px;
   line-height: 1.6;
-  word-break: break-word;
 }
 
 .report-editor-panel__preview-body:deep(p:first-child) {
@@ -380,73 +335,13 @@ const selectedWorkUnitSummary = computed(() => {
   margin-bottom: 0;
 }
 
-.report-editor-panel__preview-body:deep(code) {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.92em;
-}
-
-.report-editor-panel__preview-body:deep(pre) {
-  margin: 12px 0 0;
-  padding: 14px;
-  overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.report-editor-panel__preview-body:deep(pre code) {
-  padding: 0;
-  background: transparent;
-}
-
-.report-editor-panel__preview-body:deep(a) {
-  color: #8bd0ff;
-  text-decoration: underline;
-}
-
-.report-editor-panel__preview-body:deep(ul),
-.report-editor-panel__preview-body:deep(ol) {
-  padding-left: 20px;
-}
-
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
+  .report-editor-panel__header,
+  .report-editor-panel__header-actions,
+  .report-editor-panel__meta-grid,
   .report-editor-panel__workspace {
+    display: grid;
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .report-editor-panel__header {
-    flex-direction: column;
-  }
-
-  .report-editor-panel__header-date {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .report-editor-panel__header-date > span,
-  .report-editor-panel__header-date-field {
-    text-align: left;
-    justify-items: stretch;
-  }
-
-  .report-editor-panel__meta-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .report-editor-panel__inline-field {
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 6px;
-  }
-
-  .report-editor-panel__field--full {
-    grid-column: auto;
   }
 }
 </style>
