@@ -3,6 +3,55 @@ import type { PageResponse } from '~/types/api/common'
 export type WorkUnitStatus = 'IN_PROGRESS' | 'DONE' | 'ON_HOLD'
 export type WorkUnitSort = 'updated' | 'recent' | 'frequent'
 export type WeeklyReportGenerationType = 'MANUAL' | 'OPENAI' | 'RULE_BASED'
+export type WorkGitProvider = 'GITLAB'
+
+export interface WorkGitAccount {
+  gitAccountUuid: string
+  provider: WorkGitProvider
+  accountLabel: string
+  authorName: string
+  hasAccessToken: boolean
+  useYn: 'Y' | 'N'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SaveWorkGitAccountPayload {
+  accountLabel: string
+  provider: WorkGitProvider
+  authorName: string
+  accessToken?: string
+  useYn?: 'Y' | 'N'
+}
+
+export interface WorkGitProject {
+  gitProjectUuid: string
+  gitAccountUuid: string
+  gitAccountLabel: string
+  provider: WorkGitProvider
+  projectName: string
+  repositoryUrl: string
+  useYn: 'Y' | 'N'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WorkGitConnectionTestResult {
+  gitProjectUuid: string
+  provider: WorkGitProvider
+  projectName: string
+  repositoryUrl: string
+  connected: boolean
+  message: string
+  checkedAt: string
+}
+
+export interface SaveWorkGitProjectPayload {
+  gitAccountUuid: string
+  projectName: string
+  repositoryUrl: string
+  useYn?: 'Y' | 'N'
+}
 
 export interface WorkUnit {
   workUnitUuid: string
@@ -15,6 +64,7 @@ export interface WorkUnit {
   lastUsedAt: string | null
   createdAt: string
   updatedAt: string
+  gitProjects: WorkGitProject[]
 }
 
 export interface WorkUnitOption {
@@ -30,6 +80,7 @@ export interface SaveWorkUnitPayload {
   category?: string
   description?: string
   status: WorkUnitStatus
+  gitProjectUuids: string[]
 }
 
 export interface WorkUnitListParams {
@@ -54,6 +105,18 @@ export interface DailyReportWorkUnit {
   workUnitUuid: string
   title: string
   category: string | null
+}
+
+export interface WorkUnitGitCommit {
+  gitConnectionUuid: string
+  provider: WorkGitProvider
+  repositoryUrl: string
+  repositoryName: string
+  commitSha: string
+  message: string
+  authorName: string
+  authoredAt: string
+  commitUrl: string
 }
 
 export interface SaveDailyReportPayload {

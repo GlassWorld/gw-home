@@ -3,18 +3,24 @@ package com.gw.api.service.work;
 import com.gw.api.convert.work.WorkUnitConvert;
 import com.gw.api.dto.work.CreateWorkUnitRequest;
 import com.gw.api.dto.work.UpdateWorkUnitRequest;
+import com.gw.api.dto.work.WorkUnitGitCommitResponse;
 import com.gw.api.dto.work.WorkUnitListRequest;
 import com.gw.api.dto.work.WorkUnitOptionResponse;
 import com.gw.api.dto.work.WorkUnitResponse;
 import com.gw.infra.db.mapper.account.AccountMapper;
+import com.gw.infra.db.mapper.work.WorkGitMapper;
 import com.gw.infra.db.mapper.work.WorkUnitMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.util.StringUtil;
 import com.gw.share.util.ValidationUtil;
 import com.gw.share.vo.account.AcctVo;
+import com.gw.share.vo.work.WorkGitPrjVo;
 import com.gw.share.vo.work.WorkUnitListSearchVo;
 import com.gw.share.vo.work.WorkUnitVo;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -33,11 +39,20 @@ public class WorkUnitService {
     );
 
     private final WorkUnitMapper workUnitMapper;
+    private final WorkGitMapper workGitMapper;
     private final AccountMapper accountMapper;
+    private final WorkGitCommitClient workGitCommitClient;
 
-    public WorkUnitService(WorkUnitMapper workUnitMapper, AccountMapper accountMapper) {
+    public WorkUnitService(
+            WorkUnitMapper workUnitMapper,
+            WorkGitMapper workGitMapper,
+            AccountMapper accountMapper,
+            WorkGitCommitClient workGitCommitClient
+    ) {
         this.workUnitMapper = workUnitMapper;
+        this.workGitMapper = workGitMapper;
         this.accountMapper = accountMapper;
+        this.workGitCommitClient = workGitCommitClient;
     }
 
     // 로그인 사용자의 업무 목록을 조회한다.
@@ -55,7 +70,7 @@ public class WorkUnitService {
                     .orderByClause(resolveOrderByClause(request.sort()))
                     .build();
 
-            List<WorkUnitResponse> response = workUnitMapper.selectWorkUnitList(query).stream()
+            List<WorkUnitResponse> response = enrichWorkUnits(workUnitMapper.selectWorkUnitList(query), account.getIdx()).stream()
                     .map(WorkUnitConvert::toResponse)
                     .toList();
             log.info("getWorkUnitList 완료 - loginId: {}, count: {}", loginId, response.size());
@@ -97,9 +112,30 @@ public class WorkUnitService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public WorkUnitResponse getWorkUnit(String loginId, String uuid) {
+        log.info("getWorkUnit 시작 - loginId: {}, uuid: {}", loginId, uuid);
+        try {
+            AcctVo account = getAccountByLoginId(loginId);
+            WorkUnitResponse response = WorkUnitConvert.toResponse(enrichWorkUnit(getWorkUnit(uuid, account.getIdx()), account.getIdx()));
+            log.info("getWorkUnit 완료 - loginId: {}, uuid: {}", loginId, uuid);
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getWorkUnit 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    uuid,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
     // 로그인 사용자의 업무를 생성한다.
     public WorkUnitResponse createWorkUnit(String loginId, CreateWorkUnitRequest request) {
-        log.info("createWorkUnit 시작 - loginId: {}, request: {}", loginId, request);
+        log.info("createWorkUnit 시작 - loginId: {}, title: {}", loginId, request.title());
         try {
             AcctVo account = getAccountByLoginId(loginId);
             String normalizedTitle = normalizeRequiredTitle(request.title());
@@ -115,8 +151,9 @@ public class WorkUnitService {
                     .createdBy(loginId)
                     .build();
             workUnitMapper.insertWorkUnit(workUnit);
+            syncGitProjects(workUnit.getIdx(), account.getIdx(), request.gitProjectUuids(), loginId);
 
-            WorkUnitResponse response = WorkUnitConvert.toResponse(getWorkUnitByIdx(workUnit.getIdx()));
+            WorkUnitResponse response = WorkUnitConvert.toResponse(enrichWorkUnit(getWorkUnitByIdx(workUnit.getIdx()), account.getIdx()));
             log.info("createWorkUnit 완료 - loginId: {}, uuid: {}", loginId, response.workUnitUuid());
             return response;
         } catch (BusinessException exception) {
@@ -133,7 +170,7 @@ public class WorkUnitService {
 
     // 로그인 사용자의 업무를 수정한다.
     public WorkUnitResponse updateWorkUnit(String loginId, String uuid, UpdateWorkUnitRequest request) {
-        log.info("updateWorkUnit 시작 - loginId: {}, uuid: {}, request: {}", loginId, uuid, request);
+        log.info("updateWorkUnit 시작 - loginId: {}, uuid: {}, title: {}", loginId, uuid, request.title());
         try {
             AcctVo account = getAccountByLoginId(loginId);
             WorkUnitVo workUnit = getWorkUnit(uuid, account.getIdx());
@@ -146,8 +183,9 @@ public class WorkUnitService {
             workUnit.setSts(normalizeStatusOrDefault(request.status()));
             workUnit.setUpdatedBy(loginId);
             workUnitMapper.updateWorkUnit(workUnit);
+            syncGitProjects(workUnit.getIdx(), account.getIdx(), request.gitProjectUuids(), loginId);
 
-            WorkUnitResponse response = WorkUnitConvert.toResponse(getWorkUnit(uuid, account.getIdx()));
+            WorkUnitResponse response = WorkUnitConvert.toResponse(enrichWorkUnit(getWorkUnit(uuid, account.getIdx()), account.getIdx()));
             log.info("updateWorkUnit 완료 - loginId: {}, uuid: {}", loginId, uuid);
             return response;
         } catch (BusinessException exception) {
@@ -176,6 +214,29 @@ public class WorkUnitService {
         } catch (BusinessException exception) {
             log.error(
                     "updateWorkUnitUse 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    uuid,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkUnitGitCommitResponse> getWorkUnitGitCommits(String loginId, String uuid, LocalDate reportDate) {
+        log.info("getWorkUnitGitCommits 시작 - loginId: {}, uuid: {}, reportDate: {}", loginId, uuid, reportDate);
+        try {
+            AcctVo account = getAccountByLoginId(loginId);
+            ValidationUtil.requireNonNull(reportDate, ErrorCode.BAD_REQUEST, "reportDate는 필수입니다.");
+            WorkUnitVo workUnit = enrichWorkUnit(getWorkUnit(uuid, account.getIdx()), account.getIdx());
+            List<WorkUnitGitCommitResponse> response = workGitCommitClient.fetchCommits(workUnit.getGitProjects(), reportDate);
+            log.info("getWorkUnitGitCommits 완료 - loginId: {}, uuid: {}, count: {}", loginId, uuid, response.size());
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getWorkUnitGitCommits 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     uuid,
                     exception.getMessage(),
@@ -295,5 +356,53 @@ public class WorkUnitService {
     private String resolveOrderByClause(String sort) {
         String normalized = normalizeText(sort);
         return SORT_CLAUSE_MAP.getOrDefault(normalized == null ? "updated" : normalized, SORT_CLAUSE_MAP.get("updated"));
+    }
+
+    private WorkUnitVo enrichWorkUnit(WorkUnitVo workUnit, Long mbrAcctIdx) {
+        List<WorkUnitVo> workUnits = enrichWorkUnits(List.of(workUnit), mbrAcctIdx);
+        return workUnits.isEmpty() ? workUnit : workUnits.getFirst();
+    }
+
+    private List<WorkUnitVo> enrichWorkUnits(List<WorkUnitVo> workUnits, Long mbrAcctIdx) {
+        if (workUnits == null || workUnits.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> workUnitIdxs = workUnits.stream()
+                .map(WorkUnitVo::getIdx)
+                .toList();
+
+        Map<Long, List<WorkGitPrjVo>> gitProjectMap = new LinkedHashMap<>();
+        for (WorkGitPrjVo gitProject : workGitMapper.selectWorkUnitGitProjectsByWorkUnitIdxs(workUnitIdxs, mbrAcctIdx)) {
+            gitProjectMap.computeIfAbsent(gitProject.getWorkUnitIdx(), key -> new ArrayList<>()).add(gitProject);
+        }
+
+        for (WorkUnitVo workUnit : workUnits) {
+            workUnit.setGitProjects(gitProjectMap.getOrDefault(workUnit.getIdx(), List.of()));
+        }
+
+        return workUnits;
+    }
+
+    private void syncGitProjects(
+            Long workUnitIdx,
+            Long mbrAcctIdx,
+            List<String> gitProjectUuids,
+            String loginId
+    ) {
+        workGitMapper.deleteWorkUnitGitProjects(workUnitIdx, mbrAcctIdx, loginId);
+
+        if (gitProjectUuids == null || gitProjectUuids.isEmpty()) {
+            return;
+        }
+
+        List<WorkGitPrjVo> gitProjects = workGitMapper.selectGitProjectsByUuids(mbrAcctIdx, gitProjectUuids);
+        if (gitProjects.size() != gitProjectUuids.size()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "연결할 Git 프로젝트를 찾을 수 없습니다.");
+        }
+
+        for (WorkGitPrjVo gitProject : gitProjects) {
+            workGitMapper.insertWorkUnitGitProject(workUnitIdx, gitProject.getIdx(), mbrAcctIdx, loginId);
+        }
     }
 }

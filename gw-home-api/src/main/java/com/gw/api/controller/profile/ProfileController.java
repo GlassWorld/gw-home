@@ -1,8 +1,10 @@
 package com.gw.api.controller.profile;
 
 import com.gw.api.dto.profile.MemoResponse;
+import com.gw.api.dto.profile.NavigationFavoriteResponse;
 import com.gw.api.dto.profile.ProfileResponse;
 import com.gw.api.dto.profile.SaveMemoRequest;
+import com.gw.api.dto.profile.SaveNavigationFavoriteRequest;
 import com.gw.api.dto.profile.UpdateProfileRequest;
 import com.gw.api.service.profile.ProfileService;
 import com.gw.share.common.exception.BusinessException;
@@ -42,6 +44,11 @@ public class ProfileController {
         return ApiResponse.ok(profileService.getMemo(getLoginId(principal)));
     }
 
+    @GetMapping("/me/navigation-favorites")
+    public ApiResponse<NavigationFavoriteResponse> getMyNavigationFavorites(Principal principal) {
+        return ApiResponse.ok(profileService.getNavigationFavorites(getLoginId(principal)));
+    }
+
     @PutMapping("/me")
     public ApiResponse<ProfileResponse> updateMyProfile(
             Principal principal,
@@ -56,6 +63,14 @@ public class ProfileController {
             @Valid @RequestBody SaveMemoRequest request
     ) {
         return ApiResponse.ok(profileService.saveMemo(getLoginId(principal), request));
+    }
+
+    @PutMapping("/me/navigation-favorites")
+    public ApiResponse<NavigationFavoriteResponse> saveMyNavigationFavorites(
+            Principal principal,
+            @Valid @RequestBody SaveNavigationFavoriteRequest request
+    ) {
+        return ApiResponse.ok(profileService.saveNavigationFavorites(getLoginId(principal), request));
     }
 
     private String getLoginId(Principal principal) {

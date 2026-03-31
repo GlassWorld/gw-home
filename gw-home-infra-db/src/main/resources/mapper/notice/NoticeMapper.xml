@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.notice.NoticeMapper">
+
+    <select id="selectNoticeByUuid" resultType="NtcJvo">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            cntnt,
+            view_cnt,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_ntc
+        WHERE ntc_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectNoticeForAdminByUuid" resultType="NtcJvo">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            cntnt,
+            view_cnt,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_ntc
+        WHERE ntc_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectNoticeByIdx" resultType="NtcJvo">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            cntnt,
+            view_cnt,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_ntc
+        WHERE ntc_idx = #{idx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectNoticeList" resultType="NtcSmryJvo">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            view_cnt,
+            created_by,
+            created_at
+        FROM tb_ntc
+        WHERE del_at IS NULL
+        <if test="req.kwd != null and req.kwd != ''">
+            AND ttl LIKE CONCAT('%', #{req.kwd}, '%')
+        </if>
+        ORDER BY ${req.orderByClause}
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <select id="countNoticeList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_ntc
+        WHERE del_at IS NULL
+        <if test="req.kwd != null and req.kwd != ''">
+            AND ttl LIKE CONCAT('%', #{req.kwd}, '%')
+        </if>
+    </select>
+
+    <select id="selectDashboardNoticeList" resultType="NtcSmryJvo">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            view_cnt,
+            created_by,
+            created_at
+        FROM tb_ntc
+        WHERE del_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <insert id="insertNotice" parameterType="NtcVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_ntc (
+            ttl,
+            cntnt,
+            created_by
+        ) VALUES (
+            #{ttl},
+            #{cntnt},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="NtcVo">
+        UPDATE tb_ntc
+        SET
+            ttl = #{ttl},
+            cntnt = #{cntnt},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE ntc_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteNotice">
+        UPDATE tb_ntc
+        SET
+            del_at = now(),
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE ntc_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="incrementViewCount">
+        UPDATE tb_ntc
+        SET view_cnt = view_cnt + 1
+        WHERE ntc_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+</mapper>

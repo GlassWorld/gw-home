@@ -1,0 +1,668 @@
+<script setup lang="ts">
+import type { DailyReport, DailyReportWorkUnit, SaveDailyReportPayload, UpdateDailyReportPayload, WorkUnit, WorkUnitGitCommit, WorkUnitOption } from '~/types/work'
+
+const props = defineProps<{
+  dailyReportUuid?: string
+}>()
+
+const isEditing = computed(() => Boolean(props.dailyReportUuid))
+
+const { fetchDailyReport, fetchDailyReports, createDailyReport, updateDailyReport } = useDailyReportApi()
+const { fetchWorkUnitOptions, fetchWorkUnit, fetchWorkUnitGitCommits } = useWorkUnitApi()
+const { showToast } = useToast()
+
+interface DailyReportFormState {
+  reportDate: string
+  workSummary: string
+  issueNote: string
+}
+
+function formatDateInput(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getDaysAgoInput(days: number): string {
+  const targetDate = new Date()
+  targetDate.setDate(targetDate.getDate() - days)
+  return formatDateInput(targetDate)
+}
+
+function extractSection(note: string | null | undefined, heading: string): string {
+  if (!note) {
+    return ''
+  }
+
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`\\[${escapedHeading}\\]\\n([\\s\\S]*?)(?=\\n\\n\\[[^\\]]+\\]\\n|$)`)
+  const match = note.match(pattern)
+  return match?.[1]?.trim() ?? ''
+}
+
+function removeSection(note: string | null | undefined, heading: string): string {
+  if (!note) {
+    return ''
+  }
+
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`\\n?\\[${escapedHeading}\\]\\n([\\s\\S]*?)(?=\\n\\n\\[[^\\]]+\\]\\n|$)`, 'g')
+  return note.replace(pattern, '').trim()
+}
+
+function firstLine(value: string): string {
+  return value.split('\n')[0]?.trim() ?? ''
+}
+
+function buildImportedMarkdown(selectedWorkUnit: WorkUnit | null, selectedGitCommits: WorkUnitGitCommit[]): string {
+  if (!selectedWorkUnit) {
+    return ''
+  }
+
+  const lines = [`## ${selectedWorkUnit.title}`]
+
+  if (selectedGitCommits.length) {
+    lines.push(...selectedGitCommits.map((commit) => `- ${firstLine(commit.message) || commit.commitSha.slice(0, 7)}`))
+  }
+
+  return lines.join('\n').trim()
+}
+
+const formState = reactive<DailyReportFormState>({
+  reportDate: formatDateInput(new Date()),
+  workSummary: '',
+  issueNote: ''
+})
+
+const isPageLoading = ref(false)
+const isSubmitting = ref(false)
+const isHistoryLoading = ref(false)
+const isImportModalVisible = ref(false)
+const isWorkUnitLoading = ref(false)
+const isCommitLoading = ref(false)
+const historyPreviewReportUuid = ref('')
+const workUnitSearchKeyword = ref('')
+const selectedWorkUnits = ref<DailyReportWorkUnit[]>([])
+const recentDailyReports = ref<DailyReport[]>([])
+const modalWorkUnitOptions = ref<WorkUnitOption[]>([])
+const modalSelectedWorkUnitUuid = ref('')
+const modalSelectedWorkUnit = ref<WorkUnit | null>(null)
+const modalGitCommits = ref<WorkUnitGitCommit[]>([])
+const modalSelectedCommitShas = ref<string[]>([])
+const selectedGitCommits = ref<WorkUnitGitCommit[]>([])
+
+const filteredWorkUnitOptions = computed(() => {
+  const keyword = workUnitSearchKeyword.value.trim().toLowerCase()
+
+  if (!keyword) {
+    return modalWorkUnitOptions.value
+  }
+
+  return modalWorkUnitOptions.value.filter((workUnit) =>
+    [workUnit.title, workUnit.category ?? '', workUnit.status]
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+  )
+})
+
+const historyReports = computed(() =>
+  recentDailyReports.value
+    .filter((report) => report.uuid !== props.dailyReportUuid)
+    .sort((first, second) => second.reportDate.localeCompare(first.reportDate))
+)
+
+const historyPreviewReport = computed(() =>
+  historyReports.value.find((report) => report.uuid === historyPreviewReportUuid.value) ?? historyReports.value.at(0) ?? null
+)
+
+const selectedWorkUnitSummary = computed(() => {
+  if (!selectedWorkUnits.value.length) {
+    return '선택된 업무 없음'
+  }
+
+  return selectedWorkUnits.value.map((workUnit) => workUnit.title).join(', ')
+})
+
+const selectedCommitSummary = computed(() => {
+  if (!selectedGitCommits.value.length) {
+    return '선택된 커밋 없음'
+  }
+
+  const repositoryNames = Array.from(new Set(selectedGitCommits.value.map((commit) => commit.repositoryName))).filter(Boolean)
+  return `${selectedGitCommits.value.length}개 커밋${repositoryNames.length ? ` · ${repositoryNames.join(', ')}` : ''}`
+})
+
+const canApplyImport = computed(() => Boolean(modalSelectedWorkUnit.value))
+
+watch(historyReports, (nextReports) => {
+  if (!nextReports.length) {
+    historyPreviewReportUuid.value = ''
+    return
+  }
+
+  if (!nextReports.some((report) => report.uuid === historyPreviewReportUuid.value)) {
+    historyPreviewReportUuid.value = nextReports[0]?.uuid ?? ''
+  }
+})
+
+watch(
+  () => formState.reportDate,
+  async () => {
+    if (!isImportModalVisible.value || !modalSelectedWorkUnitUuid.value) {
+      return
+    }
+
+    await loadGitCommitsForSelectedWorkUnit()
+  }
+)
+
+async function loadHistoryReports() {
+  isHistoryLoading.value = true
+
+  try {
+    const response = await fetchDailyReports({
+      dateFrom: getDaysAgoInput(120),
+      dateTo: formatDateInput(new Date()),
+      page: 1,
+      size: 100
+    })
+
+    recentDailyReports.value = response.content
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    recentDailyReports.value = []
+    showToast(fetchError.data?.message ?? '이전 일일보고를 불러오지 못했습니다.', { variant: 'error' })
+  } finally {
+    isHistoryLoading.value = false
+  }
+}
+
+async function initializeWorkspace() {
+  isPageLoading.value = true
+
+  try {
+    await loadHistoryReports()
+
+    if (!props.dailyReportUuid) {
+      return
+    }
+
+    const report = await fetchDailyReport(props.dailyReportUuid)
+    formState.reportDate = report.reportDate
+    formState.workSummary = removeSection(report.content, '이슈 / 특이사항')
+    formState.issueNote = report.note ?? extractSection(report.content, '이슈 / 특이사항')
+    selectedWorkUnits.value = report.workUnits
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    showToast(fetchError.data?.message ?? '일일보고를 불러오지 못했습니다.', { variant: 'error' })
+    await navigateTo('/work/daily-reports')
+  } finally {
+    isPageLoading.value = false
+  }
+}
+
+async function openImportModal() {
+  isImportModalVisible.value = true
+  isWorkUnitLoading.value = true
+  workUnitSearchKeyword.value = ''
+
+  try {
+    modalWorkUnitOptions.value = await fetchWorkUnitOptions(true)
+    const selectedWorkUnitUuid = selectedWorkUnits.value[0]?.workUnitUuid ?? modalWorkUnitOptions.value[0]?.workUnitUuid ?? ''
+    if (selectedWorkUnitUuid) {
+      await selectModalWorkUnit(selectedWorkUnitUuid)
+    }
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    modalWorkUnitOptions.value = []
+    showToast(fetchError.data?.message ?? '업무 목록을 불러오지 못했습니다.', { variant: 'error' })
+  } finally {
+    isWorkUnitLoading.value = false
+  }
+}
+
+function closeImportModal() {
+  isImportModalVisible.value = false
+  modalSelectedWorkUnitUuid.value = ''
+  modalSelectedWorkUnit.value = null
+  modalGitCommits.value = []
+  modalSelectedCommitShas.value = []
+}
+
+async function selectModalWorkUnit(workUnitUuid: string) {
+  modalSelectedWorkUnitUuid.value = workUnitUuid
+  modalSelectedCommitShas.value = []
+
+  try {
+    modalSelectedWorkUnit.value = await fetchWorkUnit(workUnitUuid)
+    await loadGitCommitsForSelectedWorkUnit()
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    modalSelectedWorkUnit.value = null
+    modalGitCommits.value = []
+    showToast(fetchError.data?.message ?? '업무 상세를 불러오지 못했습니다.', { variant: 'error' })
+  }
+}
+
+async function loadGitCommitsForSelectedWorkUnit() {
+  if (!modalSelectedWorkUnitUuid.value || !formState.reportDate) {
+    modalGitCommits.value = []
+    return
+  }
+
+  isCommitLoading.value = true
+
+  try {
+    modalGitCommits.value = await fetchWorkUnitGitCommits(modalSelectedWorkUnitUuid.value, formState.reportDate)
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    modalGitCommits.value = []
+    showToast(fetchError.data?.message ?? '커밋 목록을 불러오지 못했습니다.', { variant: 'error' })
+  } finally {
+    isCommitLoading.value = false
+  }
+}
+
+function toggleCommitSelection(commitSha: string, checked: boolean) {
+  if (checked) {
+    modalSelectedCommitShas.value = [...new Set([...modalSelectedCommitShas.value, commitSha])]
+    return
+  }
+
+  modalSelectedCommitShas.value = modalSelectedCommitShas.value.filter((value) => value !== commitSha)
+}
+
+function applyWorkImport() {
+  if (!modalSelectedWorkUnit.value) {
+    return
+  }
+
+  selectedWorkUnits.value = [{
+    workUnitUuid: modalSelectedWorkUnit.value.workUnitUuid,
+    title: modalSelectedWorkUnit.value.title,
+    category: modalSelectedWorkUnit.value.category
+  }]
+
+  selectedGitCommits.value = modalGitCommits.value.filter((commit) => modalSelectedCommitShas.value.includes(commit.commitSha))
+  formState.workSummary = buildImportedMarkdown(modalSelectedWorkUnit.value, selectedGitCommits.value)
+  closeImportModal()
+}
+
+function applyHistoryDraft(report: DailyReport) {
+  formState.workSummary = removeSection(report.content, '이슈 / 특이사항') || report.content || ''
+  formState.issueNote = report.note ?? extractSection(report.content, '이슈 / 특이사항')
+  historyPreviewReportUuid.value = report.uuid
+}
+
+async function handleSubmit() {
+  if (isSubmitting.value) {
+    return
+  }
+
+  if (!formState.reportDate) {
+    showToast('작성일자를 선택해주세요.', { variant: 'error' })
+    return
+  }
+
+  if (!formState.workSummary.trim() && !formState.issueNote.trim()) {
+    showToast('오늘 수행 내용 또는 이슈를 입력해주세요.', { variant: 'error' })
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    if (isEditing.value && props.dailyReportUuid) {
+      const payload: UpdateDailyReportPayload = {
+        workUnitUuids: selectedWorkUnits.value.map((workUnit) => workUnit.workUnitUuid),
+        content: formState.workSummary.trim(),
+        note: formState.issueNote.trim()
+      }
+      await updateDailyReport(props.dailyReportUuid, payload)
+      showToast('일일보고를 수정했습니다.', { variant: 'success' })
+    } else {
+      const payload: SaveDailyReportPayload = {
+        reportDate: formState.reportDate,
+        workUnitUuids: selectedWorkUnits.value.map((workUnit) => workUnit.workUnitUuid),
+        content: formState.workSummary.trim(),
+        note: formState.issueNote.trim()
+      }
+      await createDailyReport(payload)
+      showToast('일일보고를 저장했습니다.', { variant: 'success' })
+    }
+
+    await navigateTo('/work/daily-reports')
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    showToast(fetchError.data?.message ?? '일일보고 저장에 실패했습니다.', { variant: 'error' })
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+await initializeWorkspace()
+</script>
+
+<template>
+  <main class="page-container daily-report-workspace-page">
+    <section class="content-panel daily-report-workspace-page__hero">
+      <div>
+        <p class="daily-report-workspace-page__eyebrow">Daily Report</p>
+        <h1 class="section-title">{{ isEditing ? '일일보고 수정' : '일일보고 작성' }}</h1>
+        <p class="section-description">
+          왼쪽에서 이전 일일보고를 참고하고, 오른쪽에서 현재 보고를 작성합니다.
+        </p>
+      </div>
+
+      <div class="daily-report-workspace-page__hero-actions">
+        <CommonBaseButton variant="secondary" to="/work/daily-reports">
+          목록으로
+        </CommonBaseButton>
+      </div>
+    </section>
+
+    <section v-if="isPageLoading" class="content-panel daily-report-workspace-page__loading">
+      불러오는 중입니다.
+    </section>
+
+    <section v-else class="daily-report-workspace-page__layout">
+      <WorkDailyReportHistorySidebar
+        :reports="historyReports"
+        :selected-report-uuid="historyPreviewReportUuid"
+        :preview-report="historyPreviewReport"
+        :is-loading="isHistoryLoading"
+        @select-report="historyPreviewReportUuid = $event"
+        @use-as-draft="applyHistoryDraft"
+      />
+
+      <section class="daily-report-workspace-page__editor-shell">
+        <WorkReportEditorPanel
+          :report-date="formState.reportDate"
+          :selected-work-units="selectedWorkUnits"
+          :work-summary="formState.workSummary"
+          :issue-note="formState.issueNote"
+          :is-editing="isEditing"
+          :selected-commit-summary="selectedCommitSummary"
+          @update:report-date="formState.reportDate = $event"
+          @update:work-summary="formState.workSummary = $event"
+          @update:issue-note="formState.issueNote = $event"
+          @open-work-import="openImportModal"
+        />
+
+        <div class="daily-report-workspace-page__actions">
+          <div class="daily-report-workspace-page__selected-summary">
+            <strong>{{ selectedWorkUnitSummary }}</strong>
+            <span>{{ selectedCommitSummary }}</span>
+          </div>
+
+          <div class="daily-report-workspace-page__action-buttons">
+            <CommonBaseButton variant="secondary" :disabled="isSubmitting" to="/work/daily-reports">
+              취소
+            </CommonBaseButton>
+            <CommonBaseButton :disabled="isSubmitting" @click="handleSubmit">
+              {{ isEditing ? '수정 저장' : '작성 완료' }}
+            </CommonBaseButton>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <CommonBaseModal
+      :visible="isImportModalVisible"
+      eyebrow="Work Import"
+      title="업무불러오기"
+      width="min(1180px, 94vw)"
+      @close="closeImportModal"
+    >
+      <div class="daily-report-workspace-page__import-layout">
+        <section class="daily-report-workspace-page__import-panel">
+          <div class="daily-report-workspace-page__import-header">
+            <h3>업무 선택</h3>
+            <input
+              v-model="workUnitSearchKeyword"
+              class="input-field"
+              type="search"
+              placeholder="업무명 검색"
+            >
+          </div>
+
+          <div v-if="isWorkUnitLoading" class="daily-report-workspace-page__empty">
+            업무 목록을 불러오는 중입니다.
+          </div>
+
+          <div v-else-if="filteredWorkUnitOptions.length" class="daily-report-workspace-page__import-list">
+            <button
+              v-for="workUnit in filteredWorkUnitOptions"
+              :key="workUnit.workUnitUuid"
+              type="button"
+              class="daily-report-workspace-page__import-item"
+              :class="{ 'daily-report-workspace-page__import-item--active': modalSelectedWorkUnitUuid === workUnit.workUnitUuid }"
+              @click="selectModalWorkUnit(workUnit.workUnitUuid)"
+            >
+              <strong>{{ workUnit.title }}</strong>
+              <span>{{ workUnit.category || '카테고리 없음' }}</span>
+            </button>
+          </div>
+
+          <p v-else class="daily-report-workspace-page__empty">
+            검색 조건에 맞는 업무가 없습니다.
+          </p>
+        </section>
+
+        <section class="daily-report-workspace-page__import-panel">
+          <div class="daily-report-workspace-page__import-header">
+            <div>
+              <h3>커밋 선택</h3>
+              <p class="daily-report-workspace-page__import-meta">
+                {{ modalSelectedWorkUnit ? modalSelectedWorkUnit.title : '업무를 먼저 선택하세요.' }}
+              </p>
+            </div>
+          </div>
+
+          <div v-if="!modalSelectedWorkUnit" class="daily-report-workspace-page__empty">
+            업무를 선택하면 작성일 기준 커밋을 조회합니다.
+          </div>
+
+          <div v-else-if="!modalSelectedWorkUnit.gitProjects.length" class="daily-report-workspace-page__empty">
+            연결된 프로젝트가 없습니다. 적용 시 업무명만 헤더로 세팅됩니다.
+          </div>
+
+          <div v-else-if="isCommitLoading" class="daily-report-workspace-page__empty">
+            커밋 목록을 불러오는 중입니다.
+          </div>
+
+          <div v-else-if="modalGitCommits.length" class="daily-report-workspace-page__commit-list">
+            <label
+              v-for="commit in modalGitCommits"
+              :key="`${commit.gitConnectionUuid}-${commit.commitSha}`"
+              class="daily-report-workspace-page__commit-item"
+            >
+              <input
+                type="checkbox"
+                :checked="modalSelectedCommitShas.includes(commit.commitSha)"
+                @change="toggleCommitSelection(commit.commitSha, ($event.target as HTMLInputElement).checked)"
+              >
+              <div>
+                <strong>{{ commit.message.split('\n')[0] || commit.commitSha.slice(0, 7) }}</strong>
+                <span>{{ commit.repositoryName }} · {{ commit.authorName }} · {{ commit.authoredAt.slice(0, 16).replace('T', ' ') }}</span>
+              </div>
+            </label>
+          </div>
+
+          <p v-else class="daily-report-workspace-page__empty">
+            작성일 기준으로 조회된 커밋이 없습니다. 적용 시 업무명만 헤더로 세팅됩니다.
+          </p>
+        </section>
+      </div>
+
+      <template #actions>
+        <CommonBaseButton variant="secondary" type="button" @click="closeImportModal">
+          닫기
+        </CommonBaseButton>
+        <CommonBaseButton type="button" :disabled="!canApplyImport" @click="applyWorkImport">
+          적용
+        </CommonBaseButton>
+      </template>
+    </CommonBaseModal>
+  </main>
+</template>
+
+<style scoped>
+.daily-report-workspace-page {
+  display: grid;
+  gap: 24px;
+}
+
+.daily-report-workspace-page__hero,
+.daily-report-workspace-page__loading {
+  padding: 22px;
+}
+
+.daily-report-workspace-page__hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.daily-report-workspace-page__eyebrow {
+  margin: 0 0 6px;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.daily-report-workspace-page__layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 3fr) minmax(0, 7fr);
+  gap: 20px;
+  min-height: min(780px, calc(100vh - 220px));
+}
+
+.daily-report-workspace-page__editor-shell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 16px;
+  min-height: 0;
+}
+
+.daily-report-workspace-page__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(147, 210, 255, 0.12);
+  border-radius: var(--radius-large);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.daily-report-workspace-page__selected-summary {
+  display: grid;
+  gap: 4px;
+}
+
+.daily-report-workspace-page__selected-summary span {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.daily-report-workspace-page__action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.daily-report-workspace-page__import-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.4fr);
+  gap: 16px;
+  min-height: 560px;
+}
+
+.daily-report-workspace-page__import-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  min-height: 0;
+  padding: 18px;
+  border-radius: var(--radius-medium);
+  border: 1px solid rgba(147, 210, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.daily-report-workspace-page__import-header {
+  display: grid;
+  gap: 10px;
+}
+
+.daily-report-workspace-page__import-header h3 {
+  margin: 0;
+}
+
+.daily-report-workspace-page__import-meta,
+.daily-report-workspace-page__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.daily-report-workspace-page__import-list,
+.daily-report-workspace-page__commit-list {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.daily-report-workspace-page__import-item,
+.daily-report-workspace-page__commit-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--radius-medium);
+  border: 1px solid rgba(147, 210, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+  text-align: left;
+  font: inherit;
+}
+
+.daily-report-workspace-page__import-item--active {
+  border-color: rgba(110, 193, 255, 0.52);
+  background: rgba(110, 193, 255, 0.08);
+}
+
+.daily-report-workspace-page__import-item span,
+.daily-report-workspace-page__commit-item span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.daily-report-workspace-page__commit-item {
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: flex-start;
+}
+
+@media (max-width: 1100px) {
+  .daily-report-workspace-page__layout,
+  .daily-report-workspace-page__import-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .daily-report-workspace-page__hero,
+  .daily-report-workspace-page__actions {
+    display: grid;
+  }
+
+  .daily-report-workspace-page__action-buttons {
+    justify-content: stretch;
+  }
+}
+</style>

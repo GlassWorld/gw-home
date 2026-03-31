@@ -1,9 +1,11 @@
 package com.gw.api.convert.work;
 
 import com.gw.api.dto.work.DailyReportWorkUnitResponse;
+import com.gw.api.dto.work.WorkGitProjectResponse;
 import com.gw.api.dto.work.WorkUnitOptionResponse;
 import com.gw.api.dto.work.WorkUnitResponse;
 import com.gw.share.util.ConvertUtil;
+import com.gw.share.vo.work.WorkGitPrjVo;
 import com.gw.share.vo.work.WorkUnitVo;
 import java.util.List;
 
@@ -24,7 +26,8 @@ public final class WorkUnitConvert {
                 ConvertUtil.toInteger(workUnit.getUseCnt(), 0),
                 workUnit.getLastUsedAt(),
                 workUnit.getCreatedAt(),
-                workUnit.getUpdatedAt()
+                workUnit.getUpdatedAt(),
+                toGitProjectResponses(workUnit.getGitProjects())
         );
     }
 
@@ -50,6 +53,26 @@ public final class WorkUnitConvert {
                         workUnit.getUuid(),
                         workUnit.getTtl(),
                         workUnit.getCtgr()
+                ))
+                .toList();
+    }
+
+    public static List<WorkGitProjectResponse> toGitProjectResponses(List<WorkGitPrjVo> gitProjects) {
+        if (gitProjects == null || gitProjects.isEmpty()) {
+            return List.of();
+        }
+
+        return gitProjects.stream()
+                .map(gitProject -> new WorkGitProjectResponse(
+                        gitProject.getUuid(),
+                        gitProject.getGitAccountUuid(),
+                        gitProject.getGitAccountLabel(),
+                        gitProject.getPrvdCd(),
+                        gitProject.getPrjNm(),
+                        gitProject.getRepoUrl(),
+                        gitProject.getUseYn(),
+                        gitProject.getCreatedAt(),
+                        gitProject.getUpdatedAt()
                 ))
                 .toList();
     }

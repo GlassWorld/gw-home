@@ -15,5 +15,9 @@ jwt:
 otp:
   encryption-key: Z3ctaG9tZS1vdHAta2V5IQ==
 
+work:
+  git:
+    encryption-key: Z3ctaG9tZS1naXQta2V5IQ==
+
 server:
   port: 8080

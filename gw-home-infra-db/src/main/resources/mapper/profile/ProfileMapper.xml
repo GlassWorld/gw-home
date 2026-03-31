@@ -13,6 +13,7 @@
             intro,
             prfl_img_url,
             memo,
+            fav_menu_json,
             created_by,
             updated_by,
             created_at,
@@ -30,6 +31,7 @@
             intro,
             prfl_img_url,
             memo,
+            fav_menu_json,
             created_by,
             updated_by,
             created_at,
@@ -56,11 +58,28 @@
         WHERE mbr_acct_idx = #{mbrAcctIdx}
     </select>
 
+    <!-- 회원 계정 PK로 즐겨찾기 메뉴 JSON을 조회한다 -->
+    <select id="selectNavigationFavoritesByAccountIdx" resultType="string">
+        SELECT fav_menu_json
+        FROM tb_mbr_prfl
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+    </select>
+
     <!-- 회원 계정 PK 기준으로 메모를 저장한다 -->
     <update id="updateMemo">
         UPDATE tb_mbr_prfl
         SET
             memo = #{memo},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_idx = #{mbrAcctIdx}
+    </update>
+
+    <!-- 회원 계정 PK 기준으로 즐겨찾기 메뉴 JSON을 저장한다 -->
+    <update id="updateNavigationFavorites">
+        UPDATE tb_mbr_prfl
+        SET
+            fav_menu_json = #{favoriteMenusJson},
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE mbr_acct_idx = #{mbrAcctIdx}

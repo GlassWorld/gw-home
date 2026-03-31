@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SaveWorkUnitPayload, WorkUnit, WorkUnitOption, WorkUnitSort, WorkUnitStatus } from '~/types/work'
+import type { SaveWorkUnitPayload, WorkGitProject, WorkUnit, WorkUnitOption, WorkUnitSort, WorkUnitStatus } from '~/types/work'
 import SearchableSelect from '~/components/common/SearchableSelect.vue'
 import { applySelectableValueFromOptions } from '~/utils/selectable'
 
@@ -8,11 +8,13 @@ definePageMeta({
 })
 
 const { fetchWorkUnitList, fetchWorkUnitOptions, createWorkUnit, updateWorkUnit, updateWorkUnitUse } = useWorkUnitApi()
+const { fetchGitProjectOptions } = useWorkGitApi()
 const { showToast } = useToast()
 const { confirm } = useDialog()
 
 const workUnitList = ref<WorkUnit[]>([])
 const workUnitOptions = ref<WorkUnitOption[]>([])
+const availableGitProjects = ref<WorkGitProject[]>([])
 const editingWorkUnitUuid = ref('')
 const isLoading = ref(false)
 const isSubmitting = ref(false)
@@ -36,7 +38,8 @@ const formState = ref<SaveWorkUnitPayload>({
   title: '',
   category: '',
   description: '',
-  status: 'IN_PROGRESS'
+  status: 'IN_PROGRESS',
+  gitProjectUuids: []
 })
 
 const statusLabelMap: Record<WorkUnitStatus, string> = {
@@ -92,7 +95,8 @@ function resetForm() {
     title: '',
     category: '',
     description: '',
-    status: 'IN_PROGRESS'
+    status: 'IN_PROGRESS',
+    gitProjectUuids: []
   }
 }
 
@@ -108,7 +112,8 @@ function startEdit(workUnit: WorkUnit) {
     title: workUnit.title,
     category: workUnit.category ?? '',
     description: workUnit.description ?? '',
-    status: workUnit.status
+    status: workUnit.status,
+    gitProjectUuids: workUnit.gitProjects.map((gitProject) => gitProject.gitProjectUuid)
   }
 }
 
@@ -142,8 +147,18 @@ async function loadWorkUnitOptions() {
   }
 }
 
+async function loadGitProjectOptions() {
+  try {
+    availableGitProjects.value = await fetchGitProjectOptions()
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string } }
+    availableGitProjects.value = []
+    showToast(fetchError.data?.message ?? 'Git 프로젝트 목록을 불러오지 못했습니다.', { variant: 'error' })
+  }
+}
+
 async function reloadAll() {
-  await Promise.all([loadWorkUnitList(), loadWorkUnitOptions()])
+  await Promise.all([loadWorkUnitList(), loadWorkUnitOptions(), loadGitProjectOptions()])
 }
 
 async function handleSubmit() {
@@ -162,7 +177,8 @@ async function handleSubmit() {
     title: formState.value.title.trim(),
     category: formState.value.category?.trim() || '',
     description: formState.value.description?.trim() || '',
-    status: formState.value.status
+    status: formState.value.status,
+    gitProjectUuids: [...new Set(formState.value.gitProjectUuids)]
   }
 
   try {
@@ -262,12 +278,20 @@ await reloadAll()
           <p class="section-description">
             일일보고에서 반복 사용하는 업무를 계정별로 미리 등록하고, 상태와 사용여부를 안정적으로 관리합니다.
           </p>
+          <p class="work-page__helper-copy">
+            Git 토큰과 계정은 개인 Git 계정관리에서 관리하고, 업무에는 프로젝트만 연결합니다.
+          </p>
         </div>
 
         <div class="work-page__hero-side">
-          <CommonBaseButton @click="startCreate">
-            업무 등록
-          </CommonBaseButton>
+          <div class="work-page__hero-actions">
+            <CommonBaseButton variant="secondary" to="/work/git-accounts">
+              Git 계정관리
+            </CommonBaseButton>
+            <CommonBaseButton @click="startCreate">
+              업무 등록
+            </CommonBaseButton>
+          </div>
 
           <div class="work-page__summary">
             <div>
@@ -392,6 +416,22 @@ await reloadAll()
               <p class="work-page__description">
                 {{ workUnit.description || '설명 없음' }}
               </p>
+
+              <div class="work-page__project-list">
+                <span class="work-page__project-label">연결 프로젝트</span>
+                <div v-if="workUnit.gitProjects.length" class="work-page__project-badges">
+                  <span
+                    v-for="gitProject in workUnit.gitProjects"
+                    :key="gitProject.gitProjectUuid"
+                    class="work-page__project-badge"
+                  >
+                    {{ gitProject.projectName }}
+                  </span>
+                </div>
+                <span v-else class="work-page__project-empty">
+                  연결된 프로젝트 없음
+                </span>
+              </div>
             </div>
 
             <div class="work-page__item-actions">
@@ -422,6 +462,7 @@ await reloadAll()
     <WorkUnitForm
       v-model="formState"
       :visible="isFormVisible"
+      :available-git-projects="availableGitProjects"
       :is-submitting="isSubmitting"
       :is-editing="Boolean(editingWorkUnitUuid)"
       @submit="handleSubmit"
@@ -460,6 +501,11 @@ await reloadAll()
   gap: 14px;
 }
 
+.work-page__hero-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .work-page__eyebrow {
   margin: 0 0 6px;
   color: var(--color-accent);
@@ -488,6 +534,12 @@ await reloadAll()
 .work-page__summary span {
   color: var(--color-text-muted);
   font-size: 0.82rem;
+}
+
+.work-page__helper-copy {
+  margin: 10px 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
 }
 
 .work-page__summary strong {
@@ -656,6 +708,35 @@ await reloadAll()
   word-break: break-word;
 }
 
+.work-page__project-list {
+  display: grid;
+  gap: 8px;
+}
+
+.work-page__project-label,
+.work-page__project-empty {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.work-page__project-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.work-page__project-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(110, 193, 255, 0.08);
+  border: 1px solid rgba(110, 193, 255, 0.2);
+  color: var(--color-text);
+  font-size: 0.82rem;
+}
+
 .work-page__item-actions {
   display: flex;
   gap: 10px;
@@ -690,6 +771,10 @@ await reloadAll()
 
   .work-page__hero-side {
     justify-items: stretch;
+  }
+
+  .work-page__hero-actions {
+    flex-wrap: wrap;
   }
 
   .work-page__summary {
