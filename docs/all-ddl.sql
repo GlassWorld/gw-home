@@ -88,6 +88,7 @@ CREATE TABLE tb_mbr_prfl (
     intro           VARCHAR(500),
     prfl_img_url    VARCHAR(1000),
     memo            TEXT,
+    fav_menu_json   TEXT,
     created_by      VARCHAR(100) NOT NULL,
     updated_by      VARCHAR(100),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
@@ -104,6 +105,7 @@ COMMENT ON COLUMN tb_mbr_prfl.nick_nm IS '닉네임';
 COMMENT ON COLUMN tb_mbr_prfl.intro IS '자기소개';
 COMMENT ON COLUMN tb_mbr_prfl.prfl_img_url IS '프로필 이미지 URL';
 COMMENT ON COLUMN tb_mbr_prfl.memo IS '개인 메모';
+COMMENT ON COLUMN tb_mbr_prfl.fav_menu_json IS '헤더 즐겨찾기 메뉴 JSON';
 COMMENT ON COLUMN tb_mbr_prfl.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_mbr_prfl.updated_by IS '수정자 로그인 ID';
 COMMENT ON COLUMN tb_mbr_prfl.created_at IS '생성 일시';

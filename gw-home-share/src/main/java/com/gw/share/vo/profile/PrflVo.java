@@ -28,4 +28,7 @@ public class PrflVo extends BaseVo {
 
     // 개인 메모
     private String memo;
+
+    // 헤더 즐겨찾기 메뉴 JSON
+    private String favMenuJson;
 }

@@ -1,8 +1,24 @@
 <script setup lang="ts">
+import { allNavigationItems, maxHeaderFavoriteMenuCount } from '~/constants/navigation-menu'
+
 const authStore = useAuthStore()
+const navigationFavoriteStore = useNavigationFavoriteStore()
 const { logout } = useAuth()
 const isSubmitting = ref(false)
 const isMemoVisible = ref(false)
+
+const favoriteNavigationItems = computed(() => {
+  const isAdmin = authStore.currentUser?.role === 'ADMIN'
+
+  return allNavigationItems
+    .filter(item => navigationFavoriteStore.favoriteMenus.includes(item.to))
+    .filter(item => !item.adminOnly || isAdmin)
+    .slice(0, maxHeaderFavoriteMenuCount)
+})
+
+const emit = defineEmits<{
+  openNavigation: []
+}>()
 
 async function handleLogout() {
   if (isSubmitting.value) {
@@ -31,18 +47,31 @@ function closeMemo() {
 <template>
   <header class="app-header">
     <div class="page-container app-header__inner">
-      <NuxtLink class="app-header__brand" to="/dashboard">
-        Glass World
-      </NuxtLink>
+      <div class="app-header__start">
+        <button
+          type="button"
+          class="app-header__menu-button"
+          aria-label="사이드메뉴 열기"
+          @click="emit('openNavigation')"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
 
-      <nav class="app-header__nav">
-        <NuxtLink to="/board">게시글</NuxtLink>
-        <NuxtLink to="/work">업무등록</NuxtLink>
-        <NuxtLink to="/work/daily-reports">일일보고</NuxtLink>
-        <NuxtLink to="/work/weekly-reports">주간보고</NuxtLink>
-        <NuxtLink to="/vault">자격증명</NuxtLink>
-        <NuxtLink v-if="authStore.currentUser?.role === 'ADMIN'" to="/admin/accounts">
-          계정관리
+        <NuxtLink class="app-header__brand" to="/dashboard">
+          Glass World
+        </NuxtLink>
+      </div>
+
+      <nav v-if="favoriteNavigationItems.length" class="app-header__favorite-navigation" aria-label="즐겨찾기 메뉴">
+        <NuxtLink
+          v-for="item in favoriteNavigationItems"
+          :key="item.to"
+          :to="item.to"
+          class="app-header__favorite-link"
+        >
+          {{ item.label }}
         </NuxtLink>
       </nav>
 
@@ -115,9 +144,9 @@ function closeMemo() {
 }
 
 .app-header__inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   min-height: 48px;
 }
@@ -128,15 +157,33 @@ function closeMemo() {
   letter-spacing: 0.04em;
 }
 
-.app-header__nav,
+.app-header__start,
 .app-header__actions {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.app-header__nav a {
-  color: var(--color-text-muted);
+.app-header__menu-button {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid rgba(147, 210, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d8f1ff;
+}
+
+.app-header__menu-button span {
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .app-header__profile {
@@ -157,6 +204,26 @@ function closeMemo() {
 .app-header__profile-link:hover {
   background: rgba(95, 186, 255, 0.08);
   box-shadow: inset 0 -1px 0 rgba(147, 210, 255, 0.32);
+}
+
+.app-header__favorite-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.app-header__favorite-link {
+  color: var(--color-text-muted);
+  transition:
+    transform 0.18s ease,
+    color 0.18s ease;
+}
+
+.app-header__favorite-link:hover {
+  transform: translateY(-1px);
+  color: #f7fbff;
 }
 
 .app-header__profile span {
@@ -199,14 +266,23 @@ function closeMemo() {
 
 @media (max-width: 768px) {
   .app-header__inner {
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 12px;
     padding-top: 8px;
     padding-bottom: 8px;
+    grid-template-columns: auto auto;
+  }
+
+  .app-header__start,
+  .app-header__actions {
+    min-width: 0;
   }
 
   .app-header__profile {
     align-items: center;
+  }
+
+  .app-header__favorite-navigation {
+    display: none;
   }
 }
 </style>

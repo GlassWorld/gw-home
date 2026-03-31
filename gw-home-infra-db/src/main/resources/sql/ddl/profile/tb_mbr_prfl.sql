@@ -5,6 +5,7 @@ CREATE TABLE tb_mbr_prfl (
     nick_nm         VARCHAR(50)  NOT NULL UNIQUE,
     intro           VARCHAR(500),
     prfl_img_url    VARCHAR(1000),
+    fav_menu_json   TEXT,
     created_by      VARCHAR(100) NOT NULL,
     updated_by      VARCHAR(100),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),

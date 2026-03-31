@@ -43,6 +43,7 @@ export function useAuth() {
   const runtimeConfig = useRuntimeConfig()
   const apiBaseUrl = resolveApiBaseUrl(runtimeConfig.public.apiBase)
   const authStore = useAuthStore()
+  const navigationFavoriteStore = useNavigationFavoriteStore()
   const accessTokenCookie = useCookie<string | null>('gw-home-access-token', {
     default: () => null,
     sameSite: 'lax',
@@ -155,6 +156,7 @@ export function useAuth() {
       accessTokenCookie.value = null
       refreshTokenCookie.value = null
       authStore.clearAuth()
+      navigationFavoriteStore.clearFavoriteMenus()
     }
   }
 
@@ -207,12 +209,14 @@ export function useAuth() {
       } catch {
         accessTokenCookie.value = null
         authStore.clearAuth()
+        navigationFavoriteStore.clearFavoriteMenus()
       }
     }
 
     if (!refreshTokenCookie.value) {
       accessTokenCookie.value = null
       authStore.clearAuth()
+      navigationFavoriteStore.clearFavoriteMenus()
       return false
     }
 
@@ -223,6 +227,7 @@ export function useAuth() {
       accessTokenCookie.value = null
       refreshTokenCookie.value = null
       authStore.clearAuth()
+      navigationFavoriteStore.clearFavoriteMenus()
       return false
     }
   }

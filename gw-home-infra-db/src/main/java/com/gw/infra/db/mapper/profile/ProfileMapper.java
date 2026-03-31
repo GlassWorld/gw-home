@@ -13,11 +13,19 @@ public interface ProfileMapper {
 
     String selectMemoByAccountIdx(@Param("mbrAcctIdx") Long mbrAcctIdx);
 
+    String selectNavigationFavoritesByAccountIdx(@Param("mbrAcctIdx") Long mbrAcctIdx);
+
     int updateProfile(PrflVo prfl);
 
     int updateMemo(
             @Param("mbrAcctIdx") Long mbrAcctIdx,
             @Param("memo") String memo,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int updateNavigationFavorites(
+            @Param("mbrAcctIdx") Long mbrAcctIdx,
+            @Param("favoriteMenusJson") String favoriteMenusJson,
             @Param("updatedBy") String updatedBy
     );
 
