@@ -13,15 +13,15 @@ export const primaryNavigationItems: NavigationMenuItem[] = [
 ]
 
 export const personalNavigationItems: NavigationMenuItem[] = [
-  { key: 'work', to: '/work', label: '업무등록', adminOnly: false, favoriteEnabled: true },
-  { key: 'daily-reports', to: '/work/daily-reports', label: '일일보고', adminOnly: false, favoriteEnabled: true },
-  { key: 'vault', to: '/vault', label: '자격증명', adminOnly: false, favoriteEnabled: true }
+  { key: 'work', to: '/work', label: '업무관리', adminOnly: false, favoriteEnabled: true },
+  { key: 'daily-reports', to: '/work/daily-reports', label: '일일보고관리', adminOnly: false, favoriteEnabled: true },
+  { key: 'vault', to: '/vault', label: '자격증명관리', adminOnly: false, favoriteEnabled: true }
 ]
 
 export const adminNavigationItems: NavigationMenuItem[] = [
   { key: 'admin-accounts', to: '/admin/accounts', label: '계정관리', adminOnly: true, favoriteEnabled: true },
   { key: 'admin-notices', to: '/admin/notices', label: '공지관리', adminOnly: true, favoriteEnabled: true },
-  { key: 'admin-vault-categories', to: '/admin/vault-categories', label: '자격증명 카테고리', adminOnly: true, favoriteEnabled: true }
+  { key: 'admin-vault-categories', to: '/admin/vault-categories', label: '범주관리', adminOnly: true, favoriteEnabled: true }
 ]
 
 export const allNavigationItems: NavigationMenuItem[] = [

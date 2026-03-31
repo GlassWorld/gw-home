@@ -7,6 +7,8 @@
 | `/` | `pages/index.vue` | 루트 진입 시 `/dashboard` 이동 | X |
 | `/login` | `pages/login.vue` | 로그인 화면 | X |
 | `/dashboard` | `pages/dashboard/index.vue` | 대시보드 | O |
+| `/notices` | `pages/notices/index.vue` | 공지사항 목록 | O |
+| `/notices/[noticeUuid]` | `pages/notices/[noticeUuid].vue` | 공지사항 상세 | O |
 | `/board` | `pages/board/index.vue` | 게시글 목록 | O |
 | `/board/[boardUuid]` | `pages/board/[boardUuid].vue` | 게시글 상세 | O |
 | `/board/create` | `pages/board/create.vue` | 게시글 작성 | O |
@@ -17,6 +19,7 @@
 | `/settings` | `pages/settings/index.vue` | 계정 설정 | O |
 | `/security` | `pages/security/index.vue` | OTP 및 보안 설정 | O |
 | `/admin/accounts` | `pages/admin/accounts/index.vue` | 관리자 계정 관리 | O (관리자) |
+| `/admin/notices` | `pages/admin/notices/index.vue` | 관리자 공지 관리 | O (관리자) |
 | `/admin/daily-reports` | `pages/admin/daily-reports/index.vue` | 관리자 일일보고 관리 | O (관리자) |
 | `/admin/vault-categories` | `pages/admin/vault-categories/index.vue` | 관리자 금고 카테고리 관리 | O (관리자) |
 
@@ -41,8 +44,13 @@
 
 ### `dashboard/index.vue`
 - 로그인 사용자 요약 정보
+- 최근 공지 목록
 - 최근 게시글 목록
 - 빠른 링크 (게시글 작성, 프로필)
+
+### `notices/*`
+- 공지 목록 및 상세 조회
+- 상세 본문은 markdown 렌더링 적용
 
 ### `board/index.vue`
 - 게시글 목록 (페이징, 키워드 검색)
@@ -67,6 +75,7 @@
 
 ### `admin/*`
 - 계정 관리
+- 공지 관리
 - 일일보고 관리
 - 금고 카테고리 관리
 
