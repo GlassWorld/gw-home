@@ -234,7 +234,6 @@ const selectedWorkUnitSummary = computed(() => {
   display: grid;
   gap: 16px;
   min-height: 0;
-  overflow-y: auto;
   padding: 18px;
 }
 
@@ -295,6 +294,7 @@ const selectedWorkUnitSummary = computed(() => {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
   min-height: 0;
+  align-items: start;
 }
 
 .report-editor-panel__workspace-column,
@@ -302,6 +302,15 @@ const selectedWorkUnitSummary = computed(() => {
   display: grid;
   gap: 14px;
   min-height: 0;
+  align-content: start;
+}
+
+.report-editor-panel__workspace-column {
+  grid-template-rows: auto auto auto;
+}
+
+.report-editor-panel__preview-grid {
+  grid-template-rows: repeat(2, minmax(0, auto));
 }
 
 .report-editor-panel__workspace-header,
@@ -314,6 +323,7 @@ const selectedWorkUnitSummary = computed(() => {
 
 .report-editor-panel__preview-card {
   display: grid;
+  align-content: start;
   gap: 10px;
   min-height: 0;
   padding: 16px;
@@ -324,6 +334,8 @@ const selectedWorkUnitSummary = computed(() => {
 
 .report-editor-panel__preview-body {
   min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
   line-height: 1.6;
 }
 

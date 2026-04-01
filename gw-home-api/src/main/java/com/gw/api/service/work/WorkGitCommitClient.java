@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -139,8 +140,6 @@ public class WorkGitCommitClient {
                                 + encode(since.toString())
                                 + "&until="
                                 + encode(until.toString())
-                                + "&author="
-                                + encode(gitProject.getAuthNm())
                                 + "&per_page=100"
                 ))
                 .header("Accept", "application/json")
@@ -157,6 +156,15 @@ public class WorkGitCommitClient {
         JsonNode rootNode = objectMapper.readTree(response.body());
         List<WorkUnitGitCommitResponse> commits = new ArrayList<>();
 
+        log.info(
+                "GitLab commit raw response - gitProjectUuid: {}, projectName: {}, reportDate: {}, expectedAuthorName: {}, commits: {}",
+                gitProject.getUuid(),
+                gitProject.getPrjNm(),
+                reportDate,
+                gitProject.getAuthNm(),
+                summarizeCommitNodes(rootNode)
+        );
+
         for (JsonNode commitNode : rootNode) {
             String authorName = commitNode.path("author_name").asText("");
             if (!isSameAuthor(authorName, gitProject.getAuthNm())) {
@@ -165,6 +173,9 @@ public class WorkGitCommitClient {
 
             String authoredAt = commitNode.path("authored_date").asText(commitNode.path("created_at").asText(""));
             String message = commitNode.path("message").asText(commitNode.path("title").asText(""));
+            if (isMergeCommit(message)) {
+                continue;
+            }
             commits.add(new WorkUnitGitCommitResponse(
                     gitProject.getUuid(),
                     gitProject.getPrvdCd(),
@@ -278,6 +289,26 @@ public class WorkGitCommitClient {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private List<Map<String, String>> summarizeCommitNodes(JsonNode rootNode) {
+        List<Map<String, String>> summaries = new ArrayList<>();
+
+        for (JsonNode commitNode : rootNode) {
+            summaries.add(Map.of(
+                    "sha", commitNode.path("id").asText(""),
+                    "authorName", commitNode.path("author_name").asText(""),
+                    "authoredAt", commitNode.path("authored_date").asText(commitNode.path("created_at").asText("")),
+                    "message", commitNode.path("message").asText(commitNode.path("title").asText(""))
+            ));
+        }
+
+        return summaries;
+    }
+
+    private boolean isMergeCommit(String message) {
+        String normalizedMessage = normalize(message);
+        return normalizedMessage.startsWith("merge ");
     }
 
     private OffsetDateTime parseOffsetDateTime(String value) {
