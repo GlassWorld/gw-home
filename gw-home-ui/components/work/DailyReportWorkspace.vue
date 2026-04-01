@@ -148,6 +148,23 @@ const isAllModalCommitsSelected = computed(() =>
   modalGitCommits.value.length > 0
   && modalGitCommits.value.every((commit) => modalSelectedCommitShas.value.includes(commit.commitSha))
 )
+const modalCommitQuerySummary = computed(() => {
+  if (!formState.reportDate) {
+    return ''
+  }
+
+  const authorNames = Array.from(new Set(
+    modalGitCommits.value
+      .map((commit) => commit.authorName.trim())
+      .filter(Boolean)
+  ))
+
+  if (!authorNames.length) {
+    return `${formState.reportDate} 기준`
+  }
+
+  return `${formState.reportDate} 기준 · ${authorNames.join(', ')}`
+})
 
 watch(historyReports, (nextReports) => {
   if (!nextReports.length) {
@@ -176,10 +193,9 @@ async function loadHistoryReports() {
 
   try {
     const response = await fetchDailyReports({
-      dateFrom: getDaysAgoInput(120),
       dateTo: formatDateInput(new Date()),
       page: 1,
-      size: 100
+      size: 3
     })
 
     recentDailyReports.value = response.content
@@ -500,7 +516,7 @@ await initializeWorkspace()
       @close="closeImportModal"
     >
       <div class="daily-report-workspace-page__import-layout">
-        <section class="daily-report-workspace-page__import-panel">
+        <section class="daily-report-workspace-page__import-panel daily-report-workspace-page__import-panel--work-units">
           <div class="daily-report-workspace-page__import-header">
             <h3>업무 선택</h3>
             <input
@@ -548,7 +564,7 @@ await initializeWorkspace()
             <div>
               <h3>커밋 선택</h3>
               <p class="daily-report-workspace-page__import-meta">
-                {{ modalSelectedWorkUnit ? modalSelectedWorkUnit.title : '업무를 먼저 선택하세요.' }}
+                {{ modalSelectedWorkUnit ? `${modalSelectedWorkUnit.title} · ${modalCommitQuerySummary}` : '업무를 먼저 선택하세요.' }}
               </p>
             </div>
             <CommonBaseButton
@@ -586,9 +602,9 @@ await initializeWorkspace()
                 :checked="modalSelectedCommitShas.includes(commit.commitSha)"
                 @change="toggleCommitSelection(commit.commitSha, ($event.target as HTMLInputElement).checked)"
               >
-              <div>
-                <strong>{{ commit.message.split('\n')[0] || commit.commitSha.slice(0, 7) }}</strong>
-                <span>{{ commit.repositoryName }} · {{ commit.authorName }} · {{ commit.authoredAt.slice(0, 16).replace('T', ' ') }}</span>
+              <div class="daily-report-workspace-page__commit-item-content">
+                <strong class="daily-report-workspace-page__commit-message">{{ commit.message.split('\n')[0] || commit.commitSha.slice(0, 7) }}</strong>
+                <span class="daily-report-workspace-page__commit-meta">{{ commit.repositoryName }} · {{ commit.authorName }} · {{ commit.authoredAt.slice(0, 16).replace('T', ' ') }}</span>
               </div>
             </label>
           </div>
@@ -680,9 +696,10 @@ await initializeWorkspace()
 
 .daily-report-workspace-page__import-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.4fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 16px;
-  min-height: 560px;
+  min-height: 520px;
+  align-items: start;
 }
 
 .daily-report-workspace-page__import-panel {
@@ -690,10 +707,15 @@ await initializeWorkspace()
   grid-template-rows: auto minmax(0, 1fr);
   gap: 14px;
   min-height: 0;
-  padding: 18px;
+  padding: 16px;
   border-radius: var(--radius-medium);
   border: 1px solid rgba(147, 210, 255, 0.12);
   background: rgba(255, 255, 255, 0.03);
+}
+
+.daily-report-workspace-page__import-panel--work-units {
+  width: 280px;
+  max-width: 280px;
 }
 
 .daily-report-workspace-page__import-header {
@@ -724,7 +746,7 @@ await initializeWorkspace()
 .daily-report-workspace-page__commit-item {
   display: grid;
   gap: 6px;
-  padding: 12px 14px;
+  padding: 8px 10px;
   border-radius: var(--radius-medium);
   border: 1px solid rgba(147, 210, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
@@ -735,7 +757,7 @@ await initializeWorkspace()
 
 .daily-report-workspace-page__import-item {
   grid-template-columns: 20px minmax(0, 1fr);
-  align-items: flex-start;
+  align-items: center;
 }
 
 .daily-report-workspace-page__import-item--active {
@@ -744,8 +766,11 @@ await initializeWorkspace()
 }
 
 .daily-report-workspace-page__import-item-button {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 22px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -759,6 +784,38 @@ await initializeWorkspace()
   color: var(--color-text-muted);
   font-size: 0.85rem;
   line-height: 1.5;
+}
+
+.daily-report-workspace-page__commit-item-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.daily-report-workspace-page__commit-message {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.daily-report-workspace-page__commit-meta {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.daily-report-workspace-page__import-item strong,
+.daily-report-workspace-page__import-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.daily-report-workspace-page__import-item span {
+  flex-shrink: 0;
+  max-width: 92px;
+  line-height: 1.2;
 }
 
 .daily-report-workspace-page__commit-item {
@@ -781,6 +838,15 @@ await initializeWorkspace()
 
   .daily-report-workspace-page__action-buttons {
     justify-content: stretch;
+  }
+
+  .daily-report-workspace-page__commit-item-content {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .daily-report-workspace-page__commit-meta {
+    text-align: left;
   }
 }
 </style>
