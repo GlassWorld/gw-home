@@ -55,18 +55,24 @@ function firstLine(value: string): string {
   return value.split('\n')[0]?.trim() ?? ''
 }
 
-function buildImportedMarkdown(selectedWorkUnit: WorkUnit | null, selectedGitCommits: WorkUnitGitCommit[]): string {
-  if (!selectedWorkUnit) {
+function buildImportedMarkdown(
+  selectedWorkUnits: DailyReportWorkUnit[],
+  selectedGitCommitsByWorkUnit: Record<string, WorkUnitGitCommit[]>
+): string {
+  if (!selectedWorkUnits.length) {
     return ''
   }
 
-  const lines = [`## ${selectedWorkUnit.title}`]
+  return selectedWorkUnits.map((workUnit) => {
+    const lines = [`## ${workUnit.title}`]
+    const selectedGitCommits = selectedGitCommitsByWorkUnit[workUnit.workUnitUuid] ?? []
 
-  if (selectedGitCommits.length) {
-    lines.push(...selectedGitCommits.map((commit) => `- ${firstLine(commit.message) || commit.commitSha.slice(0, 7)}`))
-  }
+    if (selectedGitCommits.length) {
+      lines.push(...selectedGitCommits.map((commit) => `- ${firstLine(commit.message) || commit.commitSha.slice(0, 7)}`))
+    }
 
-  return lines.join('\n').trim()
+    return lines.join('\n')
+  }).join('\n\n').trim()
 }
 
 const formState = reactive<DailyReportFormState>({
@@ -86,11 +92,14 @@ const workUnitSearchKeyword = ref('')
 const selectedWorkUnits = ref<DailyReportWorkUnit[]>([])
 const recentDailyReports = ref<DailyReport[]>([])
 const modalWorkUnitOptions = ref<WorkUnitOption[]>([])
-const modalSelectedWorkUnitUuid = ref('')
+const modalSelectedWorkUnitUuids = ref<string[]>([])
+const modalActiveWorkUnitUuid = ref('')
 const modalSelectedWorkUnit = ref<WorkUnit | null>(null)
 const modalGitCommits = ref<WorkUnitGitCommit[]>([])
 const modalSelectedCommitShas = ref<string[]>([])
 const selectedGitCommits = ref<WorkUnitGitCommit[]>([])
+const modalGitCommitsByWorkUnit = ref<Record<string, WorkUnitGitCommit[]>>({})
+const modalSelectedCommitShasByWorkUnit = ref<Record<string, string[]>>({})
 
 const filteredWorkUnitOptions = computed(() => {
   const keyword = workUnitSearchKeyword.value.trim().toLowerCase()
@@ -134,7 +143,11 @@ const selectedCommitSummary = computed(() => {
   return `${selectedGitCommits.value.length}개 커밋${repositoryNames.length ? ` · ${repositoryNames.join(', ')}` : ''}`
 })
 
-const canApplyImport = computed(() => Boolean(modalSelectedWorkUnit.value))
+const canApplyImport = computed(() => modalSelectedWorkUnitUuids.value.length > 0)
+const isAllModalCommitsSelected = computed(() =>
+  modalGitCommits.value.length > 0
+  && modalGitCommits.value.every((commit) => modalSelectedCommitShas.value.includes(commit.commitSha))
+)
 
 watch(historyReports, (nextReports) => {
   if (!nextReports.length) {
@@ -150,7 +163,7 @@ watch(historyReports, (nextReports) => {
 watch(
   () => formState.reportDate,
   async () => {
-    if (!isImportModalVisible.value || !modalSelectedWorkUnitUuid.value) {
+    if (!isImportModalVisible.value || !modalActiveWorkUnitUuid.value) {
       return
     }
 
@@ -210,7 +223,9 @@ async function openImportModal() {
 
   try {
     modalWorkUnitOptions.value = await fetchWorkUnitOptions(true)
-    const selectedWorkUnitUuid = selectedWorkUnits.value[0]?.workUnitUuid ?? modalWorkUnitOptions.value[0]?.workUnitUuid ?? ''
+    modalSelectedWorkUnitUuids.value = selectedWorkUnits.value.map((workUnit) => workUnit.workUnitUuid)
+
+    const selectedWorkUnitUuid = modalSelectedWorkUnitUuids.value[0] ?? modalWorkUnitOptions.value[0]?.workUnitUuid ?? ''
     if (selectedWorkUnitUuid) {
       await selectModalWorkUnit(selectedWorkUnitUuid)
     }
@@ -225,29 +240,37 @@ async function openImportModal() {
 
 function closeImportModal() {
   isImportModalVisible.value = false
-  modalSelectedWorkUnitUuid.value = ''
+  modalSelectedWorkUnitUuids.value = []
+  modalActiveWorkUnitUuid.value = ''
   modalSelectedWorkUnit.value = null
   modalGitCommits.value = []
   modalSelectedCommitShas.value = []
+  modalGitCommitsByWorkUnit.value = {}
+  modalSelectedCommitShasByWorkUnit.value = {}
 }
 
 async function selectModalWorkUnit(workUnitUuid: string) {
-  modalSelectedWorkUnitUuid.value = workUnitUuid
-  modalSelectedCommitShas.value = []
+  modalActiveWorkUnitUuid.value = workUnitUuid
+
+  if (!modalSelectedWorkUnitUuids.value.includes(workUnitUuid)) {
+    modalSelectedWorkUnitUuids.value = [...modalSelectedWorkUnitUuids.value, workUnitUuid]
+  }
 
   try {
     modalSelectedWorkUnit.value = await fetchWorkUnit(workUnitUuid)
     await loadGitCommitsForSelectedWorkUnit()
+    modalSelectedCommitShas.value = modalSelectedCommitShasByWorkUnit.value[workUnitUuid] ?? []
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
     modalSelectedWorkUnit.value = null
     modalGitCommits.value = []
+    modalSelectedCommitShas.value = []
     showToast(fetchError.data?.message ?? '업무 상세를 불러오지 못했습니다.', { variant: 'error' })
   }
 }
 
 async function loadGitCommitsForSelectedWorkUnit() {
-  if (!modalSelectedWorkUnitUuid.value || !formState.reportDate) {
+  if (!modalActiveWorkUnitUuid.value || !formState.reportDate) {
     modalGitCommits.value = []
     return
   }
@@ -255,38 +278,98 @@ async function loadGitCommitsForSelectedWorkUnit() {
   isCommitLoading.value = true
 
   try {
-    modalGitCommits.value = await fetchWorkUnitGitCommits(modalSelectedWorkUnitUuid.value, formState.reportDate)
+    modalGitCommits.value = await fetchWorkUnitGitCommits(modalActiveWorkUnitUuid.value, formState.reportDate)
+    modalGitCommitsByWorkUnit.value = {
+      ...modalGitCommitsByWorkUnit.value,
+      [modalActiveWorkUnitUuid.value]: modalGitCommits.value
+    }
+    modalSelectedCommitShas.value = (modalSelectedCommitShasByWorkUnit.value[modalActiveWorkUnitUuid.value] ?? [])
+      .filter((commitSha) => modalGitCommits.value.some((commit) => commit.commitSha === commitSha))
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
     modalGitCommits.value = []
+    modalGitCommitsByWorkUnit.value = {
+      ...modalGitCommitsByWorkUnit.value,
+      [modalActiveWorkUnitUuid.value]: []
+    }
+    modalSelectedCommitShas.value = []
     showToast(fetchError.data?.message ?? '커밋 목록을 불러오지 못했습니다.', { variant: 'error' })
   } finally {
     isCommitLoading.value = false
   }
 }
 
+function toggleWorkUnitSelection(workUnitUuid: string, checked: boolean) {
+  if (checked) {
+    modalSelectedWorkUnitUuids.value = [...new Set([...modalSelectedWorkUnitUuids.value, workUnitUuid])]
+    return
+  }
+
+  modalSelectedWorkUnitUuids.value = modalSelectedWorkUnitUuids.value.filter((value) => value !== workUnitUuid)
+}
+
 function toggleCommitSelection(commitSha: string, checked: boolean) {
   if (checked) {
     modalSelectedCommitShas.value = [...new Set([...modalSelectedCommitShas.value, commitSha])]
+    modalSelectedCommitShasByWorkUnit.value = {
+      ...modalSelectedCommitShasByWorkUnit.value,
+      [modalActiveWorkUnitUuid.value]: modalSelectedCommitShas.value
+    }
     return
   }
 
   modalSelectedCommitShas.value = modalSelectedCommitShas.value.filter((value) => value !== commitSha)
+  modalSelectedCommitShasByWorkUnit.value = {
+    ...modalSelectedCommitShasByWorkUnit.value,
+    [modalActiveWorkUnitUuid.value]: modalSelectedCommitShas.value
+  }
 }
 
-function applyWorkImport() {
-  if (!modalSelectedWorkUnit.value) {
+function toggleAllCommitSelections() {
+  if (!modalGitCommits.value.length) {
     return
   }
 
-  selectedWorkUnits.value = [{
-    workUnitUuid: modalSelectedWorkUnit.value.workUnitUuid,
-    title: modalSelectedWorkUnit.value.title,
-    category: modalSelectedWorkUnit.value.category
-  }]
+  if (isAllModalCommitsSelected.value) {
+    modalSelectedCommitShas.value = []
+    modalSelectedCommitShasByWorkUnit.value = {
+      ...modalSelectedCommitShasByWorkUnit.value,
+      [modalActiveWorkUnitUuid.value]: []
+    }
+    return
+  }
 
-  selectedGitCommits.value = modalGitCommits.value.filter((commit) => modalSelectedCommitShas.value.includes(commit.commitSha))
-  formState.workSummary = buildImportedMarkdown(modalSelectedWorkUnit.value, selectedGitCommits.value)
+  modalSelectedCommitShas.value = modalGitCommits.value.map((commit) => commit.commitSha)
+  modalSelectedCommitShasByWorkUnit.value = {
+    ...modalSelectedCommitShasByWorkUnit.value,
+    [modalActiveWorkUnitUuid.value]: modalSelectedCommitShas.value
+  }
+}
+
+function applyWorkImport() {
+  if (!modalSelectedWorkUnitUuids.value.length) {
+    return
+  }
+
+  selectedWorkUnits.value = modalSelectedWorkUnitUuids.value
+    .map((workUnitUuid) => modalWorkUnitOptions.value.find((workUnit) => workUnit.workUnitUuid === workUnitUuid))
+    .filter((workUnit): workUnit is WorkUnitOption => Boolean(workUnit))
+    .map((workUnit) => ({
+      workUnitUuid: workUnit.workUnitUuid,
+      title: workUnit.title,
+      category: workUnit.category
+    }))
+
+  const selectedGitCommitsByWorkUnit = Object.fromEntries(
+    modalSelectedWorkUnitUuids.value.map((workUnitUuid) => {
+      const commits = modalGitCommitsByWorkUnit.value[workUnitUuid] ?? []
+      const selectedCommitShas = modalSelectedCommitShasByWorkUnit.value[workUnitUuid] ?? []
+      return [workUnitUuid, commits.filter((commit) => selectedCommitShas.includes(commit.commitSha))]
+    })
+  ) as Record<string, WorkUnitGitCommit[]>
+
+  selectedGitCommits.value = Object.values(selectedGitCommitsByWorkUnit).flat()
+  formState.workSummary = buildImportedMarkdown(selectedWorkUnits.value, selectedGitCommitsByWorkUnit)
   closeImportModal()
 }
 
@@ -433,17 +516,26 @@ await initializeWorkspace()
           </div>
 
           <div v-else-if="filteredWorkUnitOptions.length" class="daily-report-workspace-page__import-list">
-            <button
+            <label
               v-for="workUnit in filteredWorkUnitOptions"
               :key="workUnit.workUnitUuid"
-              type="button"
               class="daily-report-workspace-page__import-item"
-              :class="{ 'daily-report-workspace-page__import-item--active': modalSelectedWorkUnitUuid === workUnit.workUnitUuid }"
-              @click="selectModalWorkUnit(workUnit.workUnitUuid)"
+              :class="{ 'daily-report-workspace-page__import-item--active': modalActiveWorkUnitUuid === workUnit.workUnitUuid }"
             >
-              <strong>{{ workUnit.title }}</strong>
-              <span>{{ workUnit.category || '카테고리 없음' }}</span>
-            </button>
+              <input
+                type="checkbox"
+                :checked="modalSelectedWorkUnitUuids.includes(workUnit.workUnitUuid)"
+                @change="toggleWorkUnitSelection(workUnit.workUnitUuid, ($event.target as HTMLInputElement).checked)"
+              >
+              <button
+                type="button"
+                class="daily-report-workspace-page__import-item-button"
+                @click="selectModalWorkUnit(workUnit.workUnitUuid)"
+              >
+                <strong>{{ workUnit.title }}</strong>
+                <span>{{ workUnit.category || '카테고리 없음' }}</span>
+              </button>
+            </label>
           </div>
 
           <p v-else class="daily-report-workspace-page__empty">
@@ -459,6 +551,16 @@ await initializeWorkspace()
                 {{ modalSelectedWorkUnit ? modalSelectedWorkUnit.title : '업무를 먼저 선택하세요.' }}
               </p>
             </div>
+            <CommonBaseButton
+              v-if="modalGitCommits.length"
+              variant="secondary"
+              size="small"
+              type="button"
+              :disabled="isCommitLoading"
+              @click="toggleAllCommitSelections"
+            >
+              {{ isAllModalCommitsSelected ? '전체해제' : '전체선택' }}
+            </CommonBaseButton>
           </div>
 
           <div v-if="!modalSelectedWorkUnit" class="daily-report-workspace-page__empty">
@@ -540,12 +642,12 @@ await initializeWorkspace()
   display: grid;
   grid-template-columns: minmax(280px, 3fr) minmax(0, 7fr);
   gap: 20px;
-  min-height: min(780px, calc(100vh - 220px));
+  align-items: start;
 }
 
 .daily-report-workspace-page__editor-shell {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
   gap: 16px;
   min-height: 0;
 }
@@ -631,9 +733,25 @@ await initializeWorkspace()
   font: inherit;
 }
 
+.daily-report-workspace-page__import-item {
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: flex-start;
+}
+
 .daily-report-workspace-page__import-item--active {
   border-color: rgba(110, 193, 255, 0.52);
   background: rgba(110, 193, 255, 0.08);
+}
+
+.daily-report-workspace-page__import-item-button {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
 }
 
 .daily-report-workspace-page__import-item span,
