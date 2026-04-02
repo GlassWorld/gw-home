@@ -4,6 +4,7 @@ This document is the single source of truth for review and todo document rules.
 
 ## Document Lifecycle
 
+- Review and todo documents exist to support the user's requested task, not to become standalone deliverables by themselves.
 - Review document: `work/review/{domain}/review-{subject}.md`
 - Todo document: `work/todo/{domain}/todo-{subject}.md`
 - Reuse existing documents when the topic matches
@@ -17,8 +18,8 @@ Naming examples:
 
 ## Output Rules
 
-- `##검토` output: Scope, Summary, Findings or scores, Recommended next actions
-- `##계획` output: Goal, Scope, Current state, Action items, Done criteria
+- `##검토` output: a review document for the requested task with Scope, Summary, Findings or scores, Recommended next actions
+- `##계획` output: a todo or plan document for the requested task with Goal, Scope, Current state, Action items, Done criteria
 - `##작업` may update code and documents, but should keep work documents aligned with the current scope
 
 ## Template References

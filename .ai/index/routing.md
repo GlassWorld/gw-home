@@ -6,8 +6,8 @@ This document is the single source of truth for task routing and HEAVY flow.
 
 | Trigger | Action |
 |--------|------|
-| `##검토` | Write or update a review document under `work/review/` |
-| `##계획` | Write or update a todo document under `work/todo/` |
+| `##검토` | Write or update a review document under `work/review/` for the requested task |
+| `##계획` | Write or update a todo document under `work/todo/` for the requested task |
 | `##작업` | Classify the task, load only the needed references, and execute |
 | `##커밋` | Review changes and draft the commit message |
 
