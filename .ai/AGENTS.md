@@ -57,13 +57,14 @@ How would you like to proceed?
 
 | Trigger | Action |
 |--------|------|
-| `##검토` | Create or update `work/review/{domain}/review-{subject}.md` |
-| `##계획` | Create or update `work/todo/{domain}/todo-{subject}.md` |
-| `##작업` | Classify the task using `.ai/TASK_ROUTER.md` and execute |
-| `##커밋` | Review changes and propose a commit message draft |
+| `##검토` | Write a review document under `work/review/` |
+| `##계획` | Write a todo document under `work/todo/` |
+| `##작업` | Route the task with `.ai/TASK_ROUTER.md` and execute |
+| `##커밋` | Review changes and draft the commit message |
 
 - Do not change code for `##검토` or `##계획`
 - Change code only for `##작업`
+- Use `.ai/TASK_ROUTER.md` for document naming, minimum sections, and lifecycle
 
 ## Commit Rules
 

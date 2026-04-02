@@ -81,6 +81,33 @@ INPUT: {task}
 - Completed documents are not moved automatically
 - Clean up related documents during `##커밋`
 
+Naming examples:
+
+- `work/review/auth/review-login-policy.md`
+- `work/todo/board/todo-board-search.md`
+
+## Work Document Minimum Sections
+
+Review documents should include:
+
+- Scope
+- Summary
+- Findings or scores
+- Recommended next actions
+
+Todo documents should include:
+
+- Goal
+- Scope
+- Current state
+- Action items
+- Done criteria
+
+Template references:
+
+- Review template: `work/review/_template.md`
+- Todo template: `work/todo/_template.md`
+
 ## DB Change Checklist
 
 If the task includes DB changes, include this checklist in the task document.

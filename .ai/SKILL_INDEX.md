@@ -39,6 +39,15 @@ Interpretation:
 |-------|------|
 | `create-api-endpoint` | Guide for implementing a backend API endpoint |
 | `api-connect` | Guide for frontend API types and composables |
+| `review-doc-template` | Template reference for `work/review` documents |
+| `todo-doc-template` | Template reference for `work/todo` documents |
+
+## Work Document References
+
+| Reference | Path | Purpose |
+|-------|------|------|
+| `review-doc-template` | `work/review/_template.md` | Standard structure for `##검토` output |
+| `todo-doc-template` | `work/todo/_template.md` | Standard structure for `##계획` output |
 
 ## Input Format Example
 
