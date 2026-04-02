@@ -1,68 +1,98 @@
 # 바이브코딩 문서 세팅 리뷰
 
-## 범위
+## Scope
 
 - 대상: `.ai/AGENTS.md`, `.ai/CORE_RULES.md`, `.ai/TASK_ROUTER.md`, `.ai/SKILL_INDEX.md`, `.ai/project/summary.md`
-- 관점: 바이브코딩 활용도, 토큰 효율, 문서 구조, 중복도, 실행 가능성
+- 관점: 바이브코딩 활용도, 토큰 효율, 문서 구조, 중복 관리, 실행 가능성
 
-## 총평
+## Summary
 
-- 전체 평점: `8.1 / 10`
-- 한줄 평가: 작은 코어 문서로 작업 흐름을 빠르게 고정하는 구조는 좋지만, 일부 규칙이 여러 문서에 반복되어 토큰 효율과 유지보수 효율이 조금 깎인다.
+- 한줄 요약: 현재 세팅은 entry, routing, skill reference 역할이 꽤 선명해졌고, 2차 압축으로 토큰 효율도 다시 개선돼 전체 균형이 한 단계 좋아졌다.
+- 전체 판단: `8.8 / 10`
 
-## 분야별 점수
+## Findings or Scores
 
-| 항목 | 점수 | 메모 |
+| 항목 | 점수 | 평가 |
 |------|------|------|
-| 진입성 | `9.0 / 10` | 시작 문서와 우선순위가 분명하다 |
-| 토큰 효율 | `7.5 / 10` | 코어 문서 총량은 작지만 반복 규칙이 있다 |
-| 문서 구조 | `8.8 / 10` | 역할 분리가 선명하다 |
-| 중복 관리 | `6.8 / 10` | 요약 문서와 규칙 문서 사이 반복이 보인다 |
-| 실행 가능성 | `8.7 / 10` | 트리거와 라우팅 규칙이 구체적이다 |
-| 확장성 | `7.9 / 10` | 현재 규모엔 적합하지만 도메인 증가 시 index 관리가 필요하다 |
-| 모델 친화성 | `8.3 / 10` | 읽기 순서, 범위 제한, 금지 규칙이 모델 행동 제어에 유리하다 |
+| 바이브코딩 활용도 | `9.2 / 10` | 빠른 진입과 작업 모드 고정이 더 매끄러워졌다 |
+| 토큰 효율 | `8.4 / 10` | 총량이 다시 줄고 중복 설명도 더 압축됐다 |
+| 문서 구조 | `9.1 / 10` | 역할 경계와 source of truth가 더 선명해졌다 |
+| 중복 관리 | `8.2 / 10` | 핵심 반복 구간이 꽤 정리됐다 |
+| 실행 가능성 | `9.0 / 10` | 트리거, 라우팅, 산출물 규칙이 계속 강하다 |
+| 확장성 | `8.0 / 10` | 현재 규모엔 충분히 좋고 이후 인덱싱만 보강하면 된다 |
+| 유지보수성 | `8.4 / 10` | 단일 출처 선언과 실제 수정 포인트가 더 가까워졌다 |
 
-## 강점
+### 항목: 바이브코딩 활용도
 
-1. `AGENTS -> summary -> 필요한 문서만 로드` 흐름이 짧고 명확하다.
-2. 절대 규칙을 `.ai/CORE_RULES.md`로 모아 충돌 시 우선순위를 판단하기 쉽다.
-3. `##검토`, `##계획`, `##작업`, `##커밋` 트리거가 명시되어 에이전트 행동을 안정적으로 유도한다.
-4. `TASK_ROUTER`가 SIMPLE / NORMAL / HEAVY 기준을 분리해 과도한 구현을 막는다.
+- 점수: `9.2 / 10`
+- 근거:
+  - 진입 순서가 [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L5)~[`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L9)에 짧고 안정적으로 고정돼 있다.
+  - `TASK_ROUTER`와 `SKILL_INDEX`를 각각 단일 출처로 명시한 부분이 [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L31)~[`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L33), [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L3), [`.ai/SKILL_INDEX.md`](/home/glassworld/workspace/gw-home/.ai/SKILL_INDEX.md#L3)에 반영됐다.
+  - 요청 트리거는 여전히 [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L56)~[`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L65)에서 빠르게 해석되고, 보조 설명은 더 짧아졌다.
+- 영향:
+  - 새 세션에서 에이전트가 읽기 순서, 작업 기준, 참조 기준을 더 빠르게 고정할 수 있다.
 
-## 주요 이슈
+### 항목: 토큰 효율
 
-### 1. 중복 규칙이 여러 문서에 퍼져 있어 수정 비용이 커질 수 있음
+- 점수: `8.4 / 10`
+- 근거:
+  - 코어 문서 5개 총량이 `1973 words, 394 lines`에서 `1920 words, 375 lines`로 다시 줄었다.
+  - [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L56)~[`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L65)의 trigger 보조 설명이 축약됐다.
+  - [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L91)~[`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L96)에서 work 문서 규칙이 한 블록으로 압축됐다.
+- 영향:
+  - 구조 이해를 유지하면서 첫 로딩 부담도 실제로 줄었다.
 
-- `work/review`, `work/todo` 경로와 관련 규칙이 [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L58), [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L68), [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L78)에 반복된다.
-- 스킬이 자동 실행이 아니라 참조용이라는 설명도 [`.ai/CORE_RULES.md`](/home/glassworld/workspace/gw-home/.ai/CORE_RULES.md#L76), [`.ai/SKILL_INDEX.md`](/home/glassworld/workspace/gw-home/.ai/SKILL_INDEX.md#L8), [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L67)에 분산돼 있다.
-- 영향: 규칙 수정 시 2~3개 문서를 함께 수정해야 해서 drift 위험이 생긴다.
+### 항목: 문서 구조
 
-### 2. summary 문서가 요약과 규칙을 함께 가져가 토큰 재소모 가능성이 있음
+- 점수: `9.1 / 10`
+- 근거:
+  - `TASK_ROUTER`가 task routing과 work document rules의 단일 출처라고 직접 선언해 [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L3) 문서 역할이 더 분명해졌다.
+  - `SKILL_INDEX`도 skill interpretation의 단일 출처라고 선언해 [`.ai/SKILL_INDEX.md`](/home/glassworld/workspace/gw-home/.ai/SKILL_INDEX.md#L3) 경계가 분명해졌다.
+  - `summary`의 quick reference가 [`.ai/project/summary.md`](/home/glassworld/workspace/gw-home/.ai/project/summary.md#L45)~[`.ai/project/summary.md`](/home/glassworld/workspace/gw-home/.ai/project/summary.md#L47)에서 한 줄로 압축돼 summary 역할에 더 가까워졌다.
+- 영향:
+  - 각 문서를 왜 읽는지 설명하기 쉬워졌고, 탐색 흐름도 더 자연스러워졌다.
 
-- [`.ai/project/summary.md`](/home/glassworld/workspace/gw-home/.ai/project/summary.md#L45)에는 설계 원칙이 있고, 이 중 일부는 [`.ai/CORE_RULES.md`](/home/glassworld/workspace/gw-home/.ai/CORE_RULES.md#L7), [`.ai/CORE_RULES.md`](/home/glassworld/workspace/gw-home/.ai/CORE_RULES.md#L34), [`.ai/CORE_RULES.md`](/home/glassworld/workspace/gw-home/.ai/CORE_RULES.md#L39), [`.ai/CORE_RULES.md`](/home/glassworld/workspace/gw-home/.ai/CORE_RULES.md#L47)와 의미상 겹친다.
-- 영향: summary를 읽은 뒤 rules를 다시 읽으면 모델 입장에서 같은 신호를 두 번 받는다.
+### 항목: 중복 관리
 
-### 3. AGENTS와 TASK_ROUTER 사이 경계가 살짝 겹침
+- 점수: `8.2 / 10`
+- 근거:
+  - `summary` 쪽 반복은 많이 줄었다.
+  - `##검토`, `##계획`, `##작업`의 세부 규칙은 더 짧아졌고, work 문서 규칙도 [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L91)~[`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L96) 한 블록에 모였다.
+  - `SKILL_INDEX`의 template purpose 문구도 [`.ai/SKILL_INDEX.md`](/home/glassworld/workspace/gw-home/.ai/SKILL_INDEX.md#L47)~[`.ai/SKILL_INDEX.md`](/home/glassworld/workspace/gw-home/.ai/SKILL_INDEX.md#L52)에서 더 짧게 정리됐다.
+- 영향:
+  - 이전보다 중복 신호가 눈에 띄게 줄었고, drift 위험도 더 낮아졌다.
 
-- [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L54)는 트리거와 워크 문서 규칙을 담고 있고, [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L76)도 문서 lifecycle과 review/todo 경로를 다시 설명한다.
-- 영향: 엔트리 문서가 길어질수록 router의 독립성이 약해진다.
+### 항목: 실행 가능성
 
-## 토큰 효율 평가
+- 점수: `9.0 / 10`
+- 근거:
+  - 요청 트리거별 행동은 [`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L56)~[`.ai/AGENTS.md`](/home/glassworld/workspace/gw-home/.ai/AGENTS.md#L67)에 그대로 명확하다.
+  - 난이도 분류와 후속 액션은 [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L15)~[`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L65)에서 충분히 구체적이다.
+  - work 문서 최소 섹션과 템플릿 연결도 [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L91)~[`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L117), [review template](/home/glassworld/workspace/gw-home/work/review/_template.md), [todo template](/home/glassworld/workspace/gw-home/work/todo/_template.md)에 맞물려 있다.
+- 영향:
+  - 실사용 관점에서는 여전히 매우 강한 구조다.
 
-- 코어 문서 5개 합계는 약 `1,854 words`, `367 lines`라서 절대량은 가볍다.
-- 현재 구조는 대형 단일 문서보다 훨씬 효율적이다.
-- 다만 다음 항목은 압축 여지가 있다.
-  - work 문서 경로 규칙
-  - skill 문서 해석 규칙
-  - 설계 원칙과 절대 규칙의 중복 표현
+### 항목: 확장성
 
-## 개선 우선순위
+- 점수: `8.0 / 10`
+- 근거:
+  - 프로젝트 개요와 도메인 정보는 [`.ai/project/summary.md`](/home/glassworld/workspace/gw-home/.ai/project/summary.md#L20)~[`.ai/project/summary.md`](/home/glassworld/workspace/gw-home/.ai/project/summary.md#L43) 정도면 빠르게 파악 가능하다.
+  - `SKILL_INDEX`가 단일 출처가 되면서 skill 추가 시 어디에 정리할지 기준은 더 명확해졌다.
+  - 다만 skill 수가 많이 늘면 현재 표 기반 index만으로는 검색성, 우선순위, 태그 분류가 부족할 수 있다.
+- 영향:
+  - 지금은 충분히 유연하지만, 성장 단계에서는 index 보강이 필요할 가능성이 있다.
 
-1. `summary`는 진짜 요약만 남기고 규칙성 문장은 `CORE_RULES` 링크로 치환
-2. work 문서 경로와 lifecycle은 `TASK_ROUTER` 한 곳만 source of truth로 두고 `AGENTS`는 링크만 유지
-3. skill 해석 규칙은 `SKILL_INDEX`로 모으고 다른 문서에서는 한 줄 참조만 남기기
+### 항목: 유지보수성
 
-## 권장 목표 점수
+- 점수: `8.4 / 10`
+- 근거:
+  - 이전에는 source of truth 선언과 실제 구조 사이 거리가 있었지만, 지금은 [`.ai/TASK_ROUTER.md`](/home/glassworld/workspace/gw-home/.ai/TASK_ROUTER.md#L3), [`.ai/SKILL_INDEX.md`](/home/glassworld/workspace/gw-home/.ai/SKILL_INDEX.md#L3)에서 직접 맞물리기 시작했다.
+  - 2차 압축으로 `AGENTS`는 더 entry 중심이 되고, `TASK_ROUTER`는 더 규칙 중심이 되어 수정 포인트가 더 읽기 쉬워졌다.
+- 영향:
+  - 규칙 개정 시 수정 경로가 전보다 더 예측 가능해졌다.
 
-- 위 3가지만 정리하면 예상 점수는 `8.8 ~ 9.1 / 10`
-- 특히 토큰 효율은 `7.5 -> 8.6` 수준까지 개선 가능
+## Recommended Next Actions
+
+1. 현재 구조는 실사용 기준으로 충분히 안정적이므로, 다음 단계는 무리한 축약보다 실제 운영에서 헷갈리는 지점이 있는지 관찰하는 쪽이 낫다.
+2. skill 수가 늘기 시작하면 `SKILL_INDEX`에 태그나 우선순위 열을 추가해 검색성을 보강한다.
+3. 이후 다시 점수가 떨어진다면 문서 길이보다 "한 요청에서 실제 몇 파일을 읽게 되는지" 기준으로 재검토한다.

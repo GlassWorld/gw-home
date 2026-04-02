@@ -44,6 +44,4 @@ admin     admin features
 
 ## Quick References
 
-- Absolute rules: `.ai/CORE_RULES.md`
-- Task routing: `.ai/TASK_ROUTER.md`
-- Skill references: `.ai/SKILL_INDEX.md`
+- Rules and workflow references are managed in `.ai/CORE_RULES.md`, `.ai/TASK_ROUTER.md`, and `.ai/SKILL_INDEX.md`.

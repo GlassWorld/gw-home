@@ -1,5 +1,7 @@
 # SKILL INDEX
 
+This document is the single source of truth for skill interpretation and reference format.
+
 Reference paths:
 
 - `.claude/skill/{name}/SKILL.md`
@@ -46,8 +48,8 @@ Interpretation:
 
 | Reference | Path | Purpose |
 |-------|------|------|
-| `review-doc-template` | `work/review/_template.md` | Standard structure for `##검토` output |
-| `todo-doc-template` | `work/todo/_template.md` | Standard structure for `##계획` output |
+| `review-doc-template` | `work/review/_template.md` | Review template reference |
+| `todo-doc-template` | `work/todo/_template.md` | Todo template reference |
 
 ## Input Format Example
 

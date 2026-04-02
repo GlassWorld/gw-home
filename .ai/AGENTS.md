@@ -29,7 +29,7 @@ System and developer instructions -> `.ai/CORE_RULES.md` -> task documents (`wor
 - Implement only what was requested. Do not add speculative extensions.
 - Prefer editing existing files. Keep new file creation to a minimum.
 - Follow `.ai/CORE_RULES.md` for all absolute rules.
-- Use `.ai/TASK_ROUTER.md` as the source of truth for work document lifecycle and HEAVY flow.
+- Use `.ai/TASK_ROUTER.md` as the source of truth for task routing, HEAVY flow, and work document rules.
 - Use `.ai/SKILL_INDEX.md` as the source of truth for skill interpretation and reference format.
 
 Out-of-scope response format:
@@ -62,9 +62,7 @@ How would you like to proceed?
 | `##작업` | Route the task with `.ai/TASK_ROUTER.md` and execute |
 | `##커밋` | Review changes and draft the commit message |
 
-- Do not change code for `##검토` or `##계획`
-- Change code only for `##작업`
-- Use `.ai/TASK_ROUTER.md` for document naming, minimum sections, and lifecycle
+- Use `.ai/TASK_ROUTER.md` for detailed work document rules and lifecycle.
 
 ## Commit Rules
 
@@ -75,5 +73,5 @@ How would you like to proceed?
 
 ## References
 
-- Use `.ai/TASK_ROUTER.md` for task levels, HEAVY flow, and work document lifecycle
-- Use `.ai/SKILL_INDEX.md` for skill references and interpretation rules
+- Routing and work documents: `.ai/TASK_ROUTER.md`
+- Skill references and interpretation: `.ai/SKILL_INDEX.md`

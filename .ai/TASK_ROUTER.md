@@ -1,5 +1,7 @@
 # TASK ROUTER
 
+This document is the single source of truth for task routing, HEAVY flow, and work document rules.
+
 ## Layer Classification
 
 Classify each task first as `Backend`, `Frontend`, or `Full-stack`.
@@ -86,22 +88,11 @@ Naming examples:
 - `work/review/auth/review-login-policy.md`
 - `work/todo/board/todo-board-search.md`
 
-## Work Document Minimum Sections
+## Work Document Rules
 
-Review documents should include:
-
-- Scope
-- Summary
-- Findings or scores
-- Recommended next actions
-
-Todo documents should include:
-
-- Goal
-- Scope
-- Current state
-- Action items
-- Done criteria
+- `##검토` output: Scope, Summary, Findings or scores, Recommended next actions
+- `##계획` output: Goal, Scope, Current state, Action items, Done criteria
+- `##작업` may update code and documents, but should follow this file for work document handling
 
 Template references:
 

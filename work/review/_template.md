@@ -10,12 +10,12 @@
 - 한줄 요약:
 - 전체 판단:
 
-## Findings
+## Findings or Scores
 
 - 항목:
-  - 점수:
-  - 근거:
-  - 영향:
+- 점수:
+- 근거:
+- 영향:
 
 ## Recommended Next Actions
 
