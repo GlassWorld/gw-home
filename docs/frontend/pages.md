@@ -1,10 +1,14 @@
-# Pages
+# 페이지 안내
 
-## 라우트 구조
+## 이 문서의 목적
+
+이 문서는 현재 프론트엔드 라우트와 각 페이지의 역할을 이해하기 위한 안내서다.
+
+## 주요 라우트
 
 | 경로 | 파일 | 설명 | 인증 필요 |
 |------|------|------|-----------|
-| `/` | `pages/index.vue` | 루트 진입 시 `/dashboard` 이동 | X |
+| `/` | `pages/index.vue` | 루트 진입 시 기본 페이지로 이동 | X |
 | `/login` | `pages/login.vue` | 로그인 화면 | X |
 | `/dashboard` | `pages/dashboard/index.vue` | 대시보드 | O |
 | `/notices` | `pages/notices/index.vue` | 공지사항 목록 | O |
@@ -12,101 +16,70 @@
 | `/board` | `pages/board/index.vue` | 게시글 목록 | O |
 | `/board/[boardUuid]` | `pages/board/[boardUuid].vue` | 게시글 상세 | O |
 | `/board/create` | `pages/board/create.vue` | 게시글 작성 | O |
-| `/work` | `pages/work/index.vue` | 업무 등록/조회 | O |
-| `/work/daily-reports` | `pages/work/daily-reports/index.vue` | 일일보고 작성/조회 | O |
-| `/work/weekly-reports` | `pages/work/weekly-reports/index.vue` | 주간보고 작성/조회 | O |
+| `/work` | `pages/work/index.vue` | 업무 등록과 조회 | O |
+| `/work/daily-reports` | `pages/work/daily-reports/index.vue` | 일일보고 작성과 조회 | O |
+| `/work/daily-reports/create` | `pages/work/daily-reports/create.vue` | 일일보고 작성 | O |
+| `/work/daily-reports/[dailyReportUuid]/edit` | `pages/work/daily-reports/[dailyReportUuid]/edit.vue` | 일일보고 수정 | O |
+| `/work/weekly-reports` | `pages/work/weekly-reports/index.vue` | 주간보고 작성과 조회 | O |
+| `/work/git-accounts` | `pages/work/git-accounts/index.vue` | Git 계정 및 저장소 연동 관리 | O |
 | `/vault` | `pages/vault/index.vue` | 자격증명 보관함 | O |
 | `/settings` | `pages/settings/index.vue` | 계정 설정 | O |
-| `/security` | `pages/security/index.vue` | OTP 및 보안 설정 | O |
-| `/admin/accounts` | `pages/admin/accounts/index.vue` | 관리자 계정 관리 | O (관리자) |
-| `/admin/notices` | `pages/admin/notices/index.vue` | 관리자 공지 관리 | O (관리자) |
-| `/admin/daily-reports` | `pages/admin/daily-reports/index.vue` | 관리자 일일보고 관리 | O (관리자) |
-| `/admin/vault-categories` | `pages/admin/vault-categories/index.vue` | 관리자 금고 카테고리 관리 | O (관리자) |
+| `/security` | `pages/security/index.vue` | OTP와 보안 설정 | O |
+| `/admin/accounts` | `pages/admin/accounts/index.vue` | 관리자 계정 관리 | O |
+| `/admin/notices` | `pages/admin/notices/index.vue` | 관리자 공지 관리 | O |
+| `/admin/daily-reports` | `pages/admin/daily-reports/index.vue` | 관리자 일일보고 관리 | O |
+| `/admin/vault-categories` | `pages/admin/vault-categories/index.vue` | 관리자 금고 카테고리 관리 | O |
 
 ## 초기 진입 흐름
 
-```
-브라우저 접속 (`/`)
-  ↓
-`pages/index.vue` 에서 `/dashboard` 이동
-  ↓
-미들웨어: auth.ts (보호 페이지 인증 확인)
-  ├─ 비인증 → /login 리다이렉트
-  └─ 인증됨 → 요청 경로 유지
+```text
+사용자 접속
+  -> /
+  -> 기본 페이지로 이동
+  -> 인증 필요 페이지면 auth 미들웨어 검사
+  -> 비인증 상태면 /login 으로 이동
 ```
 
-## 페이지별 책임
+## 페이지별 역할
 
-### `login.vue`
-- 로그인 폼 (로그인 ID + 비밀번호)
-- 로그인 성공 → `/dashboard` 이동
-- 이미 로그인 상태 → `/dashboard` 자동 이동
+### 로그인
 
-### `dashboard/index.vue`
+- 로그인 ID와 비밀번호 입력
+- 이미 로그인한 사용자는 대시보드로 이동
+
+### 대시보드
+
 - 로그인 사용자 요약 정보
-- 최근 공지 목록
-- 최근 게시글 목록
-- 빠른 링크 (게시글 작성, 프로필)
+- 최근 공지와 최근 게시글 표시
+- 주요 화면으로 이동하는 빠른 링크 제공
 
-### `notices/*`
-- 공지 목록 및 상세 조회
-- 상세 본문은 markdown 렌더링 적용
+### 공지사항
 
-### `board/index.vue`
-- 게시글 목록 (페이징, 키워드 검색)
-- 정렬: 최신순 기본
+- 공지 목록 조회
+- 공지 상세 확인
 
-### `board/[boardUuid].vue`
-- 게시글 상세 본문
-- 댓글 목록
-- 작성자 본인: 수정/삭제 버튼
+### 게시글
 
-### `settings/index.vue`
-- 이메일, 닉네임, 소개 수정
-- 프로필 이미지 변경 진입
+- 목록, 검색, 상세 조회
+- 작성자 본인의 수정과 삭제
+- 새 게시글 작성
 
-### `security/index.vue`
-- OTP 설정/활성화/비활성화
-- 보안 설정 관리
+### 설정과 보안
 
-### `work/*`
-- 업무 등록/수정/사용 여부 관리
-- 일일보고/주간보고 작성 및 조회
+- 계정 정보 수정
+- OTP 설정과 보안 설정 관리
 
-### `admin/*`
-- 계정 관리
-- 공지 관리
-- 일일보고 관리
-- 금고 카테고리 관리
+### 업무와 관리자 화면
+
+- 업무, 일일보고, 주간보고 작성과 조회
+- Git 계정과 저장소 연동 관리
+- 관리자 전용 운영 기능 제공
 
 ## 미들웨어
 
-```
+```text
 middleware/
-├── auth.ts         # 인증 필요 페이지 접근 제어
-└── guest.ts        # 비인증 전용 페이지 (login 등)
-```
-
-### `auth.ts`
-
-```typescript
-// middleware/auth.ts
-export default defineNuxtRouteMiddleware(() => {
-  const authStore = useAuthStore()
-  if (!authStore.isAuthenticated) {
-    return navigateTo('/login')
-  }
-})
-```
-
-### `guest.ts`
-
-```typescript
-// middleware/guest.ts
-export default defineNuxtRouteMiddleware(() => {
-  const authStore = useAuthStore()
-  if (authStore.isAuthenticated) {
-    return navigateTo('/dashboard')
-  }
-})
+├── auth.ts   인증 필요 페이지 접근 제어
+├── guest.ts  로그인 페이지 같은 비인증 전용 화면 제어
+└── admin.ts  관리자 전용 화면 접근 제어
 ```

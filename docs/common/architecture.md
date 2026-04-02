@@ -1,64 +1,70 @@
-# Architecture
+# 아키텍처
+
+## 이 문서의 목적
+
+이 문서는 `gw-home` 프로젝트의 전체 구조와 모듈 책임을 빠르게 이해하기 위한 사용자용 안내서다.
 
 ## 전체 모듈 구조
 
-```
+```text
 gw-home/
-├── gw-home-share/      # 공통 DTO, 예외, 유틸 (Backend 공유)
-├── gw-home-api/        # Controller, Service, DTO
-├── gw-home-infra-db/   # MyBatis Mapper, XML, DB 설정
-└── gw-home-ui/         # Nuxt3 프론트엔드
+├── gw-home-share/      공통 DTO, 예외, 유틸
+├── gw-home-api/        Controller, Service, DTO
+├── gw-home-infra-db/   MyBatis Mapper, XML, DB 설정
+└── gw-home-ui/         Nuxt3 프론트엔드
 ```
 
-## Backend 모듈 책임
+## 모듈별 책임
 
-### `{project}-share`
+### `gw-home-share`
+
 - 공통 응답 DTO (`ApiResponse`, `PageResponse`)
 - 공통 예외 (`BusinessException`, `ErrorCode`)
-- 공통 범용 유틸 (`share.util`)
-- 공용 `VO` / `JVO` (단일 테이블 / 조인 조회 모델)
-- `BaseVo`: 공통 PK/UUID/감사 컬럼 (`idx`, `uuid`, `createdBy`, `updatedBy`, `createdAt`, `updatedAt`, `delAt`)
-- 다른 모듈에 의존하지 않음
+- 공용 `VO`, `JVO`
+- 공통 식별자와 감사 컬럼을 담는 `BaseVo`
 
-### `{project}-api`
-- `Controller` — HTTP 요청/응답
-- `Service` — 비즈니스 로직
-- `convert/{domain}/` — 도메인 응답 변환 책임
-- `dto/{domain}/` — Request / Response DTO
-- `{project}-share` 의존 O, `{project}-infra-db` 직접 의존 O
+### `gw-home-api`
 
-### `{project}-infra-db`
-- `Mapper` (interface) — MyBatis 매퍼 인터페이스
-- MyBatis Mapper XML (`resources/mapper/{domain}/`)
-- `DataSource`, `MyBatis` 설정
-- DB 마이그레이션 스크립트 (`sql/ddl/`, `sql/dml/`)
+- HTTP 요청과 응답 처리
+- 비즈니스 로직 수행
+- 도메인별 Request / Response DTO 관리
+- 도메인별 응답 변환 로직 관리
 
-## Frontend 모듈 책임
+### `gw-home-infra-db`
 
-### `{project}-ui` (Nuxt3)
-- 루트 진입: `/` → `/dashboard` 이동
-- 비인증 상태에서 보호 페이지 접근 시 `/login` 리다이렉트
-- `composables/` — API 호출 훅
-- `components/` — 공통 컴포넌트
-- `pages/` — 라우트 기반 페이지
-- `stores/` — 상태 관리 (Pinia)
-- `types/` — TypeScript 타입 정의
+- MyBatis Mapper 인터페이스
+- Mapper XML
+- DataSource, MyBatis 설정
+- DDL, DML 스크립트 관리
 
-## Backend 의존 방향
+### `gw-home-ui`
 
-```
-{project}-api → {project}-share
-{project}-api → {project}-infra-db
-{project}-infra-db → {project}-share
-{project}-ui → {project}-api (HTTP / REST)
+- 페이지 라우팅
+- 공통 컴포넌트
+- API 연동 composable
+- 상태 관리 store
+- TypeScript 타입 관리
+
+## 의존 방향
+
+```text
+gw-home-api      -> gw-home-share
+gw-home-api      -> gw-home-infra-db
+gw-home-infra-db -> gw-home-share
+gw-home-ui       -> gw-home-api (HTTP API 호출)
 ```
 
-## Backend 패키지 규칙
+## 백엔드 패키지 규칙
 
-```
+기본 패키지 구조는 아래 순서를 따른다.
+
+```text
 com.gw.{module}.{layer}.{domain}
+```
 
-예:
+예시:
+
+```text
 com.gw.api.controller.board
 com.gw.api.service.board
 com.gw.api.convert.board
@@ -66,5 +72,10 @@ com.gw.api.dto.board
 com.gw.infra.db.mapper.board
 com.gw.share.vo.board
 com.gw.share.jvo.board
-com.gw.share.common.exception
 ```
+
+## 함께 보면 좋은 문서
+
+- 백엔드 규칙: [backend-rules.md](/home/glassworld/workspace/gw-home/docs/backend/backend-rules.md)
+- 데이터베이스 규칙: [database.md](/home/glassworld/workspace/gw-home/docs/backend/database.md)
+- 프론트엔드 규칙: [frontend-rules.md](/home/glassworld/workspace/gw-home/docs/frontend/frontend-rules.md)

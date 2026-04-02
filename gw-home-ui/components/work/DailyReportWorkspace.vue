@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import type { DailyReport, DailyReportWorkUnit, SaveDailyReportPayload, UpdateDailyReportPayload, WorkUnit, WorkUnitGitCommit, WorkUnitOption } from '~/types/work'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   dailyReportUuid?: string
+  modalMode?: boolean
+  modalZIndexBase?: number
+}>(), {
+  dailyReportUuid: '',
+  modalMode: false,
+  modalZIndexBase: 30
+})
+
+const emit = defineEmits<{
+  saved: [report: DailyReport]
+  cancel: []
 }>()
 
 const isEditing = computed(() => Boolean(props.dailyReportUuid))
@@ -22,12 +33,6 @@ function formatDateInput(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-function getDaysAgoInput(days: number): string {
-  const targetDate = new Date()
-  targetDate.setDate(targetDate.getDate() - days)
-  return formatDateInput(targetDate)
 }
 
 function extractSection(note: string | null | undefined, heading: string): string {
@@ -226,6 +231,12 @@ async function initializeWorkspace() {
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
     showToast(fetchError.data?.message ?? '일일보고를 불러오지 못했습니다.', { variant: 'error' })
+
+    if (props.modalMode) {
+      emit('cancel')
+      return
+    }
+
     await navigateTo('/work/daily-reports')
   } finally {
     isPageLoading.value = false
@@ -419,8 +430,9 @@ async function handleSubmit() {
         content: formState.workSummary.trim(),
         note: formState.issueNote.trim()
       }
-      await updateDailyReport(props.dailyReportUuid, payload)
+      const updatedReport = await updateDailyReport(props.dailyReportUuid, payload)
       showToast('일일보고를 수정했습니다.', { variant: 'success' })
+      emit('saved', updatedReport)
     } else {
       const payload: SaveDailyReportPayload = {
         reportDate: formState.reportDate,
@@ -428,11 +440,14 @@ async function handleSubmit() {
         content: formState.workSummary.trim(),
         note: formState.issueNote.trim()
       }
-      await createDailyReport(payload)
+      const createdReport = await createDailyReport(payload)
       showToast('일일보고를 저장했습니다.', { variant: 'success' })
+      emit('saved', createdReport)
     }
 
-    await navigateTo('/work/daily-reports')
+    if (!props.modalMode) {
+      await navigateTo('/work/daily-reports')
+    }
   } catch (error) {
     const fetchError = error as { data?: { message?: string } }
     showToast(fetchError.data?.message ?? '일일보고 저장에 실패했습니다.', { variant: 'error' })
@@ -445,8 +460,8 @@ await initializeWorkspace()
 </script>
 
 <template>
-  <main class="page-container daily-report-workspace-page">
-    <section class="content-panel daily-report-workspace-page__hero">
+  <main class="daily-report-workspace-page" :class="{ 'daily-report-workspace-page--modal': modalMode }">
+    <section v-if="!modalMode" class="content-panel daily-report-workspace-page__hero">
       <div>
         <p class="daily-report-workspace-page__eyebrow">Daily Report</p>
         <h1 class="section-title">{{ isEditing ? '일일보고 수정' : '일일보고 작성' }}</h1>
@@ -497,8 +512,12 @@ await initializeWorkspace()
           </div>
 
           <div class="daily-report-workspace-page__action-buttons">
-            <CommonBaseButton variant="secondary" :disabled="isSubmitting" to="/work/daily-reports">
-              취소
+            <CommonBaseButton
+              variant="secondary"
+              :disabled="isSubmitting"
+              @click="modalMode ? emit('cancel') : navigateTo('/work/daily-reports')"
+            >
+              {{ modalMode ? '닫기' : '취소' }}
             </CommonBaseButton>
             <CommonBaseButton :disabled="isSubmitting" @click="handleSubmit">
               {{ isEditing ? '수정 저장' : '작성 완료' }}
@@ -513,6 +532,7 @@ await initializeWorkspace()
       eyebrow="Work Import"
       title="업무불러오기"
       width="min(1180px, 94vw)"
+      :z-index="modalZIndexBase + 10"
       @close="closeImportModal"
     >
       <div class="daily-report-workspace-page__import-layout">
@@ -631,6 +651,10 @@ await initializeWorkspace()
 .daily-report-workspace-page {
   display: grid;
   gap: 24px;
+}
+
+.daily-report-workspace-page--modal {
+  gap: 16px;
 }
 
 .daily-report-workspace-page__hero,

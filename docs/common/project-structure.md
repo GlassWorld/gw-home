@@ -1,124 +1,91 @@
-# Project Structure
+# 프로젝트 구조
 
-## 디렉토리 구조 (전체)
+## 이 문서의 목적
 
-```
+이 문서는 저장소에서 어떤 디렉터리에 무엇이 있는지 빠르게 찾기 위한 안내서다.
+
+## 최상위 구조
+
+```text
 gw-home/
-├── README.md
-├── docs/
-│   ├── common/
-│   │   ├── architecture.md         # 전체 아키텍처
-│   │   └── project-structure.md    # 이 파일
-│   ├── backend/
-│   │   ├── backend-rules.md        # 백엔드 코딩 규칙
-│   │   ├── database.md             # DB DDL 규칙
-│   │   └── domain.md               # 도메인 정의
-│   └── frontend/
-│       ├── frontend-rules.md       # 프론트 코딩 규칙
-│       ├── pages.md                # 페이지 목록 및 라우트
-│       └── auth-flow.md            # 인증 흐름
-├── .ai/
-│   ├── AGENTS.md
-│   ├── CORE_RULES.md
-│   ├── TASK_ROUTER.md
-│   ├── SKILL_INDEX.md
-│   ├── project/
-│   │   └── summary.md
-│   └── skills/
-│       ├── backend/
-│       │   ├── create-domain-structure.md
-│       │   └── create-service.md
-│       ├── frontend/
-│       │   ├── create-page.md
-│       │   └── create-component.md
-│       ├── database/
-│       │   ├── generate-ddl.md
-│       │   └── create-mapper.md
-│       └── common/
-│           └── create-api-endpoint.md
-├── todo/
-│   ├── 00-overview.md
-│   ├── 01-project-setup.md
-│   ├── 02-share-module.md
-│   ├── 03-infra-db-module.md
-│   ├── 04-domain-account.md
-│   ├── 05-domain-auth.md
-│   ├── 06-domain-profile.md
-│   ├── 07-domain-board.md
-│   ├── 08-domain-comment.md
-│   ├── 09-domain-file.md
-│   ├── 10-domain-tag.md
-│   ├── 11-domain-favorite.md
-│   ├── 12-domain-admin.md
-│   └── 13-ui-module.md
-├── gw-home-share/
-├── gw-home-api/
-├── gw-home-infra-db/
-└── gw-home-ui/                     # Nuxt3
-    ├── pages/
-    │   ├── login.vue
-    │   ├── dashboard/
-    │   │   └── index.vue
-    │   ├── board/
-    │   │   ├── index.vue
-    │   │   └── [boardUuid].vue
-    │   └── profile/
-    │       └── index.vue
-    ├── components/
-    ├── composables/
-    ├── stores/
-    ├── types/
-    ├── assets/
-    ├── nuxt.config.ts
-    ├── tsconfig.json
-    └── package.json
+├── docs/                  사용자용 문서
+├── .ai/                   AI 작업용 문서
+├── gw-home-share/         공통 백엔드 모듈
+├── gw-home-api/           API 모듈
+├── gw-home-infra-db/      DB 연동 모듈
+└── gw-home-ui/            프론트엔드 모듈
 ```
 
-## Backend 소스 구조 (`{project}-api`)
+## 문서 디렉터리
 
+### `docs/`
+
+- `common/`: 아키텍처, 구조, API 계약
+- `backend/`: 백엔드 규칙, DB 규칙, 도메인 설명
+- `frontend/`: 프론트엔드 규칙, 인증 흐름, 페이지 안내
+
+### `.ai/`
+
+- AI 작업용 진입 문서와 규칙 문서
+- 사용자 설명보다는 작업 흐름과 제약 조건 중심
+
+## 백엔드 소스 구조
+
+### `gw-home-api`
+
+```text
+src/main/java/com/gw/api/
+├── controller/{domain}/
+├── service/{domain}/
+├── convert/{domain}/
+└── dto/{domain}/
 ```
-gw-home-api/src/main/java/com/gw/api/
-├── controller/
-│   ├── account/    AccountController.java
-│   ├── auth/       AuthController.java
-│   ├── profile/    ProfileController.java
-│   ├── board/      BoardController.java
-│   ├── comment/    CommentController.java
-│   ├── file/       FileController.java
-│   ├── tag/        TagController.java
-│   ├── favorite/   FavoriteController.java
-│   └── admin/      AdminController.java
-├── service/
-│   └── {domain}/   {Domain}Service.java
-└── dto/
-    └── {domain}/   {Domain}Request.java, {Domain}Response.java
-```
 
-## Backend 소스 구조 (`{project}-infra-db`)
+### `gw-home-infra-db`
 
-```
-gw-home-infra-db/src/main/java/com/gw/infra/db/
-└── mapper/
-    └── {domain}/   {Domain}Mapper.java
+```text
+src/main/java/com/gw/infra/db/
+└── mapper/{domain}/
 
-gw-home-infra-db/src/main/resources/
-├── mapper/
-│   └── {domain}/   {Domain}Mapper.xml
+src/main/resources/
+├── mapper/{domain}/
 └── sql/
-    ├── ddl/
-    │   └── {domain}/   {table}.sql
+    ├── ddl/{domain}/
     └── dml/
 ```
 
-## Backend 소스 구조 (`{project}-share`)
+### `gw-home-share`
 
-```
-gw-home-share/src/main/java/com/gw/share/
+```text
+src/main/java/com/gw/share/
 ├── common/
-│   ├── exception/  BusinessException.java, ErrorCode.java
-│   └── response/   ApiResponse.java, PageResponse.java
-├── vo/
-│   └── {domain}/   {Domain}Vo.java
-└── jvo/
-    └── {domain}/   {Domain}Jvo.java
+├── vo/{domain}/
+└── jvo/{domain}/
 ```
+
+## 프론트엔드 소스 구조
+
+### `gw-home-ui`
+
+```text
+gw-home-ui/
+├── pages/
+├── features/
+├── components/
+├── composables/
+├── stores/
+├── types/
+├── assets/
+├── middleware/
+├── nuxt.config.ts
+├── tsconfig.json
+└── package.json
+```
+
+## 찾는 법
+
+- API 요청/응답 구조를 보고 싶다면 `gw-home-api`의 `dto/`, `controller/`를 본다
+- SQL과 매퍼를 보고 싶다면 `gw-home-infra-db`의 `mapper/`, `sql/`을 본다
+- 공통 응답, 예외, VO/JVO를 보고 싶다면 `gw-home-share`를 본다
+- 화면과 라우팅을 보고 싶다면 `gw-home-ui/pages/`를 본다
+- 기능 단위 UI 조합과 화면 로직을 보고 싶다면 `gw-home-ui/features/`를 함께 본다

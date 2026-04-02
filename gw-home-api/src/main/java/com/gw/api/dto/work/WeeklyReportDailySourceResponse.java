@@ -7,6 +7,7 @@ public record WeeklyReportDailySourceResponse(
         String uuid,
         LocalDate reportDate,
         List<DailyReportWorkUnitResponse> workUnits,
+        String content,
         String note
 ) {
 }

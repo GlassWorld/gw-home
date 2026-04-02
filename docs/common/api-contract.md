@@ -1,18 +1,15 @@
-# API Contract (Front ↔ Back)
+# API 계약
 
-## 개요
+## 이 문서의 목적
 
-Backend는 모든 API 응답을 `ApiResponse<T>` 로 래핑한다.
-Frontend는 이 구조를 기준으로 데이터를 주고받아야 한다.
+이 문서는 프론트엔드와 백엔드가 어떤 응답 구조로 데이터를 주고받는지 설명한다.
 
----
+## 기본 응답 구조
 
-## Backend 응답 구조
-
-### ApiResponse\<T\>
+백엔드는 모든 API 응답을 `ApiResponse<T>` 형태로 감싼다.
+응답 JSON 필드명은 전역적으로 `snake_case` 직렬화를 사용한다.
 
 ```java
-// com.gw.share.common.response.ApiResponse
 record ApiResponse<T>(
     boolean success,
     T data,
@@ -22,32 +19,31 @@ record ApiResponse<T>(
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `success` | `boolean` | 성공 여부 |
-| `data` | `T \| null` | 실제 데이터 (`ApiResponse.ok()` 또는 실패 응답에서는 `null` 가능) |
-| `message` | `string \| null` | 에러 메시지 (성공 시 `null`) |
+| `success` | `boolean` | 요청 성공 여부 |
+| `data` | `T \| null` | 실제 데이터 |
+| `message` | `string \| null` | 오류 메시지 또는 부가 메시지 |
 
-#### 성공 응답 예시
+## 성공 응답 예시
 
 ```json
-// 데이터 있음
-{ "success": true, "data": { "uuid": "abc...", "title": "제목" }, "message": null }
+{ "success": true, "data": { "uuid": "abc", "title": "제목" }, "message": null }
+```
 
-// 데이터 없음 (생성/삭제 등)
+```json
 { "success": true, "data": null, "message": null }
 ```
 
-#### 실패 응답 예시
+## 실패 응답 예시
 
 ```json
 { "success": false, "data": null, "message": "리소스를 찾을 수 없습니다" }
 ```
 
----
+## 페이징 응답 구조
 
-### PageResponse\<T\> — 페이징 응답
+목록 조회는 `ApiResponse<PageResponse<T>>` 구조를 사용한다.
 
 ```java
-// com.gw.share.common.response.PageResponse
 record PageResponse<T>(
     List<T> content,
     int page,
@@ -57,13 +53,13 @@ record PageResponse<T>(
 )
 ```
 
-페이징 응답은 `ApiResponse<PageResponse<T>>` 로 래핑된다.
+예시:
 
 ```json
 {
   "success": true,
   "data": {
-    "content": [ { "uuid": "...", "title": "..." }, ... ],
+    "content": [{ "uuid": "abc", "title": "제목" }],
     "page": 1,
     "size": 20,
     "totalCount": 150,
@@ -73,28 +69,22 @@ record PageResponse<T>(
 }
 ```
 
----
+## 오류 응답 원칙
 
-### HTTP 상태 코드 + ErrorCode
+| HTTP 상태 | ErrorCode | 설명 |
+|------|------|------|
+| `400` | `BAD_REQUEST` | 잘못된 요청 |
+| `401` | `UNAUTHORIZED` | 인증 필요 |
+| `403` | `FORBIDDEN` | 권한 없음 |
+| `404` | `NOT_FOUND` | 리소스 없음 |
+| `409` | `DUPLICATE` | 중복 데이터 |
+| `500` | `INTERNAL_ERROR` | 서버 오류 |
 
-| HTTP | ErrorCode | message |
-|------|-----------|---------|
-| 400 | `BAD_REQUEST` | 잘못된 요청입니다 |
-| 401 | `UNAUTHORIZED` | 인증이 필요합니다 |
-| 403 | `FORBIDDEN` | 접근 권한이 없습니다 |
-| 404 | `NOT_FOUND` | 리소스를 찾을 수 없습니다 |
-| 409 | `DUPLICATE` | 이미 존재합니다 |
-| 500 | `INTERNAL_ERROR` | 서버 오류가 발생했습니다 |
+오류 응답도 body 형식은 `ApiResponse<Void>`를 따른다.
 
-에러 응답은 HTTP 상태 코드가 4xx/5xx이며 body는 항상 `ApiResponse<Void>` 형태이다.
-
----
-
-## Frontend TypeScript 타입 정의
+## 프론트엔드 타입 예시
 
 ```typescript
-// types/api/common.ts
-
 export interface ApiResponse<T> {
   success: boolean
   data: T
@@ -108,120 +98,54 @@ export interface PageResponse<T> {
   totalCount: number
   totalPages: number
 }
-
-// 페이징 응답 래핑 타입
-export type PageApiResponse<T> = ApiResponse<PageResponse<T>>
 ```
 
----
+## 프론트엔드 호출 원칙
 
-## Frontend API 호출 패턴
+- 모든 API 호출은 `ApiResponse<T>` 기준으로 처리한다
+- `response.data`를 사용하기 전에 `response.success`를 먼저 확인한다
+- 목록 응답은 `ApiResponse<PageResponse<T>>`로 가정한다
+- 오류 메시지는 `response.message` 또는 `FetchError.data.message`에서 꺼낸다
+- 응답 식별자는 `_idx`가 아니라 `uuid`만 사용한다
+- composable 내부에서 `ApiResponse`를 벗기고 페이지에는 실제 `data`만 전달하는 방식을 권장한다
+- 백엔드 응답 JSON은 `snake_case` 이므로 프론트 타입 정의와 매핑 시 이를 기준으로 처리한다
 
-### 기본 패턴 — `$fetch` 사용
-
-`$fetch`는 4xx/5xx 상태에서 자동으로 throw 한다.
-현재 프론트 공통 타입은 성공 경로 기준으로 `data: T`를 사용한다.
-실패 응답의 `data: null`은 `FetchError.data`에서 별도로 처리한다.
+## 예시 코드
 
 ```typescript
-// composables/use-board.ts
-import type { ApiResponse, PageApiResponse } from '~/types/api/common'
-import type { BoardResponse, BoardListResponse } from '~/types/api/board'
+import type { ApiResponse, PageResponse } from '~/types/api/common'
 
 export function useBoard() {
-
-  // 단건 조회
-  const fetchBoard = async (boardUuid: string): Promise<BoardResponse> => {
-    const response = await $fetch<ApiResponse<BoardResponse>>(
-      `/api/v1/boards/${boardUuid}`
-    )
+  const fetchBoard = async (boardUuid: string) => {
+    const response = await $fetch<ApiResponse<BoardResponse>>(`/api/v1/boards/${boardUuid}`)
     if (!response.success) {
-      throw new Error(response.message ?? '조회 실패')
+      throw new Error(response.message ?? '게시글 조회에 실패했습니다.')
     }
     return response.data
   }
 
-  // 페이징 목록 조회
-  const fetchBoardList = async (
-    params?: { page?: number; size?: number; keyword?: string }
-  ): Promise<PageResponse<BoardListResponse>> => {
-    const response = await $fetch<PageApiResponse<BoardListResponse>>(
-      '/api/v1/boards',
-      { query: params }
-    )
+  const fetchBoardList = async () => {
+    const response = await $fetch<ApiResponse<PageResponse<BoardListResponse>>>('/api/v1/boards')
     if (!response.success) {
-      throw new Error(response.message ?? '목록 조회 실패')
+      throw new Error(response.message ?? '게시글 목록 조회에 실패했습니다.')
     }
     return response.data
   }
 
-  // 데이터 없는 요청 (생성, 삭제 등)
-  const deleteBoard = async (boardUuid: string): Promise<void> => {
-    const response = await $fetch<ApiResponse<null>>(
-      `/api/v1/boards/${boardUuid}`,
-      { method: 'DELETE' }
-    )
-    if (!response.success) {
-      throw new Error(response.message ?? '삭제 실패')
-    }
-  }
-
-  return { fetchBoard, fetchBoardList, deleteBoard }
+  return { fetchBoard, fetchBoardList }
 }
 ```
 
-### 에러 처리 패턴
+## 실제 응답 필드 예시
 
-`$fetch`는 4xx/5xx에서 `FetchError`를 throw한다.
-`FetchError.data`에서 `ApiResponse` body를 꺼낼 수 있다.
-
-```typescript
-// composables/use-auth.ts
-import type { FetchError } from 'ofetch'
-import type { ApiResponse } from '~/types/api/common'
-
-export function useAuth() {
-  const login = async (loginId: string, password: string): Promise<void> => {
-    try {
-      const response = await $fetch<ApiResponse<LoginResponse>>(
-        '/api/v1/auth/login',
-        { method: 'POST', body: { loginId, password } }
-      )
-      if (!response.success) {
-        throw new Error(response.message ?? '로그인 실패')
-      }
-      // 성공 응답의 실제 데이터 구조는 도메인별 DTO를 따른다.
-    } catch (error) {
-      const fetchError = error as FetchError<ApiResponse<null>>
-      throw new Error(fetchError.data?.message ?? '로그인 실패')
-    }
-  }
-
-  return { login }
+```json
+{
+  "success": true,
+  "data": {
+    "board_post_uuid": "abc",
+    "category_name": "공지",
+    "created_at": "2026-04-02T10:00:00+09:00"
+  },
+  "message": null
 }
 ```
-
-### useFetch 사용 패턴 (SSR / 페이지 컴포넌트)
-
-```typescript
-// pages/board/index.vue
-const { data: boardPage, pending: isLoading } = await useFetch<PageApiResponse<BoardListResponse>>(
-  '/api/v1/boards',
-  { query: { page: currentPage, size: 20 } }
-)
-
-// 실제 데이터 접근
-const boards = computed(() => boardPage.value?.data?.content ?? [])
-const totalPages = computed(() => boardPage.value?.data?.totalPages ?? 0)
-```
-
----
-
-## 규칙 요약
-
-- [ ] 모든 API 호출은 `ApiResponse<T>` 래핑을 가정한다
-- [ ] `response.data`를 꺼내기 전 `response.success` 를 반드시 확인한다
-- [ ] 페이징 응답은 `ApiResponse<PageResponse<T>>` 구조이다
-- [ ] 에러 메시지는 `response.message` 또는 `FetchError.data.message` 에서 가져온다
-- [ ] `_idx` 필드는 응답에 없으므로 `uuid` 기반으로만 식별한다
-- [ ] composable 내부에서 `ApiResponse` 를 벗겨 `data` 만 반환한다 — 페이지 컴포넌트는 data 구조에만 집중
