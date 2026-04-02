@@ -32,6 +32,7 @@ public final class WeeklyReportConvert {
                 dailyReport.getUuid(),
                 dailyReport.getRptDt(),
                 WorkUnitConvert.toDailyReportWorkUnitResponses(dailyReport.getWorkUnits()),
+                dailyReport.getCntn(),
                 dailyReport.getSpclNote()
         );
     }

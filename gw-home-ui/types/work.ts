@@ -186,6 +186,7 @@ export interface WeeklyReportDailySource {
   uuid: string
   reportDate: string
   workUnits: DailyReportWorkUnit[]
+  content: string | null
   note: string | null
 }
 

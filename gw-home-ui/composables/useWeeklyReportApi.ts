@@ -10,6 +10,40 @@ import type {
 export function useWeeklyReportApi() {
   const { authorizedFetch } = useAuth()
 
+  interface DailyReportWorkUnitApi {
+    workUnitUuid?: string
+    work_unit_uuid?: string
+    title?: string
+    category?: string | null
+  }
+
+  interface WeeklyReportDailySourceApi extends Partial<WeeklyReportDailySource> {
+    report_date?: string
+    work_units?: DailyReportWorkUnitApi[]
+  }
+
+  function normalizeLocalDate(value: unknown): string {
+    if (typeof value !== 'string') {
+      return ''
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value
+    }
+
+    const parsedDate = new Date(value)
+
+    if (!Number.isNaN(parsedDate.getTime())) {
+      const year = parsedDate.getFullYear()
+      const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+      const day = String(parsedDate.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    const matchedDate = value.match(/\d{4}-\d{2}-\d{2}/)
+    return matchedDate?.[0] ?? ''
+  }
+
   function toWeeklyBody(payload: SaveWeeklyReportPayload): Record<string, string> {
     return {
       weekStartDate: payload.weekStartDate,
@@ -52,11 +86,18 @@ export function useWeeklyReportApi() {
     }
   }
 
-  function toDailySource(source: Partial<WeeklyReportDailySource>): WeeklyReportDailySource {
+  function toDailySource(source: WeeklyReportDailySourceApi): WeeklyReportDailySource {
+    const workUnitList = (source.workUnits ?? source.work_units ?? []) as DailyReportWorkUnitApi[]
+
     return {
       uuid: source.uuid ?? '',
-      reportDate: source.reportDate ?? '',
-      workUnits: source.workUnits ?? [],
+      reportDate: normalizeLocalDate(source.reportDate ?? source.report_date),
+      workUnits: workUnitList.map((workUnit) => ({
+        workUnitUuid: workUnit.workUnitUuid ?? workUnit.work_unit_uuid ?? '',
+        title: workUnit.title ?? '',
+        category: workUnit.category ?? null
+      })),
+      content: source.content ?? null,
       note: source.note ?? null
     }
   }
@@ -78,7 +119,7 @@ export function useWeeklyReportApi() {
   }
 
   async function fetchWeeklyDailySources(weekStartDate: string, weekEndDate: string): Promise<WeeklyReportDailySource[]> {
-    const response = await authorizedFetch<ApiResponse<WeeklyReportDailySource[]>>('/api/v1/weekly-reports/daily-sources', {
+    const response = await authorizedFetch<ApiResponse<WeeklyReportDailySourceApi[]>>('/api/v1/weekly-reports/daily-sources', {
       method: 'GET',
       query: {
         weekStartDate,

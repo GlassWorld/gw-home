@@ -109,6 +109,8 @@ const filters = reactive({
 const isLoading = ref(false)
 const isMissingPanelVisible = ref(false)
 const isDetailVisible = ref(false)
+const isFormVisible = ref(false)
+const editingDailyReportUuid = ref('')
 const selectedDetailReport = ref<DailyReport | null>(null)
 const missingDailyReports = ref<DailyReportMissing[]>([])
 const dailyReportPage = ref({
@@ -184,13 +186,31 @@ function openDetailMode(report: DailyReport) {
   isDetailVisible.value = true
 }
 
+function openCreateModal() {
+  editingDailyReportUuid.value = ''
+  isFormVisible.value = true
+}
+
+function openEditModal(report: DailyReport) {
+  editingDailyReportUuid.value = report.uuid
+  isDetailVisible.value = false
+  selectedDetailReport.value = null
+  isFormVisible.value = true
+}
+
 function closeDetailModal() {
   isDetailVisible.value = false
   selectedDetailReport.value = null
 }
 
-function moveToEdit(report: DailyReport) {
-  void navigateTo(`/work/daily-reports/${report.uuid}/edit`)
+function closeFormModal() {
+  isFormVisible.value = false
+  editingDailyReportUuid.value = ''
+}
+
+async function handleFormSaved() {
+  closeFormModal()
+  await reloadAll()
 }
 
 await reloadAll()
@@ -209,7 +229,7 @@ await reloadAll()
         </div>
 
         <div class="daily-report-page__hero-side">
-          <CommonBaseButton to="/work/daily-reports/create">
+          <CommonBaseButton @click="openCreateModal">
             일일보고 작성
           </CommonBaseButton>
 
@@ -276,7 +296,7 @@ await reloadAll()
                   <CommonBaseButton variant="secondary" size="small" @click="openDetailMode(dailyReport)">
                     상세
                   </CommonBaseButton>
-                  <CommonBaseButton variant="secondary" size="small" @click="moveToEdit(dailyReport)">
+                  <CommonBaseButton variant="secondary" size="small" @click="openEditModal(dailyReport)">
                     수정
                   </CommonBaseButton>
                 </div>
@@ -344,7 +364,14 @@ await reloadAll()
       :visible="isDetailVisible"
       :report="selectedDetailReport"
       @close="closeDetailModal"
-      @edit="moveToEdit"
+      @edit="openEditModal"
+    />
+
+    <WorkDailyReportFormModal
+      :visible="isFormVisible"
+      :daily-report-uuid="editingDailyReportUuid"
+      @close="closeFormModal"
+      @saved="handleFormSaved"
     />
   </main>
 </template>
