@@ -46,7 +46,9 @@ admin     관리자
 
 ```
 PK:       {table}_idx  BIGSERIAL
-UUID:     {table}_uuid UUID (외부 노출 전용)
+UUID:     {table}_uuid UUID (외부 식별자)
+내부 키:   id
+외부 키:   uuid
 Time:     TIMESTAMPTZ (NOT TIMESTAMP)
 Audit:    created_by = 로그인 ID
 Delete:   del_at TIMESTAMPTZ (소프트 삭제)
@@ -69,7 +71,7 @@ Delete:   del_at TIMESTAMPTZ (소프트 삭제)
 2. **명시적 SQL** — ORM 추상화 없이 SQL 직접 작성
 3. **도메인 경계 준수** — `account/auth/profile` 분리, `board/admin` 분리
 4. **파일 분리** — `file` 도메인 독립, 타 도메인은 URL만 저장
-5. **외부 노출 최소화** — 내부 PK(`_idx`) API 응답 노출 금지
+5. **식별자 분리** — 내부는 `id`, 외부 및 API는 `uuid` 사용
 6. **Full name** — Frontend는 축약어 없이 full name 사용
 
 ## Backend 패키지 규칙

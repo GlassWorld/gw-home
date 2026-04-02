@@ -2,7 +2,11 @@
 
 참조 문서 위치:
 - `.claude/skill/{name}/SKILL.md`
-- `.claude/skills/{name}/SKILL.md`
+- `.ai/skill/{name}/SKILL.md`
+
+동기화 규칙:
+- 두 디렉토리에는 같은 스킬 파일이 모두 존재해야 한다.
+- 스킬을 추가/수정/삭제할 때 두 경로를 항상 함께 반영한다.
 
 해석 기준:
 - Claude Code: 위 경로의 문서를 slash command 스타일 스킬 문서로 사용할 수 있다.
@@ -15,30 +19,30 @@
 
 | Slash Command | 위치 | 설명 |
 |---------------|------|------|
-| `/create-domain-structure` | `.claude/skill/create-domain-structure/SKILL.md` | 신규 도메인 패키지 구조 전체 생성 |
-| `/create-service` | `.claude/skill/create-service/SKILL.md` | Service 클래스 생성 |
+| `/create-domain-structure` | `.claude/skill/create-domain-structure/SKILL.md`, `.ai/skill/create-domain-structure/SKILL.md` | 신규 도메인 패키지 구조 전체 생성 |
+| `/create-service` | `.claude/skill/create-service/SKILL.md`, `.ai/skill/create-service/SKILL.md` | Service 클래스 생성 |
 
 ## Database
 
 | Slash Command | 위치 | 설명 |
 |---------------|------|------|
-| `/generate-ddl` | `.claude/skill/generate-ddl/SKILL.md` | DDL 스크립트 생성 |
-| `/create-mapper` | `.claude/skill/create-mapper/SKILL.md` | Mapper 인터페이스 + XML 생성 |
+| `/generate-ddl` | `.claude/skill/generate-ddl/SKILL.md`, `.ai/skill/generate-ddl/SKILL.md` | DDL 스크립트 생성 |
+| `/create-mapper` | `.claude/skill/create-mapper/SKILL.md`, `.ai/skill/create-mapper/SKILL.md` | Mapper 인터페이스 + XML 생성 |
 
 ## Frontend
 
 | Slash Command | 위치 | 설명 |
 |---------------|------|------|
-| `/apply-searchable-select` | `.claude/skills/apply-searchable-select/SKILL.md` | 셀렉트/드롭다운을 공통 컴포넌트로 적용하고, 모달 환경 레이어 이슈까지 고려 |
-| `/create-page` | `.claude/skill/create-page/SKILL.md` | Nuxt3 페이지 + composable 생성 |
-| `/create-component` | `.claude/skill/create-component/SKILL.md` | Vue3 컴포넌트 생성 |
+| `/apply-searchable-select` | `.claude/skill/apply-searchable-select/SKILL.md`, `.ai/skill/apply-searchable-select/SKILL.md` | 셀렉트/드롭다운을 공통 컴포넌트로 적용하고, 모달 환경 레이어 이슈까지 고려 |
+| `/create-page` | `.claude/skill/create-page/SKILL.md`, `.ai/skill/create-page/SKILL.md` | Nuxt3 페이지 + composable 생성 |
+| `/create-component` | `.claude/skill/create-component/SKILL.md`, `.ai/skill/create-component/SKILL.md` | Vue3 컴포넌트 생성 |
 
 ## Common
 
 | Slash Command | 위치 | 설명 |
 |---------------|------|------|
-| `/create-api-endpoint` | `.claude/skill/create-api-endpoint/SKILL.md` | 백엔드 API 엔드포인트 전체 생성 |
-| `/api-connect` | `.claude/skill/api-connect/SKILL.md` | 프론트 API 연동 타입 + composable 생성 |
+| `/create-api-endpoint` | `.claude/skill/create-api-endpoint/SKILL.md`, `.ai/skill/create-api-endpoint/SKILL.md` | 백엔드 API 엔드포인트 전체 생성 |
+| `/api-connect` | `.claude/skill/api-connect/SKILL.md`, `.ai/skill/api-connect/SKILL.md` | 프론트 API 연동 타입 + composable 생성 |
 
 ---
 

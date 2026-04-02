@@ -84,15 +84,14 @@ INPUT: {작업 내용}
 ```
 
 참고:
-- `.claude/skill/{name}/SKILL.md` 또는 `.claude/skills/{name}/SKILL.md` 는 작업 템플릿/참조 문서로 활용할 수 있다.
+- `.claude/skill/{name}/SKILL.md` 와 `.ai/skill/{name}/SKILL.md` 는 작업 템플릿/참조 문서로 활용할 수 있다.
+- 두 경로의 스킬 파일은 동일한 내용을 유지해야 한다.
 - Codex에서 이것은 자동 실행 단위가 아니라 사람이 읽고 따르는 가이드 문서다.
 
 ## Document Lifecycle
 
 - 활성 작업 문서 위치:
-  - `review/`
-  - `todo/`
-- 완료된 작업 문서 위치:
-  - `archive/review/`
-  - `archive/todo/`
-- `todo` 문서에 미체크 항목이 없으면 완료 문서로 간주하고, 관련 `review` 문서와 함께 archive로 이동한다.
+  - `work/review/`
+  - `work/todo/`
+- 완료된 작업 문서는 자동 이동하지 않는다.
+- 관련 `work/review`, `work/todo` 문서 정리는 `##커밋` 진행 시 함께 삭제하는 것을 기본으로 한다.

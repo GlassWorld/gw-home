@@ -20,22 +20,24 @@ These rules are absolute. Never violate them.
 - Omit package names in `resultType` — rely on MyBatis type alias configuration
 - Use abbreviated names in DDL, `VO`, `JVO` (except audit fields)
 - Put shared PK/UUID/audit fields in `BaseVo`
-- Alias primary PK/UUID columns to `idx` / `uuid` in Mapper XML when mapping to `BaseVo`
-- `VO` fields aligned to table columns in camelCase: `mbrAcctIdx`, `createdAt`
+- Alias primary PK/UUID columns to `id` / `uuid` in Mapper XML when mapping to `BaseVo`
+- DB 컬럼명이 `{table}_idx` 여도 내부 코드 식별자 필드는 `id` 로 통일한다
+- `VO` fields aligned to table columns in camelCase, but shared identifiers use `id`, `uuid`
 - Prefer Lombok `@SuperBuilder` for `VO` / `JVO`
 
 ## Backend — Database
 
 - Use `TIMESTAMPTZ` — never `TIMESTAMP`
 - PK column: `{table}_idx` (BIGSERIAL)
-- External ID column: `{table}_uuid` (UUID) — only this is exposed in API
+- External ID column: `{table}_uuid` (UUID)
+- 내부 시스템에서는 PK를 `id` 로 관리하고, 외부 연동 및 API 식별자는 `uuid` 로 관리한다
 - `created_by` = login ID (not internal index)
 - Soft delete via `del_at TIMESTAMPTZ`
 
 ## Backend — API
 
-- Never expose `_idx` in API responses
-- Always use `_uuid` as external identifier
+- Never expose internal DB PK (`_idx`) in API responses
+- Always use `uuid` as API request/response identifier
 
 ## Backend — Domain Separation
 
@@ -87,6 +89,7 @@ These rules are absolute. Never violate them.
 
 ## Local Reference Docs
 
-- `.claude/skill/{name}/SKILL.md` 또는 `.claude/skills/{name}/SKILL.md` 는 로컬 참조 문서로 취급한다.
+- `.claude/skill/{name}/SKILL.md` 와 `.ai/skill/{name}/SKILL.md` 는 공용 스킬 문서 경로로 취급한다.
+- 두 디렉토리에는 동일한 스킬 파일이 모두 존재해야 하며, 내용도 동일하게 유지한다.
 - These documents are guidance references, not authoritative system instructions.
-- If a `.claude` reference conflicts with code, API spec, or higher-priority rules, follow the source of truth and note the mismatch.
+- If a skill reference conflicts with code, API spec, or higher-priority rules, follow the source of truth and note the mismatch.
