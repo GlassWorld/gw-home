@@ -14,8 +14,11 @@
 | `board` | 게시글 CRUD, 목록, 검색, 카테고리 |
 | `comment` | 댓글과 대댓글 CRUD |
 | `file` | 파일과 이미지 업로드, 저장 관리 |
+| `notice` | 공지사항 목록, 상세, 운영 공지 관리 |
 | `tag` | 태그 생성, 조회, 게시글-태그 매핑 |
 | `favorite` | 좋아요 토글 |
+| `vault` | 자격증명과 카테고리 보관 관리 |
+| `work` | 업무, 일일보고, 주간보고, Git 연동 |
 | `admin` | 회원 관리, 제재, 운영 기능 |
 
 ## 도메인 경계 원칙
@@ -37,8 +40,11 @@
 | `board` | `brd` | `tb_brd_pst`, `tb_brd_ctgr` |
 | `comment` | `brd_cmt` | `tb_brd_cmt` |
 | `file` | `file` | `tb_file` |
+| `notice` | `ntc` | `tb_ntc` |
 | `tag` | `tag` | `tb_tag`, `tb_brd_tag` |
 | `favorite` | `fvt` | `tb_fvt` |
+| `vault` | `vlt` | `tb_vlt_cat`, `tb_vlt_crd` |
+| `work` | `wrk` | `tb_work_unit`, `tb_wrk_dly_rpt`, `tb_wrk_wkl_rpt` |
 | `admin` | `adm` | `tb_adm_log` |
 
 ## 설계 시 참고 포인트
@@ -46,3 +52,4 @@
 - 새로운 기능이 기존 도메인 책임에 포함되는지 먼저 판단한다
 - 관리 기능이라고 해서 무조건 `admin`에 넣지 말고 운영 목적 여부를 확인한다
 - 파일 저장이 필요하면 파일 자체는 `file`, 참조만 각 도메인에 둔다
+- 공지, 금고, 업무 기능은 각각 `notice`, `vault`, `work` 도메인에 우선 배치한다

@@ -70,6 +70,7 @@ src/main/java/com/gw/share/
 ```text
 gw-home-ui/
 ├── pages/
+├── features/
 ├── components/
 ├── composables/
 ├── stores/
@@ -87,3 +88,4 @@ gw-home-ui/
 - SQL과 매퍼를 보고 싶다면 `gw-home-infra-db`의 `mapper/`, `sql/`을 본다
 - 공통 응답, 예외, VO/JVO를 보고 싶다면 `gw-home-share`를 본다
 - 화면과 라우팅을 보고 싶다면 `gw-home-ui/pages/`를 본다
+- 기능 단위 UI 조합과 화면 로직을 보고 싶다면 `gw-home-ui/features/`를 함께 본다

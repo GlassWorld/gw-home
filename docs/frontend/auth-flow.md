@@ -35,6 +35,17 @@ API 요청
   -> 실패 시 로그아웃 후 /login 이동
 ```
 
+## 실제 인증 복구 순서
+
+현재 프론트 구현은 아래 순서로 인증 상태를 복구한다.
+
+```text
+1. store 에 인증 정보가 있으면 그대로 사용
+2. 없으면 access token 쿠키로 사용자 정보 복구 시도
+3. access token 복구가 실패하면 refresh token 으로 갱신 시도
+4. refresh 도 실패하면 인증 상태를 비우고 /login 으로 이동
+```
+
 ## 로그아웃 흐름
 
 ```text
@@ -58,6 +69,7 @@ API 요청
 
 - 인증이 필요한 페이지는 `auth` 미들웨어를 사용한다
 - 비인증 전용 페이지는 `guest` 미들웨어를 사용한다
+- 관리자 전용 페이지는 `admin` 미들웨어를 사용한다
 
 예시:
 
@@ -70,5 +82,11 @@ definePageMeta({ middleware: 'auth' })
 ```vue
 <script setup lang="ts">
 definePageMeta({ middleware: 'guest' })
+</script>
+```
+
+```vue
+<script setup lang="ts">
+definePageMeta({ middleware: 'admin' })
 </script>
 ```

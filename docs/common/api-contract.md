@@ -7,6 +7,7 @@
 ## 기본 응답 구조
 
 백엔드는 모든 API 응답을 `ApiResponse<T>` 형태로 감싼다.
+응답 JSON 필드명은 전역적으로 `snake_case` 직렬화를 사용한다.
 
 ```java
 record ApiResponse<T>(
@@ -107,6 +108,7 @@ export interface PageResponse<T> {
 - 오류 메시지는 `response.message` 또는 `FetchError.data.message`에서 꺼낸다
 - 응답 식별자는 `_idx`가 아니라 `uuid`만 사용한다
 - composable 내부에서 `ApiResponse`를 벗기고 페이지에는 실제 `data`만 전달하는 방식을 권장한다
+- 백엔드 응답 JSON은 `snake_case` 이므로 프론트 타입 정의와 매핑 시 이를 기준으로 처리한다
 
 ## 예시 코드
 
@@ -131,5 +133,19 @@ export function useBoard() {
   }
 
   return { fetchBoard, fetchBoardList }
+}
+```
+
+## 실제 응답 필드 예시
+
+```json
+{
+  "success": true,
+  "data": {
+    "board_post_uuid": "abc",
+    "category_name": "공지",
+    "created_at": "2026-04-02T10:00:00+09:00"
+  },
+  "message": null
 }
 ```

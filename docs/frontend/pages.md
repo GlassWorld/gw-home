@@ -18,7 +18,10 @@
 | `/board/create` | `pages/board/create.vue` | 게시글 작성 | O |
 | `/work` | `pages/work/index.vue` | 업무 등록과 조회 | O |
 | `/work/daily-reports` | `pages/work/daily-reports/index.vue` | 일일보고 작성과 조회 | O |
+| `/work/daily-reports/create` | `pages/work/daily-reports/create.vue` | 일일보고 작성 | O |
+| `/work/daily-reports/[dailyReportUuid]/edit` | `pages/work/daily-reports/[dailyReportUuid]/edit.vue` | 일일보고 수정 | O |
 | `/work/weekly-reports` | `pages/work/weekly-reports/index.vue` | 주간보고 작성과 조회 | O |
+| `/work/git-accounts` | `pages/work/git-accounts/index.vue` | Git 계정 및 저장소 연동 관리 | O |
 | `/vault` | `pages/vault/index.vue` | 자격증명 보관함 | O |
 | `/settings` | `pages/settings/index.vue` | 계정 설정 | O |
 | `/security` | `pages/security/index.vue` | OTP와 보안 설정 | O |
@@ -69,6 +72,7 @@
 ### 업무와 관리자 화면
 
 - 업무, 일일보고, 주간보고 작성과 조회
+- Git 계정과 저장소 연동 관리
 - 관리자 전용 운영 기능 제공
 
 ## 미들웨어
@@ -76,5 +80,6 @@
 ```text
 middleware/
 ├── auth.ts   인증 필요 페이지 접근 제어
-└── guest.ts  로그인 페이지 같은 비인증 전용 화면 제어
+├── guest.ts  로그인 페이지 같은 비인증 전용 화면 제어
+└── admin.ts  관리자 전용 화면 접근 제어
 ```
