@@ -1,64 +1,54 @@
-# Backend Rules
+# 백엔드 개발 규칙
 
-## 절대 규칙 (위반 금지)
+## 이 문서의 목적
 
-- [ ] JPA 사용 금지 (`@Entity`, `@Repository`, `JpaRepository` 등)
-- [ ] Querydsl 사용 금지
-- [ ] MyBatis만 사용 — Mapper 인터페이스 + XML
-- [ ] `_idx`를 API 응답에 노출 금지
-- [ ] `TIMESTAMP` (without timezone) 사용 금지 → `TIMESTAMPTZ` 사용
+이 문서는 백엔드 구현 시 반드시 지켜야 할 구조와 네이밍 기준을 설명한다.
+
+## 핵심 원칙
+
+- JPA와 Querydsl은 사용하지 않는다
+- 데이터 접근은 MyBatis Mapper 인터페이스와 XML로만 처리한다
+- API에는 내부 PK(`_idx`)를 노출하지 않는다
+- 외부 식별자는 `uuid`를 사용한다
+- 시간 컬럼은 `TIMESTAMPTZ`를 사용한다
 
 ## Mapper 규칙
 
-- Mapper 인터페이스: `{project}-infra-db` 모듈 `mapper.{domain}` 패키지
-- Mapper XML: `{project}-infra-db` 모듈 `resources/mapper/{domain}/`
-- XML namespace = Mapper 인터페이스 fully qualified name
-- 동적 쿼리는 XML `<if>`, `<choose>`, `<foreach>` 사용
-- 조회 결과는 기본적으로 `resultMap` 대신 `resultType` 사용
-- 단일 테이블 조회 모델: `{Domain}Vo`, 조인 조회 모델: `{Domain}Jvo`
-- `resultType`에는 패키지명을 쓰지 않고 별칭만 사용
-- `mapUnderscoreToCamelCase=true` 기본 적용
-- `VO`는 단일 테이블 컬럼을 그대로 가져야 함
-- `JVO`는 조인 등으로 확장되거나 변경된 조회 결과에만 사용
-- DDL, `VO`, `JVO`는 감사 컬럼(`created_by`, `updated_by`, `created_at`, `updated_at`)을 제외하고 축약형 네이밍 사용
-- 공통 PK/UUID/감사 컬럼은 `BaseVo`로 관리
-- 기본 PK/UUID 컬럼은 `resultType` 매핑 시 `AS idx`, `AS uuid` alias 우선 사용
-- snake_case -> camelCase 자동 매핑이 가능한 컬럼은 alias를 생략한다
-- `BaseVo`의 `idx`, `uuid`처럼 구조적으로 필요한 alias만 유지한다
-- `VO` / `JVO` 필드명은 테이블 컬럼 기준 camelCase (`idx`, `uuid`, `mbrAcctIdx`)
-- `VO` / `JVO`는 Lombok(`@Getter`, `@Setter`, `@SuperBuilder`, `@NoArgsConstructor`, `@AllArgsConstructor`) 기본 사용
-- `VO` / `JVO` 필드에는 DB 컬럼 코멘트를 주석으로 남김
+- Mapper 인터페이스는 `{project}-infra-db` 모듈의 `mapper.{domain}` 패키지에 둔다
+- Mapper XML은 `{project}-infra-db/src/main/resources/mapper/{domain}/` 아래에 둔다
+- XML `namespace`는 Mapper 인터페이스의 전체 경로를 사용한다
+- 동적 쿼리는 XML의 `<if>`, `<choose>`, `<foreach>`로 처리한다
+- 조회 결과는 기본적으로 `resultType`을 사용한다
+- `resultMap`은 컬럼 별칭 충돌이나 중첩 매핑처럼 불가피한 경우에만 사용한다
 
-```
-✅ infra-db/src/main/java/com/gw/infra/db/mapper/board/BoardMapper.java
-✅ infra-db/src/main/resources/mapper/board/BoardMapper.xml
-```
+## 모델 규칙
+
+- 단일 테이블 모델은 `{Domain}Vo`
+- 조인/확장 조회 모델은 `{Domain}Jvo`
+- `VO`, `JVO`는 `share` 모듈에서 관리한다
+- 공통 PK, UUID, 감사 컬럼은 `BaseVo`에 둔다
+- DB 컬럼명이 `{table}_idx`, `{table}_uuid`여도 내부 식별자는 `id`, `uuid` 기준으로 맞춘다
+- `VO`, `JVO`는 테이블 컬럼 기준 camelCase를 사용한다
 
 ## Service 규칙
 
-- `@Service` + `@Transactional` 기본 적용
-- 조회 메서드: `@Transactional(readOnly = true)`
-- Service는 다른 Service를 직접 호출 가능 (순환 금지)
-- 페이징: `PageRequest` DTO 수신 → `PageResponse` 반환
-- Service는 조회/검증/저장 흐름에 집중하고, DTO 조립은 도메인별 `convert` 클래스로 위임한다
-- 서비스 메서드에는 한글 목적 주석과 진입/완료/실패 로그를 남긴다
-- 도메인 의미가 없는 기본 검증/정규화는 `share` 공통화 후보로 관리한다
-- 날짜 처리, 형변환, null 체크 같은 범용 로직은 `share.util` 공통 유틸로 관리한다
+- 서비스는 비즈니스 흐름과 검증에 집중한다
+- 조회 전용 메서드는 읽기 전용 트랜잭션을 사용한다
+- 응답 DTO 조립은 도메인별 변환 책임으로 분리하는 것을 권장한다
+- 서비스 메서드에는 진입, 완료, 실패 로그를 남긴다
 
-## 패키지 규칙
+## 패키지 구조
 
+```text
+com.gw.api.controller.{domain}
+com.gw.api.service.{domain}
+com.gw.api.convert.{domain}
+com.gw.api.dto.{domain}
+com.gw.infra.db.mapper.{domain}
+com.gw.share.vo.{domain}
+com.gw.share.jvo.{domain}
+com.gw.share.common.{category}
 ```
-com.gw.api.controller.{domain}   # @RestController
-com.gw.api.service.{domain}      # @Service
-com.gw.api.convert.{domain}      # DTO 변환
-com.gw.infra.db.mapper.{domain}  # MyBatis Mapper interface
-com.gw.api.dto.{domain}          # Request/Response DTO
-com.gw.share.common.{category}   # 공통
-com.gw.share.vo.{domain}         # 기본 조회/저장 VO
-com.gw.share.jvo.{domain}        # 조인 조회 JVO
-```
-
-도메인 기반 패키지는 모든 모듈에서 `com.gw.{module}.{layer}.{domain}` 순서를 기본 규칙으로 사용한다.
 
 ## 네이밍 규칙
 
@@ -67,10 +57,13 @@ com.gw.share.jvo.{domain}        # 조인 조회 JVO
 | Controller 메서드 | 동사 + 명사 | `getBoard`, `createBoard` |
 | Service 메서드 | 동사 + 명사 | `findBoard`, `saveBoard` |
 | Mapper 메서드 | `select` / `insert` / `update` / `delete` + 명사 | `selectBoardByUuid` |
-| DTO (Request) | `{동사}{명사}Request` | `CreateBoardRequest` |
-| DTO (Response) | `{명사}Response` | `BoardResponse` |
-| VO / JVO 공통 필드 | `BaseVo` 상속 | `idx`, `uuid`, `createdAt` |
-| VO / JVO 도메인 필드 | 테이블 컬럼 camelCase | `mbrAcctIdx`, `brdCtgrIdx` |
+| Request DTO | `{동사}{명사}Request` | `CreateBoardRequest` |
+| Response DTO | `{명사}Response` | `BoardResponse` |
 | XML id | Mapper 메서드명과 동일 | `selectBoardByUuid` |
-| DB 컬럼 | 혼합 snake_case | `brd_pst_idx`, `created_at` |
-| Java 필드 | 혼합 camelCase | `brdPstIdx`, `createdAt` |
+
+## 구현 시 체크 포인트
+
+- SQL은 명시적으로 작성되어 있는가
+- API 응답에 `_idx`가 섞이지 않았는가
+- 조회 모델과 저장 모델의 역할이 섞이지 않았는가
+- 공통화가 필요한 로직이 `share`로 빠져야 하는 수준인지 검토했는가

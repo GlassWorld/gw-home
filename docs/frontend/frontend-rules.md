@@ -1,97 +1,72 @@
-# Frontend Rules
+# 프론트엔드 개발 규칙
 
-## 절대 규칙 (위반 금지)
+## 이 문서의 목적
 
-- [ ] 축약어 사용 금지 (`button` not `btn`, `user` not `usr`, `index` not `idx`)
-- [ ] `any` 타입 사용 금지 — 반드시 명시적 타입 정의
-- [ ] API 응답 `_idx` 필드 사용 금지 — `uuid` 기반으로만 식별
+이 문서는 프론트엔드 구현 시 지켜야 할 네이밍, 구조, API 연동 기준을 설명한다.
+
+## 핵심 원칙
+
+- 축약어를 사용하지 않는다
+- `any` 타입을 사용하지 않는다
+- API 응답 식별자는 `uuid` 기준으로만 다룬다
+- 공통 UI는 가능한 한 공통 컴포넌트로 관리한다
 
 ## 기술 스택
 
-- Nuxt3 (Vue3 Composition API)
+- Nuxt3
+- Vue3 Composition API
 - TypeScript
-- Pinia (상태 관리)
-- `$fetch` / `useFetch` (API 호출)
+- Pinia
+- `$fetch`, `useFetch`
 
 ## 네이밍 규칙
 
 | 대상 | 규칙 | 예시 |
 |------|------|------|
-| 파일명 | kebab-case | `user-profile.vue`, `auth-form.ts` |
-| 컴포넌트명 | PascalCase | `UserProfile`, `LoginForm` |
-| 함수명 | camelCase (동사 시작) | `fetchUserProfile`, `handleLogin` |
-| 변수명 | camelCase (full name) | `userList`, `boardContent`, `isLoading` |
-| TypeScript 타입/인터페이스 | PascalCase | `BoardResponse`, `UserProfile` |
+| 파일명 | kebab-case | `user-profile.vue` |
+| 컴포넌트명 | PascalCase | `UserProfile` |
+| 함수명 | camelCase | `fetchUserProfile` |
+| 변수명 | full name camelCase | `userList`, `boardContent` |
+| 타입/인터페이스 | PascalCase | `BoardResponse` |
 | Composable | `use` 접두사 | `useAuth`, `useBoard` |
-| Store | `use{Name}Store` | `useAuthStore`, `useBoardStore` |
-| CSS 클래스 | kebab-case | `user-avatar`, `board-list-item` |
+| Store | `use{Name}Store` | `useAuthStore` |
+| CSS 클래스 | kebab-case | `board-list-item` |
 
-## 디렉토리 구조 (`gw-home-ui/`)
+## 디렉터리 구조
 
-```
+```text
 gw-home-ui/
-├── pages/              # 라우트 페이지
-├── components/         # 재사용 컴포넌트
-├── composables/        # API 호출 및 공통 로직
-├── stores/             # Pinia 상태 관리
-├── types/              # TypeScript 타입 정의
-├── assets/             # 이미지, 스타일
-├── middleware/         # 라우트 미들웨어 (인증 등)
-├── nuxt.config.ts
-├── tsconfig.json
-└── package.json
+├── pages/
+├── components/
+├── composables/
+├── stores/
+├── types/
+├── assets/
+├── middleware/
+└── ...
 ```
 
 ## API 호출 규칙
 
-- API 호출은 `composables/` 에 모아서 관리
-- `useFetch` 또는 `$fetch` 사용
-- Base URL은 환경 변수로 관리 (`NUXT_PUBLIC_API_BASE`)
-- 응답 타입은 `types/` 에서 명시적으로 선언
+- API 호출은 `composables/`에 모아 관리한다
+- 응답 타입은 TypeScript로 명시한다
+- Base URL은 환경 변수로 관리한다
+- `ApiResponse<T>` 구조를 기준으로 성공 여부와 메시지를 처리한다
 
-```typescript
-// composables/use-board.ts
-export function useBoard() {
-  const fetchBoardList = async (): Promise<BoardListResponse> => {
-    return await $fetch('/api/v1/boards')
-  }
-  return { fetchBoardList }
-}
-```
+## 상태 관리 규칙
 
-## 상태 관리 규칙 (Pinia)
+- Store는 도메인 단위로 분리한다
+- Store 파일명은 `{domain}.store.ts` 형태를 따른다
+- 상태 변경은 action을 통해 수행하는 구조를 권장한다
 
-- Store는 도메인 단위로 분리
-- Store 파일명: `{domain}.store.ts`
-- 직접 mutation 금지 — action 경유
+## 타입 규칙
 
-```typescript
-// stores/auth.store.ts
-export const useAuthStore = defineStore('auth', () => {
-  const currentUser = ref<UserProfile | null>(null)
-  const isAuthenticated = computed(() => currentUser.value !== null)
+- API 응답 타입은 `types/api/` 아래에 둔다
+- props 타입은 명시적으로 선언한다
+- `uuid`는 `string`으로 다룬다
 
-  function setUser(user: UserProfile) {
-    currentUser.value = user
-  }
+## 공통 UI 원칙
 
-  return { currentUser, isAuthenticated, setUser }
-})
-```
-
-## TypeScript 타입 규칙
-
-- API 응답 타입은 `types/api/` 에 정의
-- 컴포넌트 props 타입은 `defineProps<{...}>()` 사용
-- `uuid` 식별자는 `string` 타입으로 명시
-
-```typescript
-// types/api/board.ts
-export interface BoardResponse {
-  uuid: string
-  title: string
-  content: string
-  createdBy: string
-  createdAt: string
-}
-```
+- 버튼, 모달, 토스트처럼 반복 사용되는 UI는 공통 컴포넌트로 관리한다
+- 페이지 컴포넌트는 공통 컴포넌트를 조합해 화면을 만든다
+- 새 컴포넌트를 만들기 전에 기존 공통 컴포넌트 확장 가능성을 먼저 검토한다
