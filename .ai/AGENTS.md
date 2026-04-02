@@ -29,6 +29,8 @@ System and developer instructions -> `.ai/CORE_RULES.md` -> task documents (`wor
 - Implement only what was requested. Do not add speculative extensions.
 - Prefer editing existing files. Keep new file creation to a minimum.
 - Follow `.ai/CORE_RULES.md` for all absolute rules.
+- Use `.ai/TASK_ROUTER.md` as the source of truth for work document lifecycle and HEAVY flow.
+- Use `.ai/SKILL_INDEX.md` as the source of truth for skill interpretation and reference format.
 
 Out-of-scope response format:
 
@@ -63,21 +65,14 @@ How would you like to proceed?
 - Do not change code for `##검토` or `##계획`
 - Change code only for `##작업`
 
-## Work Document Rules
-
-- Active work documents live under `work/review/` and `work/todo/`
-- Reuse an existing document when the topic matches
-- Completed documents are not moved automatically
-- Clean up related work documents during `##커밋`
-
 ## Commit Rules
 
 1. Inspect changes with `git diff --staged` and `git status`
 2. Choose the right prefix: `fix.`, `feat.`, `refactor.`, `docs.`, `chore.`
 3. Draft the commit message in Korean and ask for approval before committing
-4. Clean up directly related `work/review` and `work/todo` documents together
+4. Clean up related work documents according to `.ai/TASK_ROUTER.md`
 
 ## References
 
-- Use `.ai/TASK_ROUTER.md` for task levels and HEAVY flow
-- Use `.ai/SKILL_INDEX.md` for skill references
+- Use `.ai/TASK_ROUTER.md` for task levels, HEAVY flow, and work document lifecycle
+- Use `.ai/SKILL_INDEX.md` for skill references and interpretation rules

@@ -72,9 +72,3 @@ This document is the single source of truth for absolute project rules.
 - Do not analyze the entire repository
 - Read only the files needed for the current task
 - Load frontend files only for frontend work and backend files only for backend work unless the task is full-stack
-
-## Skill References
-
-- Treat `.claude/skill/{name}/SKILL.md` and `.ai/skill/{name}/SKILL.md` as reference document paths
-- Skill documents are guidance, not automatic execution rules
-- If a skill document conflicts with code, API specs, or higher-priority rules, follow the source of truth

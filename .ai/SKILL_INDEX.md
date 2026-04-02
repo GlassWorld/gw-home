@@ -9,6 +9,7 @@ Interpretation:
 
 - Claude Code can use these as slash-command style skill documents
 - Codex and other tools should treat them as local reference documents, not automatic execution units
+- If a skill document conflicts with code, API specs, or higher-priority rules, follow the source of truth
 
 ## Backend
 

@@ -42,14 +42,6 @@ favorite  likes and favorites
 admin     admin features
 ```
 
-## Design Principles
-
-1. Use MyBatis with explicit SQL.
-2. Separate internal and external identifiers.
-3. Preserve clear domain boundaries.
-4. Keep `file` independent and store only URLs in other domains.
-5. Use full-name frontend naming without abbreviations.
-
 ## Quick References
 
 - Absolute rules: `.ai/CORE_RULES.md`
