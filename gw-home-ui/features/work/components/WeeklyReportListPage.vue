@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import WeeklyReportFormModal from '~/components/work/WeeklyReportFormModal.vue'
+import WeeklyReportFormModal from './WeeklyReportFormModal.vue'
 import { useWeeklyReportList } from '../composables/use-weekly-report-list'
 
 const {

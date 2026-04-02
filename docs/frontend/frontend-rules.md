@@ -23,7 +23,8 @@
 
 | 대상 | 규칙 | 예시 |
 |------|------|------|
-| 파일명 | kebab-case | `user-profile.vue` |
+| 라우트/일반 파일명 | kebab-case | `user-profile.vue`, `use-board-list.ts` |
+| 컴포넌트 파일명 | 기존 디렉터리 관례 유지 | `AppHeader.vue`, `DailyReportFormModal.vue` |
 | 컴포넌트명 | PascalCase | `UserProfile` |
 | 함수명 | camelCase | `fetchUserProfile` |
 | 변수명 | full name camelCase | `userList`, `boardContent` |
@@ -37,6 +38,7 @@
 ```text
 gw-home-ui/
 ├── pages/
+├── features/
 ├── components/
 ├── composables/
 ├── stores/
@@ -48,7 +50,9 @@ gw-home-ui/
 
 ## API 호출 규칙
 
-- API 호출은 `composables/`에 모아 관리한다
+- 공용으로 재사용되는 API 진입점은 `composables/`에 둔다
+- 특정 feature 안에서만 쓰는 API 구현과 feature-local 타입은 `features/{domain}/api`, `features/{domain}/types`에 둘 수 있다
+- feature 내부에서는 가능하면 루트 `composables/`의 공개 진입점을 통해 접근하고, 직접 경로 참조는 feature 내부에서만 제한적으로 사용한다
 - 응답 타입은 TypeScript로 명시한다
 - Base URL은 환경 변수로 관리한다
 - `ApiResponse<T>` 구조를 기준으로 성공 여부와 메시지를 처리한다
@@ -62,6 +66,7 @@ gw-home-ui/
 ## 타입 규칙
 
 - API 응답 타입은 `types/api/` 아래에 둔다
+- feature 전용 화면, 폼, 도메인 타입은 `features/{domain}/types` 또는 루트 `types/`에 둘 수 있다
 - props 타입은 명시적으로 선언한다
 - `uuid`는 `string`으로 다룬다
 

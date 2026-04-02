@@ -46,7 +46,8 @@ This document is the single source of truth for absolute project rules.
 
 - Do not use abbreviations (`button`, `user`, `index`)
 - Do not use `any`
-- Use kebab-case for file names
+- Use kebab-case for route-oriented files and general TypeScript files
+- Preserve the established naming convention inside existing component directories
 - Use PascalCase for component names
 - Use camelCase for function names
 - Use `/login` as the initial route
@@ -55,6 +56,7 @@ This document is the single source of truth for absolute project rules.
 - Manage reusable buttons, modals, toasts, and similar primitives under `gw-home-ui/components/common`
 - Keep page components focused on composition and page-specific exceptions
 - Before creating a new shared UI wrapper, check whether an existing common component can be extended
+- Shared API entry points should remain discoverable from `gw-home-ui/composables`, but feature-local API and type modules may live under `gw-home-ui/features/{domain}` when they are only used inside that feature
 
 ## Comment And Log Policy
 

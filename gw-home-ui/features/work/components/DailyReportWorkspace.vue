@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DailyReport, DailyReportWorkUnit, SaveDailyReportPayload, UpdateDailyReportPayload, WorkUnit, WorkUnitGitCommit, WorkUnitOption } from '~/types/work'
+import DailyReportHistorySidebar from './DailyReportHistorySidebar.vue'
+import ReportEditorPanel from './ReportEditorPanel.vue'
 
 const props = withDefaults(defineProps<{
   dailyReportUuid?: string
@@ -482,7 +484,7 @@ await initializeWorkspace()
     </section>
 
     <section v-else class="daily-report-workspace-page__layout">
-      <WorkDailyReportHistorySidebar
+      <DailyReportHistorySidebar
         :reports="historyReports"
         :selected-report-uuid="historyPreviewReportUuid"
         :preview-report="historyPreviewReport"
@@ -492,7 +494,7 @@ await initializeWorkspace()
       />
 
       <section class="daily-report-workspace-page__editor-shell">
-        <WorkReportEditorPanel
+        <ReportEditorPanel
           :report-date="formState.reportDate"
           :selected-work-units="selectedWorkUnits"
           :work-summary="formState.workSummary"

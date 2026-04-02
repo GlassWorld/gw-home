@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DailyReport } from '~/types/work'
+import DailyReportWorkspace from './DailyReportWorkspace.vue'
 
 const props = withDefaults(defineProps<{
   visible: boolean
@@ -23,7 +24,7 @@ const emit = defineEmits<{
     :z-index="40"
     @close="emit('close')"
   >
-    <WorkDailyReportWorkspace
+    <DailyReportWorkspace
       :daily-report-uuid="dailyReportUuid"
       modal-mode
       :modal-z-index-base="40"
