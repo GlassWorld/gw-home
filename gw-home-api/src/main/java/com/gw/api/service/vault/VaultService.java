@@ -1,6 +1,6 @@
 package com.gw.api.service.vault;
 
-import com.gw.api.dto.vault.CredentialCategoryResponse;
+import com.gw.api.convert.vault.VaultConvert;
 import com.gw.api.dto.vault.CredentialResponse;
 import com.gw.api.dto.vault.SaveCredentialRequest;
 import com.gw.infra.db.mapper.account.AccountMapper;
@@ -58,7 +58,7 @@ public class VaultService {
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(credentialList, categoryByIdx);
 
         return credentialList.stream()
-                .map(credential -> toResponse(credential, categoriesByCredentialIdx))
+                .map(credential -> VaultConvert.toResponse(credential, categoriesByCredentialIdx))
                 .toList();
     }
 
@@ -68,7 +68,7 @@ public class VaultService {
         CrdVo credential = getCredentialVo(uuid, account.getIdx());
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(List.of(credential), categoryByIdx);
-        return toResponse(credential, categoriesByCredentialIdx);
+        return VaultConvert.toResponse(credential, categoriesByCredentialIdx);
     }
 
     public CredentialResponse saveCredential(SaveCredentialRequest request, String loginId) {
@@ -133,7 +133,7 @@ public class VaultService {
 
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(List.of(credential), categoryByIdx);
-        return toResponse(credential, categoriesByCredentialIdx);
+        return VaultConvert.toResponse(credential, categoriesByCredentialIdx);
     }
 
     private AcctVo getAccountByLoginId(String loginId) {
@@ -242,27 +242,5 @@ public class VaultService {
         if (!categoryIdxList.isEmpty()) {
             vaultCredentialCategoryMapper.insertCredentialCategoryMappings(credentialIdx, categoryIdxList);
         }
-    }
-
-    private CredentialResponse toResponse(CrdVo credential, Map<Long, List<CatVo>> categoriesByCredentialIdx) {
-        List<CredentialCategoryResponse> categories = categoriesByCredentialIdx
-                .getOrDefault(credential.getIdx(), List.of())
-                .stream()
-                .map(category -> new CredentialCategoryResponse(
-                        category.getUuid(),
-                        category.getNm(),
-                        category.getColor()
-                ))
-                .toList();
-
-        return new CredentialResponse(
-                credential.getUuid(),
-                credential.getTtl(),
-                categories,
-                credential.getLgnId(),
-                credential.getPwd(),
-                credential.getMemo(),
-                credential.getCreatedAt()
-        );
     }
 }

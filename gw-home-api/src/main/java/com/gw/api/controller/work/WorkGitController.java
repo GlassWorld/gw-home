@@ -32,11 +32,13 @@ public class WorkGitController {
         this.workGitService = workGitService;
     }
 
+    // 로그인 사용자의 Git 계정 목록을 조회한다.
     @GetMapping("/accounts")
     public ApiResponse<List<WorkGitAccountResponse>> getGitAccounts(Principal principal) {
         return ApiResponse.ok(workGitService.getGitAccounts(getLoginId(principal)));
     }
 
+    // 로그인 사용자가 Git 계정을 생성한다.
     @PostMapping("/accounts")
     public ApiResponse<WorkGitAccountResponse> createGitAccount(
             Principal principal,
@@ -45,6 +47,7 @@ public class WorkGitController {
         return ApiResponse.ok(workGitService.createGitAccount(getLoginId(principal), request));
     }
 
+    // 로그인 사용자가 Git 계정을 수정한다.
     @PutMapping("/accounts/{uuid}")
     public ApiResponse<WorkGitAccountResponse> updateGitAccount(
             Principal principal,
@@ -54,6 +57,7 @@ public class WorkGitController {
         return ApiResponse.ok(workGitService.updateGitAccount(getLoginId(principal), uuid, request));
     }
 
+    // 로그인 사용자가 Git 계정을 삭제한다.
     @DeleteMapping("/accounts/{uuid}")
     public ApiResponse<Void> deleteGitAccount(
             Principal principal,
@@ -63,6 +67,7 @@ public class WorkGitController {
         return ApiResponse.ok(null);
     }
 
+    // 로그인 사용자의 Git 프로젝트 목록을 조회한다.
     @GetMapping("/projects")
     public ApiResponse<List<WorkGitProjectResponse>> getGitProjects(
             Principal principal,
@@ -71,11 +76,13 @@ public class WorkGitController {
         return ApiResponse.ok(workGitService.getGitProjects(getLoginId(principal), gitAccountUuid));
     }
 
+    // 로그인 사용자의 Git 프로젝트 선택 옵션을 조회한다.
     @GetMapping("/projects/options")
     public ApiResponse<List<WorkGitProjectResponse>> getGitProjectOptions(Principal principal) {
         return ApiResponse.ok(workGitService.getGitProjectOptions(getLoginId(principal)));
     }
 
+    // 로그인 사용자가 Git 프로젝트를 생성한다.
     @PostMapping("/projects")
     public ApiResponse<WorkGitProjectResponse> createGitProject(
             Principal principal,
@@ -84,6 +91,7 @@ public class WorkGitController {
         return ApiResponse.ok(workGitService.createGitProject(getLoginId(principal), request));
     }
 
+    // 로그인 사용자가 Git 프로젝트를 수정한다.
     @PutMapping("/projects/{uuid}")
     public ApiResponse<WorkGitProjectResponse> updateGitProject(
             Principal principal,
@@ -93,6 +101,7 @@ public class WorkGitController {
         return ApiResponse.ok(workGitService.updateGitProject(getLoginId(principal), uuid, request));
     }
 
+    // 로그인 사용자가 Git 프로젝트를 삭제한다.
     @DeleteMapping("/projects/{uuid}")
     public ApiResponse<Void> deleteGitProject(
             Principal principal,
@@ -102,6 +111,7 @@ public class WorkGitController {
         return ApiResponse.ok(null);
     }
 
+    // 로그인 사용자가 Git 프로젝트 연결을 테스트한다.
     @PostMapping("/projects/{uuid}/connection-test")
     public ApiResponse<WorkGitConnectionTestResponse> testGitProjectConnection(
             Principal principal,

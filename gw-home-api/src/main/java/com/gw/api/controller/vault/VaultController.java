@@ -37,6 +37,7 @@ public class VaultController {
         this.vaultCategoryService = vaultCategoryService;
     }
 
+    // 로그인 사용자의 자격증명 목록을 조회한다.
     @GetMapping("/credentials")
     public ApiResponse<List<CredentialResponse>> getCredentialList(
             Principal principal,
@@ -67,16 +68,19 @@ public class VaultController {
         return ApiResponse.ok(vaultService.getCredentialList(keyword, requestedCategoryUuids, getLoginId(principal)));
     }
 
+    // 자격증명 카테고리 목록을 조회한다.
     @GetMapping("/categories")
     public ApiResponse<List<VaultCategoryResponse>> getCategories() {
         return ApiResponse.ok(vaultCategoryService.getCategoryList());
     }
 
+    // 로그인 사용자의 자격증명 상세 정보를 조회한다.
     @GetMapping("/credentials/{uuid}")
     public ApiResponse<CredentialResponse> getCredential(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(vaultService.getCredential(uuid, getLoginId(principal)));
     }
 
+    // 로그인 사용자가 자격증명을 생성한다.
     @PostMapping("/credentials")
     public ApiResponse<CredentialResponse> saveCredential(
             Principal principal,
@@ -85,6 +89,7 @@ public class VaultController {
         return ApiResponse.ok(vaultService.saveCredential(request, getLoginId(principal)));
     }
 
+    // 로그인 사용자가 자격증명을 수정한다.
     @PutMapping("/credentials/{uuid}")
     public ApiResponse<CredentialResponse> updateCredential(
             Principal principal,
@@ -94,6 +99,7 @@ public class VaultController {
         return ApiResponse.ok(vaultService.updateCredential(uuid, request, getLoginId(principal)));
     }
 
+    // 로그인 사용자가 자격증명을 삭제한다.
     @DeleteMapping("/credentials/{uuid}")
     public ApiResponse<Void> deleteCredential(Principal principal, @PathVariable String uuid) {
         vaultService.deleteCredential(uuid, getLoginId(principal));

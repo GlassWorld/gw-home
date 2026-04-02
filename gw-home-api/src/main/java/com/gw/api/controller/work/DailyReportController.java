@@ -32,16 +32,19 @@ public class DailyReportController {
         this.dailyReportService = dailyReportService;
     }
 
+    // 로그인 사용자의 일일보고 목록을 조회한다.
     @GetMapping
     public ApiResponse<PageResponse<DailyReportResponse>> getDailyReports(Principal principal, DailyReportListRequest request) {
         return ApiResponse.ok(dailyReportService.getDailyReportList(getLoginId(principal), request));
     }
 
+    // 로그인 사용자의 일일보고 상세 정보를 조회한다.
     @GetMapping("/{uuid}")
     public ApiResponse<DailyReportResponse> getDailyReport(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(dailyReportService.getDailyReport(getLoginId(principal), uuid));
     }
 
+    // 로그인 사용자가 일일보고를 생성한다.
     @PostMapping
     public ApiResponse<DailyReportResponse> createDailyReport(
             Principal principal,
@@ -50,6 +53,7 @@ public class DailyReportController {
         return ApiResponse.ok(dailyReportService.createDailyReport(getLoginId(principal), request));
     }
 
+    // 로그인 사용자가 일일보고를 수정한다.
     @PutMapping("/{uuid}")
     public ApiResponse<DailyReportResponse> updateDailyReport(
             Principal principal,
@@ -59,6 +63,7 @@ public class DailyReportController {
         return ApiResponse.ok(dailyReportService.updateDailyReport(getLoginId(principal), uuid, request));
     }
 
+    // 로그인 사용자의 누락 일일보고 날짜를 조회한다.
     @GetMapping("/missing")
     public ApiResponse<List<DailyReportMissingResponse>> getMissingDailyReports(
             Principal principal,

@@ -28,16 +28,19 @@ public class TagController {
         this.tagService = tagService;
     }
 
+    // 전체 태그 목록을 조회한다.
     @GetMapping("/tags")
     public ApiResponse<List<TagResponse>> getAllTags() {
         return ApiResponse.ok(tagService.getAllTags());
     }
 
+    // 키워드로 태그를 검색한다.
     @GetMapping("/tags/search")
     public ApiResponse<List<TagResponse>> searchTags(@RequestParam(required = false) String keyword) {
         return ApiResponse.ok(tagService.searchTags(keyword));
     }
 
+    // 로그인 사용자가 게시글에 태그를 연결한다.
     @PostMapping("/boards/{boardPostUuid}/tags")
     public ApiResponse<List<TagResponse>> attachTag(
             Principal principal,
@@ -47,6 +50,7 @@ public class TagController {
         return ApiResponse.ok(tagService.attachTag(getLoginId(principal), boardPostUuid, request.name()));
     }
 
+    // 로그인 사용자가 게시글에서 태그를 해제한다.
     @DeleteMapping("/boards/{boardPostUuid}/tags/{tagUuid}")
     public ApiResponse<List<TagResponse>> detachTag(
             Principal principal,

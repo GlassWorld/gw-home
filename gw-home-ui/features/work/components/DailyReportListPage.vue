@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import DailyReportDetailModal from '~/components/work/DailyReportDetailModal.vue'
-import DailyReportFormModal from '~/components/work/DailyReportFormModal.vue'
+import DailyReportDetailModal from './DailyReportDetailModal.vue'
+import DailyReportFormModal from './DailyReportFormModal.vue'
 import { useDailyReportList } from '../composables/use-daily-report-list'
 
 const {

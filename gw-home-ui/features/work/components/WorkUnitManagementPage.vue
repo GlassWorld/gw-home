@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SearchableSelect from '~/components/common/SearchableSelect.vue'
-import WorkUnitForm from '~/components/work/WorkUnitForm.vue'
+import WorkUnitForm from './WorkUnitForm.vue'
 import { useWorkUnitManagement } from '../composables/use-work-unit-management'
 
 const {

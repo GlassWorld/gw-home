@@ -29,33 +29,39 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    // 관리자용 회원 목록을 조회한다.
     @GetMapping("/members")
     public ApiResponse<PageResponse<AdminMemberResponse>> getMembers(AdminMemberListRequest request) {
         return ApiResponse.ok(adminService.getMemberList(request));
     }
 
+    // 관리자용 회원 상세 정보를 조회한다.
     @GetMapping("/members/{memberAccountUuid}")
     public ApiResponse<AdminMemberResponse> getMember(@PathVariable String memberAccountUuid) {
         return ApiResponse.ok(adminService.getMember(memberAccountUuid));
     }
 
+    // 관리자가 회원을 강제 삭제한다.
     @DeleteMapping("/members/{memberAccountUuid}")
     public ApiResponse<Void> forceDeleteMember(Principal principal, @PathVariable String memberAccountUuid) {
         adminService.forceDeleteMember(getLoginId(principal), memberAccountUuid);
         return ApiResponse.ok();
     }
 
+    // 관리자용 게시글 목록을 조회한다.
     @GetMapping("/boards")
     public ApiResponse<PageResponse<AdminBoardPostResponse>> getBoardPosts(AdminBoardPostListRequest request) {
         return ApiResponse.ok(adminService.getBoardPostList(request));
     }
 
+    // 관리자가 게시글을 강제 삭제한다.
     @DeleteMapping("/boards/{boardPostUuid}")
     public ApiResponse<Void> forceDeleteBoardPost(Principal principal, @PathVariable String boardPostUuid) {
         adminService.forceDeleteBoardPost(getLoginId(principal), boardPostUuid);
         return ApiResponse.ok();
     }
 
+    // 관리자 대시보드 요약 정보를 조회한다.
     @GetMapping("/summary")
     public ApiResponse<AdminSummaryResponse> getSummary() {
         return ApiResponse.ok(adminService.getSummary());

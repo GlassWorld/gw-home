@@ -24,6 +24,7 @@ public class FileController {
         this.fileService = fileService;
     }
 
+    // 로그인 사용자의 파일 업로드 요청을 처리한다.
     @PostMapping
     public ApiResponse<FileUploadResponse> uploadFile(
             Principal principal,
@@ -33,6 +34,7 @@ public class FileController {
         return ApiResponse.ok(fileService.uploadFile(getLoginId(principal), uploaderType, file));
     }
 
+    // 로그인 사용자가 파일을 삭제한다.
     @DeleteMapping("/{fileUuid}")
     public ApiResponse<Void> deleteFile(Principal principal, @PathVariable String fileUuid) {
         fileService.deleteFile(getLoginId(principal), fileUuid);

@@ -16,6 +16,7 @@ System and developer instructions -> `.ai/CORE_RULES.md` -> task documents (`wor
 
 ## Core Working Principles
 
+- Treat `work/review` and `work/todo` as task support documents for the user's requested work, not as standalone goals.
 - Confirm scope from the current todo document or work document before changing code or documents.
 - Stop immediately and ask for approval if the task goes out of scope.
 - Implement only what was requested. Do not add speculative extensions.
@@ -44,6 +45,9 @@ How would you like to proceed?
 | `##계획` | `.ai/index/routing.md`, `.ai/index/work-docs.md` |
 | `##작업` | `.ai/index/routing.md`, `.ai/index/references.md`, `.ai/index/skills.md` |
 | `##커밋` | `.ai/index/routing.md`, `.ai/index/work-docs.md` |
+
+- `##검토` creates a review document for the requested task.
+- `##계획` creates a todo or plan document for the requested task.
 
 ## Commit Rules
 

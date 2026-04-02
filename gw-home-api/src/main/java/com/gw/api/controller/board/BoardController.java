@@ -31,16 +31,19 @@ public class BoardController {
         this.boardService = boardService;
     }
 
+    // 게시글 목록을 조회한다.
     @GetMapping
     public ApiResponse<PageResponse<BoardPostSummaryResponse>> getBoardPostList(BoardPostListRequest request) {
         return ApiResponse.ok(boardService.getBoardPostList(request));
     }
 
+    // 게시글 상세 정보를 조회한다.
     @GetMapping("/{boardPostUuid}")
     public ApiResponse<BoardPostResponse> getBoardPost(@PathVariable String boardPostUuid) {
         return ApiResponse.ok(boardService.getBoardPost(boardPostUuid));
     }
 
+    // 로그인 사용자가 게시글을 생성한다.
     @PostMapping
     public ApiResponse<BoardPostResponse> createBoardPost(
             Principal principal,
@@ -49,6 +52,7 @@ public class BoardController {
         return ApiResponse.ok(boardService.createBoardPost(getLoginId(principal), request));
     }
 
+    // 로그인 사용자가 게시글을 수정한다.
     @PutMapping("/{boardPostUuid}")
     public ApiResponse<BoardPostResponse> updateBoardPost(
             Principal principal,
@@ -58,6 +62,7 @@ public class BoardController {
         return ApiResponse.ok(boardService.updateBoardPost(getLoginId(principal), boardPostUuid, request));
     }
 
+    // 로그인 사용자가 게시글을 삭제한다.
     @DeleteMapping("/{boardPostUuid}")
     public ApiResponse<Void> deleteBoardPost(Principal principal, @PathVariable String boardPostUuid) {
         boardService.deleteBoardPost(getLoginId(principal), boardPostUuid);

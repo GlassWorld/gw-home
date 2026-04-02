@@ -1,5 +1,6 @@
 package com.gw.api.service.tag;
 
+import com.gw.api.convert.tag.TagConvert;
 import com.gw.api.dto.tag.TagResponse;
 import com.gw.infra.db.mapper.board.BoardMapper;
 import com.gw.infra.db.mapper.tag.TagMapper;
@@ -27,7 +28,7 @@ public class TagService {
     @Transactional(readOnly = true)
     public List<TagResponse> getAllTags() {
         return tagMapper.selectAllTags().stream()
-                .map(this::toResponse)
+                .map(TagConvert::toResponse)
                 .toList();
     }
 
@@ -38,7 +39,7 @@ public class TagService {
         }
 
         return tagMapper.selectTagsByKeyword(keyword.trim().toLowerCase(Locale.ROOT)).stream()
-                .map(this::toResponse)
+                .map(TagConvert::toResponse)
                 .toList();
     }
 
@@ -46,7 +47,7 @@ public class TagService {
     public List<TagResponse> getTagsByBrdPstUuid(String brdPstUuid) {
         BrdPstJvo brdPst = getBrdPstByUuid(brdPstUuid);
         return tagMapper.selectTagsByBrdPstIdx(brdPst.getIdx()).stream()
-                .map(this::toResponse)
+                .map(TagConvert::toResponse)
                 .toList();
     }
 
@@ -107,9 +108,5 @@ public class TagService {
         }
 
         return name.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private TagResponse toResponse(TagVo tag) {
-        return new TagResponse(tag.getUuid(), tag.getNm());
     }
 }

@@ -24,11 +24,13 @@ public class AdminDailyReportController {
         this.dailyReportService = dailyReportService;
     }
 
+    // 관리자용 일일보고 목록을 조회한다.
     @GetMapping
     public ApiResponse<PageResponse<AdminDailyReportResponse>> getAdminDailyReports(DailyReportListRequest request) {
         return ApiResponse.ok(dailyReportService.getAdminDailyReports(request));
     }
 
+    // 관리자용 누락 일일보고 현황을 조회한다.
     @GetMapping("/missing")
     public ApiResponse<List<AdminDailyReportMissingResponse>> getAdminMissingDailyReports(
             AdminDailyReportMissingRequest request

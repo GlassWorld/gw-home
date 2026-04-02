@@ -29,11 +29,13 @@ public class CommentController {
         this.commentService = commentService;
     }
 
+    // 게시글 댓글 목록을 조회한다.
     @GetMapping("/boards/{boardPostUuid}/comments")
     public ApiResponse<List<CommentResponse>> getComments(@PathVariable String boardPostUuid) {
         return ApiResponse.ok(commentService.getComments(boardPostUuid));
     }
 
+    // 로그인 사용자가 댓글을 생성한다.
     @PostMapping("/boards/{boardPostUuid}/comments")
     public ApiResponse<CommentResponse> createComment(
             Principal principal,
@@ -43,6 +45,7 @@ public class CommentController {
         return ApiResponse.ok(commentService.createComment(getLoginId(principal), boardPostUuid, request));
     }
 
+    // 로그인 사용자가 댓글을 수정한다.
     @PutMapping("/comments/{commentUuid}")
     public ApiResponse<CommentResponse> updateComment(
             Principal principal,
@@ -52,6 +55,7 @@ public class CommentController {
         return ApiResponse.ok(commentService.updateComment(getLoginId(principal), commentUuid, request));
     }
 
+    // 로그인 사용자가 댓글을 삭제한다.
     @DeleteMapping("/comments/{commentUuid}")
     public ApiResponse<Void> deleteComment(Principal principal, @PathVariable String commentUuid) {
         commentService.deleteComment(getLoginId(principal), commentUuid);

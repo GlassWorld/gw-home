@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DailyReportEditorPage from '~/features/work/components/DailyReportEditorPage.vue'
+import DailyReportWorkspace from '~/features/work/components/DailyReportWorkspace.vue'
 
 definePageMeta({
   middleware: 'auth'
@@ -7,5 +7,5 @@ definePageMeta({
 </script>
 
 <template>
-  <DailyReportEditorPage />
+  <DailyReportWorkspace />
 </template>
