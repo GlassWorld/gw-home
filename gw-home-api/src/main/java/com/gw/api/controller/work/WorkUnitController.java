@@ -34,11 +34,13 @@ public class WorkUnitController {
         this.workUnitService = workUnitService;
     }
 
+    // 로그인 사용자의 업무 목록을 조회한다.
     @GetMapping
     public ApiResponse<List<WorkUnitResponse>> getWorkUnitList(Principal principal, WorkUnitListRequest request) {
         return ApiResponse.ok(workUnitService.getWorkUnitList(getLoginId(principal), request));
     }
 
+    // 로그인 사용자의 업무 선택 옵션을 조회한다.
     @GetMapping("/options")
     public ApiResponse<List<WorkUnitOptionResponse>> getWorkUnitOptions(
             Principal principal,
@@ -47,11 +49,13 @@ public class WorkUnitController {
         return ApiResponse.ok(workUnitService.getWorkUnitOptions(getLoginId(principal), includeInactive));
     }
 
+    // 로그인 사용자의 업무 상세 정보를 조회한다.
     @GetMapping("/{uuid}")
     public ApiResponse<WorkUnitResponse> getWorkUnit(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(workUnitService.getWorkUnit(getLoginId(principal), uuid));
     }
 
+    // 로그인 사용자의 업무 Git 커밋 목록을 조회한다.
     @GetMapping("/{uuid}/git-commits")
     public ApiResponse<List<WorkUnitGitCommitResponse>> getWorkUnitGitCommits(
             Principal principal,
@@ -61,6 +65,7 @@ public class WorkUnitController {
         return ApiResponse.ok(workUnitService.getWorkUnitGitCommits(getLoginId(principal), uuid, reportDate));
     }
 
+    // 로그인 사용자가 업무를 생성한다.
     @PostMapping
     public ApiResponse<WorkUnitResponse> createWorkUnit(
             Principal principal,
@@ -69,6 +74,7 @@ public class WorkUnitController {
         return ApiResponse.ok(workUnitService.createWorkUnit(getLoginId(principal), request));
     }
 
+    // 로그인 사용자가 업무를 수정한다.
     @PutMapping("/{uuid}")
     public ApiResponse<WorkUnitResponse> updateWorkUnit(
             Principal principal,
@@ -78,6 +84,7 @@ public class WorkUnitController {
         return ApiResponse.ok(workUnitService.updateWorkUnit(getLoginId(principal), uuid, request));
     }
 
+    // 로그인 사용자가 업무 사용 여부를 변경한다.
     @PutMapping("/{uuid}/use")
     public ApiResponse<WorkUnitResponse> updateWorkUnitUse(
             Principal principal,

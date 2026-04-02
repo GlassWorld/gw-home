@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gw.api.dto.work.WorkGitConnectionTestResponse;
 import com.gw.api.dto.work.WorkUnitGitCommitResponse;
-import com.gw.api.util.work.WorkGitAccessTokenEncryptor;
+import com.gw.share.common.util.WorkGitAccessTokenEncryptor;
 import com.gw.share.vo.work.WorkGitPrjVo;
 import java.io.IOException;
 import java.net.URI;

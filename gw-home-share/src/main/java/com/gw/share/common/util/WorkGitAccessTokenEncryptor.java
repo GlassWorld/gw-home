@@ -1,4 +1,4 @@
-package com.gw.api.util.work;
+package com.gw.share.common.util;
 
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
@@ -34,6 +34,7 @@ public class WorkGitAccessTokenEncryptor {
         this.secretKeySpec = new SecretKeySpec(decodedKey, ALGORITHM);
     }
 
+    // Git access token을 AES-GCM으로 암호화한다.
     public String encrypt(String plainToken) {
         try {
             byte[] iv = new byte[IV_LENGTH];
@@ -52,6 +53,7 @@ public class WorkGitAccessTokenEncryptor {
         }
     }
 
+    // 저장된 Git access token을 복호화한다.
     public String decrypt(String encryptedToken) {
         try {
             byte[] payload = Base64.getDecoder().decode(encryptedToken);

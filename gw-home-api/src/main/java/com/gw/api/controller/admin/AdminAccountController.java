@@ -35,6 +35,7 @@ public class AdminAccountController {
         this.adminAccountService = adminAccountService;
     }
 
+    // 관리자용 회원 목록을 조회한다.
     @GetMapping
     public ApiResponse<PageResponse<AdminAccountListResponse>> getAccounts(
             @RequestParam(required = false) String loginId,
@@ -46,11 +47,13 @@ public class AdminAccountController {
         return ApiResponse.ok(adminAccountService.getAccounts(loginId, role, acctStat, page, size));
     }
 
+    // 관리자용 회원 상세 정보를 조회한다.
     @GetMapping("/{uuid}")
     public ApiResponse<AdminAccountDetailResponse> getAccount(@PathVariable String uuid) {
         return ApiResponse.ok(adminAccountService.getAccount(uuid));
     }
 
+    // 관리자가 회원 계정을 생성한다.
     @PostMapping
     public ApiResponse<AdminAccountDetailResponse> createAccount(
             Principal principal,
@@ -59,6 +62,7 @@ public class AdminAccountController {
         return ApiResponse.ok(adminAccountService.createAccount(request, getLoginId(principal)));
     }
 
+    // 관리자가 회원 권한을 변경한다.
     @PutMapping("/{uuid}/role")
     public ApiResponse<AdminAccountDetailResponse> updateRole(
             Principal principal,
@@ -68,6 +72,7 @@ public class AdminAccountController {
         return ApiResponse.ok(adminAccountService.updateRole(uuid, request, getLoginId(principal)));
     }
 
+    // 관리자가 회원 상태를 변경한다.
     @PutMapping("/{uuid}/status")
     public ApiResponse<AdminAccountDetailResponse> updateStatus(
             Principal principal,
@@ -77,27 +82,32 @@ public class AdminAccountController {
         return ApiResponse.ok(adminAccountService.updateStatus(uuid, request, getLoginId(principal)));
     }
 
+    // 관리자가 회원 계정을 삭제한다.
     @DeleteMapping("/{uuid}")
     public ApiResponse<Void> deleteAccount(Principal principal, @PathVariable String uuid) {
         adminAccountService.deleteAccount(uuid, getLoginId(principal));
         return ApiResponse.ok();
     }
 
+    // 관리자가 회원 계정 잠금을 해제한다.
     @PutMapping("/{uuid}/unlock")
     public ApiResponse<AdminAccountDetailResponse> unlockAccount(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(adminAccountService.unlockAccount(uuid, getLoginId(principal)));
     }
 
+    // 관리자가 회원의 OTP 실패 횟수를 초기화한다.
     @PutMapping("/{uuid}/otp-failure/reset")
     public ApiResponse<AdminAccountDetailResponse> resetOtpFailure(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(adminAccountService.resetOtpFailure(uuid, getLoginId(principal)));
     }
 
+    // 관리자가 회원의 OTP 설정을 초기화한다.
     @PutMapping("/{uuid}/otp/reset")
     public ApiResponse<AdminAccountDetailResponse> resetOtp(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(adminAccountService.resetOtp(uuid, getLoginId(principal)));
     }
 
+    // 관리자가 회원 비밀번호를 초기화한다.
     @PutMapping("/{uuid}/password/reset")
     public ApiResponse<AdminPasswordResetResponse> resetPassword(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(adminAccountService.resetPassword(uuid, getLoginId(principal)));

@@ -30,11 +30,13 @@ public class AdminVaultCategoryController {
         this.vaultCategoryService = vaultCategoryService;
     }
 
+    // 관리자용 자격증명 카테고리 목록을 조회한다.
     @GetMapping
     public ApiResponse<List<VaultCategoryResponse>> getCategories() {
         return ApiResponse.ok(vaultCategoryService.getCategoryList());
     }
 
+    // 관리자가 자격증명 카테고리를 생성한다.
     @PostMapping
     public ApiResponse<VaultCategoryResponse> saveCategory(
             Principal principal,
@@ -43,6 +45,7 @@ public class AdminVaultCategoryController {
         return ApiResponse.ok(vaultCategoryService.saveCategory(request, getLoginId(principal)));
     }
 
+    // 관리자가 자격증명 카테고리를 수정한다.
     @PutMapping("/{uuid}")
     public ApiResponse<VaultCategoryResponse> updateCategory(
             Principal principal,
@@ -52,6 +55,7 @@ public class AdminVaultCategoryController {
         return ApiResponse.ok(vaultCategoryService.updateCategory(uuid, request, getLoginId(principal)));
     }
 
+    // 관리자가 자격증명 카테고리를 삭제한다.
     @DeleteMapping("/{uuid}")
     public ApiResponse<Void> deleteCategory(Principal principal, @PathVariable String uuid) {
         vaultCategoryService.deleteCategory(uuid, getLoginId(principal));

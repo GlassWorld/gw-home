@@ -28,16 +28,19 @@ public class AccountController {
         this.accountService = accountService;
     }
 
+    // 회원가입 요청을 처리한다.
     @PostMapping
     public ApiResponse<AccountResponse> createAccount(@Valid @RequestBody SignUpRequest request) {
         return ApiResponse.ok(accountService.signUp(request));
     }
 
+    // 로그인 사용자의 계정 정보를 조회한다.
     @GetMapping("/me")
     public ApiResponse<AccountResponse> getAccount(Principal principal) {
         return ApiResponse.ok(accountService.getMyAccount(getLoginId(principal)));
     }
 
+    // 로그인 사용자의 계정 정보를 수정한다.
     @PutMapping("/me")
     public ApiResponse<AccountResponse> updateAccount(
             Principal principal,
@@ -46,6 +49,7 @@ public class AccountController {
         return ApiResponse.ok(accountService.updateMyAccount(getLoginId(principal), request));
     }
 
+    // 로그인 사용자의 비밀번호를 변경한다.
     @PutMapping("/me/password")
     public ApiResponse<Void> changePassword(
             Principal principal,
@@ -55,6 +59,7 @@ public class AccountController {
         return ApiResponse.ok();
     }
 
+    // 로그인 사용자의 계정을 삭제한다.
     @DeleteMapping("/me")
     public ApiResponse<Void> deleteAccount(Principal principal) {
         accountService.deleteMyAccount(getLoginId(principal));

@@ -1,5 +1,6 @@
 package com.gw.api.service.notice;
 
+import com.gw.api.convert.notice.NoticeConvert;
 import com.gw.api.dto.notice.CreateNoticeRequest;
 import com.gw.api.dto.notice.NoticeDetailResponse;
 import com.gw.api.dto.notice.NoticeListRequest;
@@ -12,7 +13,6 @@ import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.query.SortDirection;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.jvo.notice.NtcJvo;
-import com.gw.share.jvo.notice.NtcSmryJvo;
 import com.gw.share.vo.notice.NtcListSrchVo;
 import com.gw.share.vo.notice.NtcVo;
 import java.util.List;
@@ -40,7 +40,7 @@ public class NoticeService {
     public PageResponse<NoticeSummaryResponse> getNoticeList(NoticeListRequest request) {
         NtcListSrchVo query = buildSearchVo(request);
         List<NoticeSummaryResponse> content = noticeMapper.selectNoticeList(query).stream()
-                .map(this::toSummaryResponse)
+                .map(NoticeConvert::toSummaryResponse)
                 .toList();
         long totalCount = noticeMapper.countNoticeList(query);
         int totalPages = (int) Math.ceil((double) totalCount / query.getSize());
@@ -52,14 +52,14 @@ public class NoticeService {
     public List<NoticeSummaryResponse> getDashboardNotices(int limit) {
         int normalizedLimit = limit < 1 ? 5 : limit;
         return noticeMapper.selectDashboardNoticeList(normalizedLimit).stream()
-                .map(this::toSummaryResponse)
+                .map(NoticeConvert::toSummaryResponse)
                 .toList();
     }
 
     public NoticeDetailResponse getNotice(String noticeUuid) {
         NtcJvo notice = getNoticeByUuid(noticeUuid);
         noticeMapper.incrementViewCount(noticeUuid);
-        return toDetailResponse(getNoticeByUuid(noticeUuid));
+        return NoticeConvert.toDetailResponse(getNoticeByUuid(noticeUuid));
     }
 
     @Transactional(readOnly = true)
@@ -69,7 +69,7 @@ public class NoticeService {
 
     @Transactional(readOnly = true)
     public NoticeDetailResponse getAdminNotice(String noticeUuid) {
-        return toDetailResponse(getNoticeForAdminByUuid(noticeUuid));
+        return NoticeConvert.toDetailResponse(getNoticeForAdminByUuid(noticeUuid));
     }
 
     public NoticeDetailResponse createNotice(String loginId, CreateNoticeRequest request) {
@@ -80,7 +80,7 @@ public class NoticeService {
                 .build();
 
         noticeMapper.insertNotice(notice);
-        return toDetailResponse(getNoticeByIdx(notice.getIdx()));
+        return NoticeConvert.toDetailResponse(getNoticeByIdx(notice.getIdx()));
     }
 
     public NoticeDetailResponse updateNotice(String loginId, String noticeUuid, UpdateNoticeRequest request) {
@@ -103,7 +103,7 @@ public class NoticeService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "공지사항을 찾을 수 없습니다.");
         }
 
-        return toDetailResponse(getNoticeByUuid(noticeUuid));
+        return NoticeConvert.toDetailResponse(getNoticeByUuid(noticeUuid));
     }
 
     public void deleteNotice(String loginId, String noticeUuid) {
@@ -171,27 +171,5 @@ public class NoticeService {
         }
 
         return notice;
-    }
-
-    private NoticeSummaryResponse toSummaryResponse(NtcSmryJvo notice) {
-        return new NoticeSummaryResponse(
-                notice.getUuid(),
-                notice.getTtl(),
-                notice.getViewCnt() == null ? 0 : notice.getViewCnt(),
-                notice.getCreatedBy(),
-                notice.getCreatedAt()
-        );
-    }
-
-    private NoticeDetailResponse toDetailResponse(NtcJvo notice) {
-        return new NoticeDetailResponse(
-                notice.getUuid(),
-                notice.getTtl(),
-                notice.getCntnt(),
-                notice.getViewCnt() == null ? 0 : notice.getViewCnt(),
-                notice.getCreatedBy(),
-                notice.getCreatedAt(),
-                notice.getUpdatedAt()
-        );
     }
 }

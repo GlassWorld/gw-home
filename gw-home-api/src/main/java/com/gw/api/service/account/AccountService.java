@@ -1,5 +1,6 @@
 package com.gw.api.service.account;
 
+import com.gw.api.convert.account.AccountConvert;
 import com.gw.api.dto.account.AccountResponse;
 import com.gw.api.dto.account.ChangePasswordRequest;
 import com.gw.api.dto.account.SignUpRequest;
@@ -50,13 +51,13 @@ public class AccountService {
         profileService.createDefaultProfile(savedAccount);
 
         log.info("signUp 완료");
-        return toResponse(savedAccount);
+        return AccountConvert.toResponse(savedAccount);
     }
 
     @Transactional(readOnly = true)
     public AccountResponse getMyAccount(String loginId) {
         log.info("getMyAccount 시작 - loginId: {}", loginId);
-        AccountResponse response = toResponse(getAccountByLoginId(loginId));
+        AccountResponse response = AccountConvert.toResponse(getAccountByLoginId(loginId));
         log.info("getMyAccount 완료");
         return response;
     }
@@ -75,7 +76,7 @@ public class AccountService {
         accountMapper.updateAccount(account);
 
         log.info("updateMyAccount 완료");
-        return toResponse(getAccountByLoginId(loginId));
+        return AccountConvert.toResponse(getAccountByLoginId(loginId));
     }
 
     public void deleteMyAccount(String loginId) {
@@ -131,15 +132,5 @@ public class AccountService {
             log.error("validateDuplicate 실패 - 원인: 이미 사용 중인 이메일입니다. email={}", email);
             throw new BusinessException(ErrorCode.DUPLICATE, "이미 사용 중인 이메일입니다.");
         }
-    }
-
-    private AccountResponse toResponse(AcctVo account) {
-        return new AccountResponse(
-                account.getUuid(),
-                account.getLgnId(),
-                account.getEmail(),
-                account.getRole(),
-                account.getCreatedAt()
-        );
     }
 }

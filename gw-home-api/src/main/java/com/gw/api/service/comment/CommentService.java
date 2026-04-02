@@ -1,5 +1,6 @@
 package com.gw.api.service.comment;
 
+import com.gw.api.convert.comment.CommentConvert;
 import com.gw.api.dto.comment.CommentResponse;
 import com.gw.api.dto.comment.CreateCommentRequest;
 import com.gw.api.dto.comment.UpdateCommentRequest;
@@ -12,10 +13,7 @@ import com.gw.share.jvo.board.BrdPstJvo;
 import com.gw.share.jvo.comment.BrdCmtJvo;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.comment.BrdCmtVo;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +41,7 @@ public class CommentService {
     public List<CommentResponse> getComments(String boardPostUuid) {
         BrdPstJvo boardPost = getBoardPostByUuid(boardPostUuid);
         List<BrdCmtJvo> comments = commentMapper.selectCommentsByBrdPstIdx(boardPost.getIdx());
-        return toTreeResponses(comments);
+        return CommentConvert.toTreeResponses(comments, DELETED_COMMENT_MESSAGE);
     }
 
     public CommentResponse createComment(String loginId, String boardPostUuid, CreateCommentRequest request) {
@@ -60,7 +58,7 @@ public class CommentService {
                 .build();
 
         commentMapper.insertComment(comment);
-        return toResponse(getCommentByIdx(comment.getIdx()));
+        return CommentConvert.toResponse(getCommentByIdx(comment.getIdx()), DELETED_COMMENT_MESSAGE);
     }
 
     public CommentResponse updateComment(String loginId, String commentUuid, UpdateCommentRequest request) {
@@ -86,7 +84,7 @@ public class CommentService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "댓글을 찾을 수 없습니다.");
         }
 
-        return toResponse(getCommentByUuid(commentUuid));
+        return CommentConvert.toResponse(getCommentByUuid(commentUuid), DELETED_COMMENT_MESSAGE);
     }
 
     public void deleteComment(String loginId, String commentUuid) {
@@ -149,87 +147,5 @@ public class CommentService {
         if (!account.getIdx().equals(comment.getMbrAcctIdx())) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 댓글만 수정 또는 삭제할 수 있습니다.");
         }
-    }
-
-    private List<CommentResponse> toTreeResponses(List<BrdCmtJvo> comments) {
-        Map<Long, MutableCommentNode> nodeMap = new LinkedHashMap<>();
-        List<MutableCommentNode> roots = new ArrayList<>();
-
-        for (BrdCmtJvo comment : comments) {
-            nodeMap.put(comment.getIdx(), toNode(comment));
-        }
-
-        for (BrdCmtJvo comment : comments) {
-            MutableCommentNode node = nodeMap.get(comment.getIdx());
-
-            if (comment.getPrntBrdCmtIdx() == null) {
-                roots.add(node);
-                continue;
-            }
-
-            MutableCommentNode parentNode = nodeMap.get(comment.getPrntBrdCmtIdx());
-
-            if (parentNode == null) {
-                roots.add(node);
-                continue;
-            }
-
-            parentNode.replies().add(node);
-        }
-
-        return roots.stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    private MutableCommentNode toNode(BrdCmtJvo comment) {
-        String content = comment.getDelAt() == null ? comment.getCntnt() : DELETED_COMMENT_MESSAGE;
-
-        return new MutableCommentNode(
-                comment.getUuid(),
-                content,
-                comment.getAthrNickNm(),
-                comment.getPrntBrdCmtUuid(),
-                new ArrayList<>(),
-                comment.getCreatedAt(),
-                comment.getUpdatedAt()
-        );
-    }
-
-    private CommentResponse toResponse(BrdCmtJvo comment) {
-        String content = comment.getDelAt() == null ? comment.getCntnt() : DELETED_COMMENT_MESSAGE;
-
-        return new CommentResponse(
-                comment.getUuid(),
-                content,
-                comment.getAthrNickNm(),
-                comment.getPrntBrdCmtUuid(),
-                List.of(),
-                comment.getCreatedAt(),
-                comment.getUpdatedAt()
-        );
-    }
-
-    private CommentResponse toResponse(MutableCommentNode node) {
-        return new CommentResponse(
-                node.boardCommentUuid(),
-                node.content(),
-                node.author(),
-                node.parentCommentUuid(),
-                node.replies().stream().map(this::toResponse).toList(),
-                node.createdAt(),
-                node.updatedAt()
-        );
-    }
-
-    private record MutableCommentNode(
-            String boardCommentUuid,
-            String content,
-            String author,
-            String parentCommentUuid,
-            List<MutableCommentNode> replies,
-            java.time.OffsetDateTime createdAt,
-            java.time.OffsetDateTime updatedAt
-    ) {
     }
 }

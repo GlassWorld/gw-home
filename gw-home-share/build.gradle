@@ -5,4 +5,5 @@ plugins {
 dependencies {
     api libs.spring.boot.starter.web
     api libs.spring.security.crypto
+    api libs.java.otp
 }

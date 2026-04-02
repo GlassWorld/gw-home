@@ -1,11 +1,11 @@
 package com.gw.api.service.board;
 
+import com.gw.api.convert.board.BoardConvert;
 import com.gw.api.dto.board.BoardPostListRequest;
 import com.gw.api.dto.board.BoardPostResponse;
 import com.gw.api.dto.board.BoardPostSummaryResponse;
 import com.gw.api.dto.board.CreateBoardPostRequest;
 import com.gw.api.dto.board.UpdateBoardPostRequest;
-import com.gw.api.dto.tag.TagResponse;
 import com.gw.api.service.tag.TagService;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.board.BoardMapper;
@@ -15,7 +15,6 @@ import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.query.SortDirection;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.jvo.board.BrdPstJvo;
-import com.gw.share.jvo.board.BrdPstSmryJvo;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.board.BrdCtgrVo;
 import com.gw.share.vo.board.BrdPstListSrchVo;
@@ -67,7 +66,7 @@ public class BoardService {
 
         List<BoardPostSummaryResponse> content = boardMapper.selectBoardPostList(query)
                 .stream()
-                .map(this::toSummaryResponse)
+                .map(BoardConvert::toSummaryResponse)
                 .toList();
         long totalCount = boardMapper.countBoardPostList(query);
         int totalPages = (int) Math.ceil((double) totalCount / query.getSize());
@@ -78,7 +77,7 @@ public class BoardService {
     public BoardPostResponse getBoardPost(String boardPostUuid) {
         BrdPstJvo boardPost = getBrdPstJvo(boardPostUuid);
         boardMapper.incrementViewCount(boardPostUuid);
-        return toResponse(getBrdPstJvo(boardPostUuid));
+        return BoardConvert.toResponse(getBrdPstJvo(boardPostUuid), tagService.getTagsByBrdPstUuid(boardPostUuid));
     }
 
     public BoardPostResponse createBoardPost(String loginId, CreateBoardPostRequest request) {
@@ -95,7 +94,7 @@ public class BoardService {
 
         boardMapper.insertBoardPost(boardPost);
         BrdPstJvo savedBoardPost = boardMapper.selectBoardPostByIdx(boardPost.getIdx());
-        return toResponse(savedBoardPost);
+        return BoardConvert.toResponse(savedBoardPost, tagService.getTagsByBrdPstUuid(savedBoardPost.getUuid()));
     }
 
     public BoardPostResponse updateBoardPost(String loginId, String boardPostUuid, UpdateBoardPostRequest request) {
@@ -118,7 +117,7 @@ public class BoardService {
                 .build();
         boardMapper.updateBoardPost(boardPostVo);
 
-        return toResponse(getBrdPstJvo(boardPostUuid));
+        return BoardConvert.toResponse(getBrdPstJvo(boardPostUuid), tagService.getTagsByBrdPstUuid(boardPostUuid));
     }
 
     public void deleteBoardPost(String loginId, String boardPostUuid) {
@@ -162,36 +161,5 @@ public class BoardService {
         if (!account.getIdx().equals(boardPost.getMbrAcctIdx())) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 게시글만 수정 또는 삭제할 수 있습니다.");
         }
-    }
-
-    private BoardPostResponse toResponse(BrdPstJvo boardPost) {
-        List<TagResponse> tags = tagService.getTagsByBrdPstUuid(boardPost.getUuid());
-
-        return new BoardPostResponse(
-                boardPost.getUuid(),
-                boardPost.getCtgrNm(),
-                boardPost.getTtl(),
-                boardPost.getCntnt(),
-                boardPost.getViewCnt() == null ? 0 : boardPost.getViewCnt(),
-                boardPost.getAthrNickNm(),
-                boardPost.getFavCnt() == null ? 0L : boardPost.getFavCnt(),
-                boardPost.getCmtCnt() == null ? 0L : boardPost.getCmtCnt(),
-                tags,
-                boardPost.getCreatedAt(),
-                boardPost.getUpdatedAt()
-        );
-    }
-
-    private BoardPostSummaryResponse toSummaryResponse(BrdPstSmryJvo boardPost) {
-        return new BoardPostSummaryResponse(
-                boardPost.getUuid(),
-                boardPost.getCtgrNm(),
-                boardPost.getTtl(),
-                boardPost.getViewCnt() == null ? 0 : boardPost.getViewCnt(),
-                boardPost.getAthrNickNm(),
-                boardPost.getFavCnt() == null ? 0L : boardPost.getFavCnt(),
-                boardPost.getCmtCnt() == null ? 0L : boardPost.getCmtCnt(),
-                boardPost.getCreatedAt()
-        );
     }
 }

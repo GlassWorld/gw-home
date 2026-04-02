@@ -22,11 +22,13 @@ public class FavoriteController {
         this.favoriteService = favoriteService;
     }
 
+    // 로그인 사용자가 게시글 좋아요를 토글한다.
     @PostMapping
     public ApiResponse<FavoriteResponse> toggleFavorite(Principal principal, @PathVariable String boardPostUuid) {
         return ApiResponse.ok(favoriteService.toggleBoardPostFavorite(getLoginId(principal), boardPostUuid));
     }
 
+    // 게시글 좋아요 수를 조회한다.
     @GetMapping("/count")
     public ApiResponse<FavoriteResponse> getFavoriteCount(@PathVariable String boardPostUuid) {
         return ApiResponse.ok(favoriteService.getBoardPostFavoriteCount(boardPostUuid));

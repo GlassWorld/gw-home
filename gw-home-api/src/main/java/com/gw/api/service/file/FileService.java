@@ -1,5 +1,6 @@
 package com.gw.api.service.file;
 
+import com.gw.api.convert.file.FileConvert;
 import com.gw.api.config.FileUploadProperties;
 import com.gw.api.dto.file.FileUploadResponse;
 import com.gw.api.service.account.AccountService;
@@ -74,7 +75,7 @@ public class FileService {
                 .build();
         fileMapper.insertFile(fileVo);
 
-        return toResponse(getFileByIdx(fileVo.getIdx()));
+        return FileConvert.toResponse(getFileByIdx(fileVo.getIdx()));
     }
 
     private void validateUploaderType(String uploaderType) {
@@ -145,15 +146,5 @@ public class FileService {
         }
 
         return file;
-    }
-
-    private FileUploadResponse toResponse(FileVo file) {
-        return new FileUploadResponse(
-                file.getUuid(),
-                file.getFileUrl(),
-                file.getOrgnlNm(),
-                file.getMimeType(),
-                file.getFileSize()
-        );
     }
 }

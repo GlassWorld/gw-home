@@ -1,4 +1,4 @@
-package com.gw.api.util.auth;
+package com.gw.share.common.util;
 
 import com.eatthepath.otp.TimeBasedOneTimePasswordGenerator;
 import com.gw.share.common.exception.BusinessException;

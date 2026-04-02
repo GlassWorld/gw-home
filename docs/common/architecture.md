@@ -8,8 +8,8 @@
 
 ```text
 gw-home/
-├── gw-home-share/      공통 DTO, 예외, 유틸
-├── gw-home-api/        Controller, Service, DTO
+├── gw-home-share/      공통 DTO, 예외, VO/JVO, 유틸, 정책, 보안 컴포넌트
+├── gw-home-api/        Controller, Service, DTO, convert
 ├── gw-home-infra-db/   MyBatis Mapper, XML, DB 설정
 └── gw-home-ui/         Nuxt3 프론트엔드
 ```
@@ -22,6 +22,9 @@ gw-home/
 - 공통 예외 (`BusinessException`, `ErrorCode`)
 - 공용 `VO`, `JVO`
 - 공통 식별자와 감사 컬럼을 담는 `BaseVo`
+- 널 체크, 형변환, 날짜 검증 같은 공통 유틸
+- 여러 도메인에서 재사용 가능한 정책 상수
+- 여러 도메인에서 재사용 가능한 기술 유틸과 보안 컴포넌트
 
 ### `gw-home-api`
 
@@ -29,6 +32,8 @@ gw-home/
 - 비즈니스 로직 수행
 - 도메인별 Request / Response DTO 관리
 - 도메인별 응답 변환 로직 관리
+- 컨트롤러와 서비스 조합 책임 관리
+- API 전용 조합 로직만 유지하고 공통 기술 유틸은 `share` 우선 검토
 
 ### `gw-home-infra-db`
 
@@ -70,6 +75,9 @@ com.gw.api.service.board
 com.gw.api.convert.board
 com.gw.api.dto.board
 com.gw.infra.db.mapper.board
+com.gw.share.util
+com.gw.share.common.policy
+com.gw.share.common.exception
 com.gw.share.vo.board
 com.gw.share.jvo.board
 ```

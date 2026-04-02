@@ -33,16 +33,19 @@ public class WeeklyReportController {
         this.weeklyReportService = weeklyReportService;
     }
 
+    // 로그인 사용자의 주간보고 목록을 조회한다.
     @GetMapping
     public ApiResponse<List<WeeklyReportResponse>> getWeeklyReports(Principal principal) {
         return ApiResponse.ok(weeklyReportService.getWeeklyReportList(getLoginId(principal)));
     }
 
+    // 로그인 사용자의 주간보고 상세 정보를 조회한다.
     @GetMapping("/{uuid}")
     public ApiResponse<WeeklyReportResponse> getWeeklyReport(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(weeklyReportService.getWeeklyReport(getLoginId(principal), uuid));
     }
 
+    // 로그인 사용자의 주간보고 작성용 일일보고 원본을 조회한다.
     @GetMapping("/daily-sources")
     public ApiResponse<List<WeeklyReportDailySourceResponse>> getWeeklyDailySources(
             Principal principal,
@@ -52,6 +55,7 @@ public class WeeklyReportController {
         return ApiResponse.ok(weeklyReportService.getWeeklySourceDailyReports(getLoginId(principal), weekStartDate, weekEndDate));
     }
 
+    // 로그인 사용자가 주간보고를 생성한다.
     @PostMapping
     public ApiResponse<WeeklyReportResponse> createWeeklyReport(
             Principal principal,
@@ -60,6 +64,7 @@ public class WeeklyReportController {
         return ApiResponse.ok(weeklyReportService.createWeeklyReport(getLoginId(principal), request));
     }
 
+    // 로그인 사용자가 주간보고를 수정한다.
     @PutMapping("/{uuid}")
     public ApiResponse<WeeklyReportResponse> updateWeeklyReport(
             Principal principal,
@@ -69,6 +74,7 @@ public class WeeklyReportController {
         return ApiResponse.ok(weeklyReportService.updateWeeklyReport(getLoginId(principal), uuid, request));
     }
 
+    // 로그인 사용자가 AI 주간보고 초안을 생성한다.
     @PostMapping("/ai-draft")
     public ApiResponse<WeeklyReportAiDraftResponse> generateWeeklyReportAiDraft(
             Principal principal,

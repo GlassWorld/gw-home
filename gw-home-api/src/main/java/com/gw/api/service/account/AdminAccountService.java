@@ -11,6 +11,7 @@ import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.support.PageSortSupport;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.AdminAccountPolicy;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.vo.account.AcctVo;
 import java.security.SecureRandom;
@@ -25,8 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AdminAccountService {
 
-    private static final String TEMP_PASSWORD_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-    private static final int TEMP_PASSWORD_LENGTH = 12;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final AccountMapper accountMapper;
@@ -257,11 +256,11 @@ public class AdminAccountService {
     }
 
     private String generateTemporaryPassword() {
-        StringBuilder builder = new StringBuilder(TEMP_PASSWORD_LENGTH);
+        StringBuilder builder = new StringBuilder(AdminAccountPolicy.TEMP_PASSWORD_LENGTH);
 
-        for (int index = 0; index < TEMP_PASSWORD_LENGTH; index++) {
-            int randomIndex = SECURE_RANDOM.nextInt(TEMP_PASSWORD_CHARACTERS.length());
-            builder.append(TEMP_PASSWORD_CHARACTERS.charAt(randomIndex));
+        for (int index = 0; index < AdminAccountPolicy.TEMP_PASSWORD_LENGTH; index++) {
+            int randomIndex = SECURE_RANDOM.nextInt(AdminAccountPolicy.TEMP_PASSWORD_CHARACTERS.length());
+            builder.append(AdminAccountPolicy.TEMP_PASSWORD_CHARACTERS.charAt(randomIndex));
         }
 
         return builder.toString();

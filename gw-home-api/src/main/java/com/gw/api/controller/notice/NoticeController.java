@@ -23,11 +23,13 @@ public class NoticeController {
         this.noticeService = noticeService;
     }
 
+    // 공지사항 목록을 조회한다.
     @GetMapping
     public ApiResponse<PageResponse<NoticeSummaryResponse>> getNotices(NoticeListRequest request) {
         return ApiResponse.ok(noticeService.getNoticeList(request));
     }
 
+    // 대시보드용 공지사항 목록을 조회한다.
     @GetMapping("/dashboard")
     public ApiResponse<List<NoticeSummaryResponse>> getDashboardNotices(
             @RequestParam(required = false, defaultValue = "5") Integer limit
@@ -35,6 +37,7 @@ public class NoticeController {
         return ApiResponse.ok(noticeService.getDashboardNotices(limit));
     }
 
+    // 공지사항 상세 정보를 조회한다.
     @GetMapping("/{noticeUuid}")
     public ApiResponse<NoticeDetailResponse> getNotice(@PathVariable String noticeUuid) {
         return ApiResponse.ok(noticeService.getNotice(noticeUuid));

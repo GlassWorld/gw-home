@@ -33,16 +33,19 @@ public class AdminNoticeController {
         this.noticeService = noticeService;
     }
 
+    // 관리자용 공지사항 목록을 조회한다.
     @GetMapping
     public ApiResponse<PageResponse<NoticeSummaryResponse>> getAdminNotices(NoticeListRequest request) {
         return ApiResponse.ok(noticeService.getAdminNoticeList(request));
     }
 
+    // 관리자용 공지사항 상세 정보를 조회한다.
     @GetMapping("/{noticeUuid}")
     public ApiResponse<NoticeDetailResponse> getAdminNotice(@PathVariable String noticeUuid) {
         return ApiResponse.ok(noticeService.getAdminNotice(noticeUuid));
     }
 
+    // 관리자가 공지사항을 생성한다.
     @PostMapping
     public ApiResponse<NoticeDetailResponse> createNotice(
             Principal principal,
@@ -51,6 +54,7 @@ public class AdminNoticeController {
         return ApiResponse.ok(noticeService.createNotice(getLoginId(principal), request));
     }
 
+    // 관리자가 공지사항을 수정한다.
     @PutMapping("/{noticeUuid}")
     public ApiResponse<NoticeDetailResponse> updateNotice(
             Principal principal,
@@ -60,6 +64,7 @@ public class AdminNoticeController {
         return ApiResponse.ok(noticeService.updateNotice(getLoginId(principal), noticeUuid, request));
     }
 
+    // 관리자가 공지사항을 삭제한다.
     @DeleteMapping("/{noticeUuid}")
     public ApiResponse<Void> deleteNotice(Principal principal, @PathVariable String noticeUuid) {
         noticeService.deleteNotice(getLoginId(principal), noticeUuid);

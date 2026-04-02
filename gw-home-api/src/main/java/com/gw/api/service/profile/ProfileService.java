@@ -1,5 +1,6 @@
 package com.gw.api.service.profile;
 
+import com.gw.api.convert.profile.ProfileConvert;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +14,7 @@ import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.profile.ProfileMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.ProfilePolicy;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.profile.PrflVo;
 import java.util.LinkedHashSet;
@@ -27,24 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ProfileService {
 
-    private static final int MAX_FAVORITE_MENU_COUNT = 5;
-    private static final Set<String> USER_NAVIGATION_MENU_PATHS = Set.of(
-            "/dashboard",
-            "/notices",
-            "/board",
-            "/work",
-            "/work/git-accounts",
-            "/work/daily-reports",
-            "/work/weekly-reports",
-            "/vault",
-            "/settings",
-            "/security"
-    );
-    private static final Set<String> ADMIN_NAVIGATION_MENU_PATHS = Set.of(
-            "/admin/accounts",
-            "/admin/notices",
-            "/admin/vault-categories"
-    );
     private static final TypeReference<List<String>> STRING_LIST_TYPE_REFERENCE = new TypeReference<>() {
     };
 
@@ -61,7 +45,7 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(String profileUuid) {
         log.info("getProfile 시작 - profileUuid: {}", profileUuid);
-        ProfileResponse response = toResponse(getProfileByUuid(profileUuid));
+        ProfileResponse response = ProfileConvert.toResponse(getProfileByUuid(profileUuid));
         log.info("getProfile 완료");
         return response;
     }
@@ -78,7 +62,7 @@ public class ProfileService {
         }
 
         log.info("getMyProfile 완료");
-        return toResponse(profile);
+        return ProfileConvert.toResponse(profile);
     }
 
     public ProfileResponse updateMyProfile(String loginId, UpdateProfileRequest request) {
@@ -98,7 +82,7 @@ public class ProfileService {
         profileMapper.updateProfile(profile);
 
         log.info("updateMyProfile 완료");
-        return toResponse(profileMapper.selectProfileByAccountIdx(account.getIdx()));
+        return ProfileConvert.toResponse(profileMapper.selectProfileByAccountIdx(account.getIdx()));
     }
 
     @Transactional(readOnly = true)
@@ -190,7 +174,7 @@ public class ProfileService {
             return List.of();
         }
 
-        if (favoriteMenus.size() > MAX_FAVORITE_MENU_COUNT) {
+        if (favoriteMenus.size() > ProfilePolicy.MAX_FAVORITE_MENU_COUNT) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "즐겨찾기 메뉴는 5개까지 저장할 수 있습니다.");
         }
 
@@ -220,11 +204,11 @@ public class ProfileService {
     }
 
     private boolean isAllowedNavigationMenu(String favoriteMenu, String role) {
-        if (USER_NAVIGATION_MENU_PATHS.contains(favoriteMenu)) {
+        if (ProfilePolicy.USER_NAVIGATION_MENU_PATHS.contains(favoriteMenu)) {
             return true;
         }
 
-        return "ADMIN".equals(role) && ADMIN_NAVIGATION_MENU_PATHS.contains(favoriteMenu);
+        return "ADMIN".equals(role) && ProfilePolicy.ADMIN_NAVIGATION_MENU_PATHS.contains(favoriteMenu);
     }
 
     private List<String> parseNavigationFavorites(String favoriteMenusJson) {
@@ -248,15 +232,5 @@ public class ProfileService {
             log.error("writeNavigationFavorites 실패 - JSON 직렬화 오류", exception);
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "즐겨찾기 메뉴를 저장할 수 없습니다.");
         }
-    }
-
-    private ProfileResponse toResponse(PrflVo profile) {
-        return new ProfileResponse(
-                profile.getUuid(),
-                profile.getNickNm(),
-                profile.getIntro(),
-                profile.getPrflImgUrl(),
-                profile.getCreatedAt()
-        );
     }
 }

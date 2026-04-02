@@ -1,5 +1,6 @@
 package com.gw.api.service.vault;
 
+import com.gw.api.convert.vault.VaultCategoryConvert;
 import com.gw.api.dto.vault.SaveVaultCategoryRequest;
 import com.gw.api.dto.vault.VaultCategoryResponse;
 import com.gw.infra.db.mapper.vault.VaultCategoryMapper;
@@ -29,7 +30,7 @@ public class VaultCategoryService {
     @Transactional(readOnly = true)
     public List<VaultCategoryResponse> getCategoryList() {
         return vaultCategoryMapper.selectCategoryList().stream()
-                .map(this::toResponse)
+                .map(VaultCategoryConvert::toResponse)
                 .toList();
     }
 
@@ -45,7 +46,7 @@ public class VaultCategoryService {
                 .build();
 
         vaultCategoryMapper.insertCategory(category);
-        return toResponse(getCategoryByIdx(category.getIdx()));
+        return VaultCategoryConvert.toResponse(getCategoryByIdx(category.getIdx()));
     }
 
     public VaultCategoryResponse updateCategory(String uuid, SaveVaultCategoryRequest request, String loginId) {
@@ -57,7 +58,7 @@ public class VaultCategoryService {
         category.setSortOrd(request.sortOrder() == null ? 0 : request.sortOrder());
         category.setUpdatedBy(loginId);
         vaultCategoryMapper.updateCategory(category);
-        return toResponse(getCategory(uuid));
+        return VaultCategoryConvert.toResponse(getCategory(uuid));
     }
 
     public void deleteCategory(String uuid, String loginId) {
@@ -92,15 +93,5 @@ public class VaultCategoryService {
         if (vaultCategoryMapper.existsByName(name, excludeUuid)) {
             throw new BusinessException(ErrorCode.DUPLICATE, "이미 사용 중인 카테고리 이름입니다.");
         }
-    }
-
-    private VaultCategoryResponse toResponse(CatVo category) {
-        return new VaultCategoryResponse(
-                category.getUuid(),
-                category.getNm(),
-                category.getDsc(),
-                category.getColor(),
-                category.getSortOrd()
-        );
     }
 }

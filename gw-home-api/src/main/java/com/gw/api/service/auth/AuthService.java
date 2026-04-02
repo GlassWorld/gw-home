@@ -6,12 +6,13 @@ import com.gw.api.dto.auth.OtpSetupResponse;
 import com.gw.api.dto.auth.OtpStatusResponse;
 import com.gw.api.dto.auth.TokenResponse;
 import com.gw.api.jwt.JwtProvider;
-import com.gw.api.util.auth.OtpSecretEncryptor;
-import com.gw.api.util.auth.OtpTotpUtil;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.auth.AuthMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.AuthPolicy;
+import com.gw.share.common.util.OtpSecretEncryptor;
+import com.gw.share.common.util.OtpTotpUtil;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.auth.AuthRfshTknVo;
 import java.nio.charset.StandardCharsets;
@@ -28,10 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Slf4j
 public class AuthService {
-
-    private static final int MAX_LOGIN_FAIL_COUNT = 5;
-    private static final int MAX_OTP_FAIL_COUNT = 5;
-    private static final int OTP_LOCK_MINUTES = 30;
 
     private final AuthMapper authMapper;
     private final AccountMapper accountMapper;
@@ -79,11 +76,11 @@ public class AuthService {
             accountMapper.incrementLoginFailCount(account.getIdx());
 
             int currentLoginFailCount = account.getLgnFailCnt() + 1;
-            if (currentLoginFailCount >= MAX_LOGIN_FAIL_COUNT) {
+            if (currentLoginFailCount >= AuthPolicy.MAX_LOGIN_FAIL_COUNT) {
                 accountMapper.lockAccount(account.getIdx());
             }
 
-            int remainingCount = Math.max(0, MAX_LOGIN_FAIL_COUNT - currentLoginFailCount);
+            int remainingCount = Math.max(0, AuthPolicy.MAX_LOGIN_FAIL_COUNT - currentLoginFailCount);
             log.error("login 실패 - 원인: 비밀번호 불일치. loginId={}, 남은횟수={}", request.loginId(), remainingCount);
             throw new BusinessException(
                     ErrorCode.UNAUTHORIZED,
@@ -203,10 +200,10 @@ public class AuthService {
         if (!otpTotpUtil.verify(secret, otpCode)) {
             accountMapper.incrementOtpFailCount(account.getIdx());
             int currentOtpFailCount = account.getOtpFailCnt() + 1;
-            int remainingCount = Math.max(0, MAX_OTP_FAIL_COUNT - currentOtpFailCount);
+            int remainingCount = Math.max(0, AuthPolicy.MAX_OTP_FAIL_COUNT - currentOtpFailCount);
             log.error("otpVerify 실패 - 원인: OTP 코드 불일치. loginId={}, 남은횟수={}", account.getLgnId(), remainingCount);
 
-            if (currentOtpFailCount >= MAX_OTP_FAIL_COUNT) {
+            if (currentOtpFailCount >= AuthPolicy.MAX_OTP_FAIL_COUNT) {
                 throw new BusinessException(ErrorCode.ACCOUNT_LOCKED, "OTP 인증이 30분간 차단되었습니다.");
             }
 
@@ -263,14 +260,14 @@ public class AuthService {
 
     private boolean isOtpLocked(AcctVo account) {
         return account.getOtpLastFailedAt() != null
-                && account.getOtpFailCnt() >= MAX_OTP_FAIL_COUNT
-                && account.getOtpLastFailedAt().plusMinutes(OTP_LOCK_MINUTES).isAfter(OffsetDateTime.now(ZoneOffset.UTC));
+                && account.getOtpFailCnt() >= AuthPolicy.MAX_OTP_FAIL_COUNT
+                && account.getOtpLastFailedAt().plusMinutes(AuthPolicy.OTP_LOCK_MINUTES).isAfter(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     private boolean isOtpLockExpired(AcctVo account) {
         return account.getOtpLastFailedAt() != null
-                && account.getOtpFailCnt() >= MAX_OTP_FAIL_COUNT
-                && !account.getOtpLastFailedAt().plusMinutes(OTP_LOCK_MINUTES).isAfter(OffsetDateTime.now(ZoneOffset.UTC));
+                && account.getOtpFailCnt() >= AuthPolicy.MAX_OTP_FAIL_COUNT
+                && !account.getOtpLastFailedAt().plusMinutes(AuthPolicy.OTP_LOCK_MINUTES).isAfter(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     private TokenResponse issueTokenResponse(AcctVo account) {
