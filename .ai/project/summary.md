@@ -44,4 +44,8 @@ admin     admin features
 
 ## Quick References
 
-- Rules and workflow references are managed in `.ai/CORE_RULES.md`, `.ai/TASK_ROUTER.md`, and `.ai/SKILL_INDEX.md`.
+- Absolute rules: `.ai/CORE_RULES.md`
+- Routing: `.ai/index/routing.md`
+- Work documents: `.ai/index/work-docs.md`
+- Context loading: `.ai/index/references.md`
+- Skill lookup: `.ai/index/skills.md`
