@@ -10,11 +10,12 @@ import com.gw.api.dto.profile.ProfileResponse;
 import com.gw.api.dto.profile.SaveMemoRequest;
 import com.gw.api.dto.profile.SaveNavigationFavoriteRequest;
 import com.gw.api.dto.profile.UpdateProfileRequest;
-import com.gw.infra.db.mapper.account.AccountMapper;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.profile.ProfileMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.policy.ProfilePolicy;
+import com.gw.share.common.policy.RolePolicy;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.profile.PrflVo;
 import java.util.LinkedHashSet;
@@ -33,16 +34,17 @@ public class ProfileService {
     };
 
     private final ProfileMapper profileMapper;
-    private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
     private final ObjectMapper objectMapper;
 
-    public ProfileService(ProfileMapper profileMapper, AccountMapper accountMapper, ObjectMapper objectMapper) {
+    public ProfileService(ProfileMapper profileMapper, AccountLookupService accountLookupService, ObjectMapper objectMapper) {
         this.profileMapper = profileMapper;
-        this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
         this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
+    // 공개 프로필을 조회한다.
     public ProfileResponse getProfile(String profileUuid) {
         log.info("getProfile 시작 - profileUuid: {}", profileUuid);
         ProfileResponse response = ProfileConvert.toResponse(getProfileByUuid(profileUuid));
@@ -51,6 +53,7 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 프로필을 조회한다.
     public ProfileResponse getMyProfile(String loginId) {
         log.info("getMyProfile 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -65,6 +68,7 @@ public class ProfileService {
         return ProfileConvert.toResponse(profile);
     }
 
+    // 로그인 사용자의 프로필을 수정한다.
     public ProfileResponse updateMyProfile(String loginId, UpdateProfileRequest request) {
         log.info("updateMyProfile 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -86,14 +90,16 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 메모를 조회한다.
     public MemoResponse getMemo(String loginId) {
         log.info("getMemo 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
         String memo = profileMapper.selectMemoByAccountIdx(account.getIdx());
         log.info("getMemo 완료");
-        return new MemoResponse(memo == null ? "" : memo);
+        return ProfileConvert.toMemoResponse(memo);
     }
 
+    // 로그인 사용자의 메모를 저장한다.
     public MemoResponse saveMemo(String loginId, SaveMemoRequest request) {
         log.info("saveMemo 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -107,19 +113,21 @@ public class ProfileService {
         String memo = request.memo() == null ? "" : request.memo();
         profileMapper.updateMemo(account.getIdx(), memo, loginId);
         log.info("saveMemo 완료");
-        return new MemoResponse(memo);
+        return ProfileConvert.toMemoResponse(memo);
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 내비게이션 즐겨찾기를 조회한다.
     public NavigationFavoriteResponse getNavigationFavorites(String loginId) {
         log.info("getNavigationFavorites 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
         String favoriteMenusJson = profileMapper.selectNavigationFavoritesByAccountIdx(account.getIdx());
         List<String> favoriteMenus = filterNavigationFavoritesByRole(parseNavigationFavorites(favoriteMenusJson), account.getRole());
         log.info("getNavigationFavorites 완료");
-        return new NavigationFavoriteResponse(favoriteMenus);
+        return ProfileConvert.toNavigationFavoriteResponse(favoriteMenus);
     }
 
+    // 로그인 사용자의 내비게이션 즐겨찾기를 저장한다.
     public NavigationFavoriteResponse saveNavigationFavorites(String loginId, SaveNavigationFavoriteRequest request) {
         log.info("saveNavigationFavorites 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -133,9 +141,10 @@ public class ProfileService {
         List<String> normalizedFavoriteMenus = normalizeNavigationFavorites(request.favoriteMenus(), account.getRole());
         profileMapper.updateNavigationFavorites(account.getIdx(), writeNavigationFavorites(normalizedFavoriteMenus), loginId);
         log.info("saveNavigationFavorites 완료");
-        return new NavigationFavoriteResponse(normalizedFavoriteMenus);
+        return ProfileConvert.toNavigationFavoriteResponse(normalizedFavoriteMenus);
     }
 
+    // 회원 기본 프로필을 생성한다.
     public void createDefaultProfile(AcctVo account) {
         log.info("createDefaultProfile 시작 - loginId: {}", account.getLgnId());
         PrflVo profile = PrflVo.builder()
@@ -159,14 +168,7 @@ public class ProfileService {
     }
 
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            log.error("getAccountByLoginId 실패 - 원인: 계정을 찾을 수 없습니다. loginId={}", loginId);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     private List<String> normalizeNavigationFavorites(List<String> favoriteMenus, String role) {
@@ -175,6 +177,7 @@ public class ProfileService {
         }
 
         if (favoriteMenus.size() > ProfilePolicy.MAX_FAVORITE_MENU_COUNT) {
+            log.error("normalizeNavigationFavorites 실패 - 원인: 즐겨찾기 메뉴 개수 초과. role={}, count={}", role, favoriteMenus.size());
             throw new BusinessException(ErrorCode.BAD_REQUEST, "즐겨찾기 메뉴는 5개까지 저장할 수 있습니다.");
         }
 
@@ -182,14 +185,17 @@ public class ProfileService {
 
         for (String favoriteMenu : favoriteMenus) {
             if (favoriteMenu == null || favoriteMenu.isBlank()) {
+                log.error("normalizeNavigationFavorites 실패 - 원인: 즐겨찾기 메뉴 경로가 비어 있습니다. role={}", role);
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "즐겨찾기 메뉴 경로가 올바르지 않습니다.");
             }
 
             if (!isAllowedNavigationMenu(favoriteMenu, role)) {
+                log.error("normalizeNavigationFavorites 실패 - 원인: 저장할 수 없는 즐겨찾기 메뉴입니다. role={}, favoriteMenu={}", role, favoriteMenu);
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "저장할 수 없는 즐겨찾기 메뉴입니다.");
             }
 
             if (!deduplicatedFavoriteMenus.add(favoriteMenu)) {
+                log.error("normalizeNavigationFavorites 실패 - 원인: 중복된 즐겨찾기 메뉴입니다. role={}, favoriteMenu={}", role, favoriteMenu);
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "중복된 즐겨찾기 메뉴는 저장할 수 없습니다.");
             }
         }
@@ -208,7 +214,7 @@ public class ProfileService {
             return true;
         }
 
-        return "ADMIN".equals(role) && ProfilePolicy.ADMIN_NAVIGATION_MENU_PATHS.contains(favoriteMenu);
+        return RolePolicy.ADMIN.equals(role) && ProfilePolicy.ADMIN_NAVIGATION_MENU_PATHS.contains(favoriteMenu);
     }
 
     private List<String> parseNavigationFavorites(String favoriteMenusJson) {

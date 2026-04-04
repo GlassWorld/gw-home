@@ -2,15 +2,20 @@ package com.gw.api.service.work;
 
 import com.gw.api.convert.work.WeeklyReportConvert;
 import com.gw.api.dto.work.CreateWeeklyReportRequest;
+import com.gw.api.dto.work.OpenWeeklyReportMemberResponse;
+import com.gw.api.dto.work.OpenWeeklyReportResponse;
 import com.gw.api.dto.work.UpdateWeeklyReportRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
 import com.gw.api.dto.work.WeeklyReportDailySourceResponse;
 import com.gw.api.dto.work.WeeklyReportResponse;
-import com.gw.infra.db.mapper.account.AccountMapper;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.work.DailyReportMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.UseYnPolicy;
+import com.gw.share.common.policy.WorkPolicy;
+import com.gw.share.jvo.work.OpenWeeklyReportJvo;
 import com.gw.share.util.DateUtil;
 import com.gw.share.util.StringUtil;
 import com.gw.share.util.ValidationUtil;
@@ -30,16 +35,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class WeeklyReportService {
 
     private final DailyReportMapper dailyReportMapper;
-    private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
     private final WeeklyReportDraftService weeklyReportDraftService;
 
     public WeeklyReportService(
             DailyReportMapper dailyReportMapper,
-            AccountMapper accountMapper,
+            AccountLookupService accountLookupService,
             WeeklyReportDraftService weeklyReportDraftService
     ) {
         this.dailyReportMapper = dailyReportMapper;
-        this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
         this.weeklyReportDraftService = weeklyReportDraftService;
     }
 
@@ -78,6 +83,75 @@ public class WeeklyReportService {
         } catch (BusinessException exception) {
             log.error(
                     "getWeeklyReport 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    uuid,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    // 공개된 주간보고를 가진 회원 목록을 조회한다.
+    @Transactional(readOnly = true)
+    public List<OpenWeeklyReportMemberResponse> getOpenWeeklyReportMembers(String loginId) {
+        log.info("getOpenWeeklyReportMembers 시작 - loginId: {}", loginId);
+        try {
+            getAccountByLoginId(loginId);
+            List<OpenWeeklyReportMemberResponse> response = dailyReportMapper.selectOpenWeeklyReportMembers().stream()
+                    .map(WeeklyReportConvert::toOpenMemberResponse)
+                    .toList();
+            log.info("getOpenWeeklyReportMembers 완료 - loginId: {}, count: {}", loginId, response.size());
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getOpenWeeklyReportMembers 실패 - loginId: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    // 회원 기준으로 공개된 주간보고 목록을 조회한다.
+    @Transactional(readOnly = true)
+    public List<OpenWeeklyReportResponse> getOpenWeeklyReports(String loginId, String memberUuid) {
+        log.info("getOpenWeeklyReports 시작 - loginId: {}, memberUuid: {}", loginId, memberUuid);
+        try {
+            getAccountByLoginId(loginId);
+            List<OpenWeeklyReportResponse> response = dailyReportMapper.selectOpenWeeklyReportList(normalizeText(memberUuid)).stream()
+                    .map(WeeklyReportConvert::toOpenResponse)
+                    .toList();
+            log.info("getOpenWeeklyReports 완료 - loginId: {}, memberUuid: {}, count: {}", loginId, memberUuid, response.size());
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getOpenWeeklyReports 실패 - loginId: {}, memberUuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    memberUuid,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    // 공개된 주간보고 상세 정보를 조회한다.
+    @Transactional(readOnly = true)
+    public OpenWeeklyReportResponse getOpenWeeklyReport(String loginId, String uuid) {
+        log.info("getOpenWeeklyReport 시작 - loginId: {}, uuid: {}", loginId, uuid);
+        try {
+            getAccountByLoginId(loginId);
+            OpenWeeklyReportResponse response = WeeklyReportConvert.toOpenResponse(getOpenWeeklyReport(uuid));
+            log.info("getOpenWeeklyReport 완료 - loginId: {}, uuid: {}", loginId, uuid);
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getOpenWeeklyReport 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     uuid,
                     exception.getMessage(),
@@ -237,6 +311,7 @@ public class WeeklyReportService {
         WeeklyReportVo weeklyReport = dailyReportMapper.selectWeeklyReport(uuid, mbrAcctIdx);
 
         if (weeklyReport == null) {
+            log.error("getWeeklyReport 실패 - 원인: 주간보고를 찾을 수 없습니다. uuid={}, memberAccountIdx={}", uuid, mbrAcctIdx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "주간보고를 찾을 수 없습니다.");
         }
 
@@ -248,7 +323,20 @@ public class WeeklyReportService {
         WeeklyReportVo weeklyReport = dailyReportMapper.selectWeeklyReportByIdx(idx);
 
         if (weeklyReport == null) {
+            log.error("getWeeklyReportByIdx 실패 - 원인: 주간보고를 찾을 수 없습니다. idx={}", idx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "주간보고를 찾을 수 없습니다.");
+        }
+
+        return weeklyReport;
+    }
+
+    // UUID로 공개된 주간보고를 조회한다.
+    private OpenWeeklyReportJvo getOpenWeeklyReport(String uuid) {
+        OpenWeeklyReportJvo weeklyReport = dailyReportMapper.selectOpenWeeklyReport(uuid);
+
+        if (weeklyReport == null) {
+            log.error("getOpenWeeklyReport 실패 - 원인: 공개된 주간보고를 찾을 수 없습니다. uuid={}", uuid);
+            throw new BusinessException(ErrorCode.NOT_FOUND, "공개된 주간보고를 찾을 수 없습니다.");
         }
 
         return weeklyReport;
@@ -256,13 +344,7 @@ public class WeeklyReportService {
 
     // 로그인 ID로 회원 계정을 조회한다.
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     // 주간보고 날짜 입력 필수 여부를 검증한다.
@@ -297,12 +379,15 @@ public class WeeklyReportService {
         String normalized = normalizeText(openYn);
 
         if (normalized == null) {
-            return "N";
+            return UseYnPolicy.NO;
         }
 
         return switch (normalized) {
-            case "Y", "N" -> normalized;
-            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "openYn은 Y 또는 N 이어야 합니다.");
+            case UseYnPolicy.YES, UseYnPolicy.NO -> normalized;
+            default -> {
+                log.error("normalizeOpenYn 실패 - 원인: openYn 값이 올바르지 않습니다. openYn={}", openYn);
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "openYn은 Y 또는 N 이어야 합니다.");
+            }
         };
     }
 
@@ -311,18 +396,21 @@ public class WeeklyReportService {
         String normalized = normalizeText(generationType);
 
         if (normalized == null) {
-            return "MANUAL";
+            return WorkPolicy.GENERATION_TYPE_MANUAL;
         }
 
         return switch (normalized) {
-            case "MANUAL", "OPENAI", "RULE_BASED" -> normalized;
-            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "generationType이 올바르지 않습니다.");
+            case WorkPolicy.GENERATION_TYPE_MANUAL, WorkPolicy.GENERATION_TYPE_OPENAI, WorkPolicy.GENERATION_TYPE_RULE_BASED -> normalized;
+            default -> {
+                log.error("normalizeGenerationType 실패 - 원인: generationType이 올바르지 않습니다. generationType={}", generationType);
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "generationType이 올바르지 않습니다.");
+            }
         };
     }
 
     // 공개 여부에 따라 발행 시각을 계산한다.
     private OffsetDateTime resolvePublishedAt(String openYn, OffsetDateTime currentPublishedAt) {
-        return "Y".equals(normalizeOpenYn(openYn)) ? (currentPublishedAt == null ? OffsetDateTime.now() : currentPublishedAt) : null;
+        return UseYnPolicy.YES.equals(normalizeOpenYn(openYn)) ? (currentPublishedAt == null ? OffsetDateTime.now() : currentPublishedAt) : null;
     }
 
     // 일일보고에 연결된 업무 목록을 채운다.

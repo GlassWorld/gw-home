@@ -1,11 +1,13 @@
 package com.gw.api.service.auth;
 
+import com.gw.api.convert.auth.AuthConvert;
 import com.gw.api.dto.auth.LoginRequest;
 import com.gw.api.dto.auth.LoginResponse;
 import com.gw.api.dto.auth.OtpSetupResponse;
 import com.gw.api.dto.auth.OtpStatusResponse;
 import com.gw.api.dto.auth.TokenResponse;
 import com.gw.api.jwt.JwtProvider;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.auth.AuthMapper;
 import com.gw.share.common.exception.BusinessException;
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final AuthMapper authMapper;
+    private final AccountLookupService accountLookupService;
     private final AccountMapper accountMapper;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
@@ -39,6 +42,7 @@ public class AuthService {
 
     public AuthService(
             AuthMapper authMapper,
+            AccountLookupService accountLookupService,
             AccountMapper accountMapper,
             JwtProvider jwtProvider,
             PasswordEncoder passwordEncoder,
@@ -46,6 +50,7 @@ public class AuthService {
             OtpTotpUtil otpTotpUtil
     ) {
         this.authMapper = authMapper;
+        this.accountLookupService = accountLookupService;
         this.accountMapper = accountMapper;
         this.jwtProvider = jwtProvider;
         this.passwordEncoder = passwordEncoder;
@@ -53,6 +58,7 @@ public class AuthService {
         this.otpTotpUtil = otpTotpUtil;
     }
 
+    // 로그인 요청을 검증하고 토큰 또는 OTP 진행 상태를 반환한다.
     public LoginResponse login(LoginRequest request) {
         log.info("login 시작 - loginId: {}", request.loginId());
         AcctVo account = accountMapper.selectAccountByLoginId(request.loginId());
@@ -92,18 +98,19 @@ public class AuthService {
 
         if (account.isOtpEnabled() && account.getOtpSecret() != null && !account.getOtpSecret().isBlank()) {
             log.info("login 완료 - OTP 추가 인증 필요");
-            return new LoginResponse("OTP_REQUIRED", null, jwtProvider.generateOtpTempToken(account.getLgnId()));
+            return AuthConvert.toOtpRequiredLoginResponse(jwtProvider.generateOtpTempToken(account.getLgnId()));
         }
 
         if (!account.isOtpEnabled()) {
             log.info("login 완료 - OTP 설정 필요");
-            return new LoginResponse("OTP_SETUP_REQUIRED", issueTokenResponse(account), null);
+            return AuthConvert.toOtpSetupRequiredLoginResponse(issueTokenResponse(account));
         }
 
         log.info("login 완료");
-        return new LoginResponse("SUCCESS", issueTokenResponse(account), null);
+        return AuthConvert.toSuccessLoginResponse(issueTokenResponse(account));
     }
 
+    // 로그인 사용자의 리프레시 토큰을 만료 처리한다.
     public void logout(String loginId, String refreshToken) {
         log.info("logout 시작 - loginId: {}", loginId);
         AcctVo account = accountMapper.selectAccountByLoginId(loginId);
@@ -124,6 +131,7 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    // 리프레시 토큰으로 액세스 토큰을 재발급한다.
     public TokenResponse refresh(String refreshToken) {
         log.info("refresh 시작");
         if (!jwtProvider.validate(refreshToken) || !"refresh".equals(jwtProvider.extractTokenType(refreshToken))) {
@@ -147,9 +155,10 @@ public class AuthService {
 
         String accessToken = jwtProvider.generateAccessToken(account.getLgnId(), account.getRole());
         log.info("refresh 완료");
-        return new TokenResponse(accessToken, refreshToken, "Bearer", jwtProvider.getAccessTokenExpiresInSeconds());
+        return AuthConvert.toTokenResponse(accessToken, refreshToken, jwtProvider.getAccessTokenExpiresInSeconds());
     }
 
+    // 로그인 사용자의 OTP 설정 정보를 생성한다.
     public OtpSetupResponse otpSetup(String loginId) {
         log.info("otpSetup 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -159,9 +168,10 @@ public class AuthService {
         accountMapper.updateOtpSecret(account.getIdx(), encryptedSecret);
 
         log.info("otpSetup 완료");
-        return new OtpSetupResponse(otpTotpUtil.buildOtpAuthUrl(account.getLgnId(), secret));
+        return AuthConvert.toOtpSetupResponse(otpTotpUtil.buildOtpAuthUrl(account.getLgnId(), secret));
     }
 
+    // 로그인 사용자의 OTP를 활성화한다.
     public void otpActivate(String loginId, String otpCode) {
         log.info("otpActivate 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -176,6 +186,7 @@ public class AuthService {
         log.info("otpActivate 완료");
     }
 
+    // OTP 추가 인증 코드를 검증하고 로그인 토큰을 발급한다.
     public TokenResponse otpVerify(String otpTempToken, String otpCode) {
         log.info("otpVerify 시작");
         if (!jwtProvider.isOtpTempToken(otpTempToken)) {
@@ -218,6 +229,7 @@ public class AuthService {
         return issueTokenResponse(account);
     }
 
+    // 로그인 사용자의 OTP를 비활성화한다.
     public void otpDisable(String loginId, String otpCode) {
         log.info("otpDisable 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
@@ -233,25 +245,21 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 OTP 활성화 상태를 조회한다.
     public OtpStatusResponse otpStatus(String loginId) {
         log.info("otpStatus 시작 - loginId: {}", loginId);
         AcctVo account = getAccountByLoginId(loginId);
         log.info("otpStatus 완료");
-        return new OtpStatusResponse(account.isOtpEnabled());
+        return AuthConvert.toOtpStatusResponse(account.isOtpEnabled());
     }
 
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     private String getDecryptedOtpSecret(AcctVo account) {
         if (account.getOtpSecret() == null || account.getOtpSecret().isBlank()) {
+            log.error("getDecryptedOtpSecret 실패 - 원인: 설정된 OTP 시크릿이 없습니다. loginId={}", account.getLgnId());
             throw new BusinessException(ErrorCode.BAD_REQUEST, "설정된 OTP 시크릿이 없습니다.");
         }
 
@@ -282,7 +290,7 @@ public class AuthService {
                 .build();
         authMapper.insertRefreshToken(refreshTokenVo);
 
-        return new TokenResponse(accessToken, refreshToken, "Bearer", jwtProvider.getAccessTokenExpiresInSeconds());
+        return AuthConvert.toTokenResponse(accessToken, refreshToken, jwtProvider.getAccessTokenExpiresInSeconds());
     }
 
     private String hashToken(String token) {

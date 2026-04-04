@@ -133,7 +133,7 @@ function handleSubmit() {
   height: 18px;
   margin: 0;
   border: 1px solid rgba(147, 210, 255, 0.5);
-  border-radius: 6px;
+  border-radius: 3px;
   background: rgba(255, 255, 255, 0.08);
   display: grid;
   place-items: center;
@@ -160,9 +160,11 @@ function handleSubmit() {
 }
 
 .login-form__group label {
-  color: rgba(147, 210, 255, 0.8);
+  color: rgba(196, 214, 255, 0.86);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  text-transform: uppercase;
 }
 
 .login-form__caps-warning {
@@ -172,44 +174,10 @@ function handleSubmit() {
   line-height: 1.4;
 }
 
-.login-form :deep(.input-field) {
-  min-height: 52px;
-  border-color: rgba(147, 210, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.login-form :deep(.input-field::placeholder) {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.login-form :deep(.input-field:focus) {
-  outline: 2px solid rgba(95, 186, 255, 0.28);
-  border-color: rgba(124, 209, 255, 0.88);
-  box-shadow:
-    0 0 0 4px rgba(15, 92, 158, 0.16),
-    0 10px 24px rgba(5, 28, 52, 0.24);
-}
-
 .login-form :deep(.message-error) {
   border-color: rgba(255, 161, 161, 0.35);
   background: rgba(122, 28, 28, 0.26);
   color: #ffe2e2;
-}
-
-.login-form :deep(.base-button--primary) {
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  background: linear-gradient(135deg, #1a7fc4 0%, #0d5c9e 100%);
-  box-shadow:
-    0 18px 34px rgba(10, 65, 114, 0.34),
-    0 0 24px rgba(26, 127, 196, 0.22);
-}
-
-.login-form :deep(.base-button--primary:hover) {
-  box-shadow:
-    0 20px 36px rgba(10, 65, 114, 0.4),
-    0 0 26px rgba(26, 127, 196, 0.28);
 }
 
 .login-form :deep(.base-button--disabled) {

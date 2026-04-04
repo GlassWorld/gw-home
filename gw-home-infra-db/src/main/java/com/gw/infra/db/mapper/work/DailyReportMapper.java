@@ -1,6 +1,7 @@
 package com.gw.infra.db.mapper.work;
 
 import com.gw.share.jvo.work.DailyReportAdmJvo;
+import com.gw.share.jvo.work.OpenWeeklyReportJvo;
 import com.gw.share.vo.work.DailyReportListSearchVo;
 import com.gw.share.vo.work.DailyReportVo;
 import com.gw.share.vo.work.WorkUnitVo;
@@ -61,6 +62,12 @@ public interface DailyReportMapper {
     WeeklyReportVo selectWeeklyReport(@Param("uuid") String uuid, @Param("mbrAcctIdx") Long mbrAcctIdx);
 
     WeeklyReportVo selectWeeklyReportByIdx(@Param("idx") Long idx);
+
+    List<OpenWeeklyReportJvo> selectOpenWeeklyReportMembers();
+
+    List<OpenWeeklyReportJvo> selectOpenWeeklyReportList(@Param("memberUuid") String memberUuid);
+
+    OpenWeeklyReportJvo selectOpenWeeklyReport(@Param("uuid") String uuid);
 
     void insertWeeklyReport(WeeklyReportVo weeklyReport);
 

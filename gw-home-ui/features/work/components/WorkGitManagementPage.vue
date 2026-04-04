@@ -364,6 +364,11 @@ const {
   align-items: center;
 }
 
+.work-git-page__card-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .work-git-page__filter-row,
 .work-git-page__filter-field {
   display: grid;
@@ -409,6 +414,7 @@ const {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+  align-items: start;
 }
 
 .work-git-page__card-list {
@@ -516,5 +522,6 @@ const {
     display: grid;
     grid-template-columns: 1fr;
   }
+
 }
 </style>

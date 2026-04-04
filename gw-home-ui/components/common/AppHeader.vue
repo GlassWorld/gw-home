@@ -89,18 +89,7 @@ function closeMemo() {
           aria-label="메모 열기"
           @click="openMemo"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7 4.5h10A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5H7A2.5 2.5 0 0 1 4.5 17V7A2.5 2.5 0 0 1 7 4.5Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-linejoin="round"
-              stroke-width="1.7"
-            />
-            <path d="M8 9h8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-            <path d="M8 12h8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-            <path d="M8 15h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-          </svg>
+          <IconsIconMemo />
         </button>
 
         <button
@@ -110,18 +99,7 @@ function closeMemo() {
           :disabled="isSubmitting"
           @click="handleLogout"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M10 4.5H7A2.5 2.5 0 0 0 4.5 7v10A2.5 2.5 0 0 0 7 19.5h3"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.7"
-            />
-            <path d="M13 8.5 17.5 12 13 15.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
-            <path d="M9 12h8.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-          </svg>
+          <IconsIconLogout />
         </button>
       </div>
     </div>
@@ -138,9 +116,11 @@ function closeMemo() {
   position: sticky;
   top: 0;
   z-index: 10;
-  backdrop-filter: blur(14px);
-  background: rgba(10, 22, 40, 0.85);
-  border-bottom: 1px solid rgba(147, 210, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  background: linear-gradient(180deg, rgba(8, 20, 36, 0.58) 0%, rgba(8, 20, 36, 0.42) 100%);
+  border-bottom: 1px solid rgba(147, 210, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(5, 14, 28, 0.12);
 }
 
 .app-header__inner {
@@ -165,18 +145,32 @@ function closeMemo() {
 }
 
 .app-header__menu-button {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #d8f1ff;
+  border: 1px solid rgba(176, 195, 255, 0.26);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
+  color: rgba(236, 246, 255, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -8px 14px rgba(56, 79, 162, 0.2),
+    0 14px 28px rgba(6, 20, 54, 0.28);
+  transition: box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.app-header__menu-button:hover {
+  border-color: rgba(196, 212, 255, 0.34);
+  background: linear-gradient(180deg, rgba(56, 70, 120, 0.96) 0%, rgba(34, 47, 86, 0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -8px 14px rgba(66, 91, 180, 0.24),
+    0 16px 30px rgba(8, 22, 58, 0.32);
 }
 
 .app-header__menu-button span {
@@ -195,15 +189,18 @@ function closeMemo() {
 
 .app-header__profile-link {
   padding: 6px 10px;
-  border-radius: 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   transition:
     background 0.18s ease,
-    box-shadow 0.18s ease;
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .app-header__profile-link:hover {
-  background: rgba(95, 186, 255, 0.08);
-  box-shadow: inset 0 -1px 0 rgba(147, 210, 255, 0.32);
+  border-color: rgba(176, 195, 255, 0.18);
+  background: linear-gradient(180deg, rgba(30, 41, 78, 0.78) 0%, rgba(20, 29, 56, 0.76) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .app-header__favorite-navigation {
@@ -237,21 +234,27 @@ function closeMemo() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #d8f1ff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(176, 195, 255, 0.26);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
+  color: rgba(236, 246, 255, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -8px 14px rgba(56, 79, 162, 0.2),
+    0 14px 28px rgba(6, 20, 54, 0.28);
   transition:
-    transform 0.18s ease,
+    box-shadow 0.18s ease,
     border-color 0.18s ease,
     background 0.18s ease;
 }
 
 .app-header__icon-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  border-color: rgba(147, 210, 255, 0.34);
-  background: rgba(95, 186, 255, 0.14);
+  border-color: rgba(196, 212, 255, 0.34);
+  background: linear-gradient(180deg, rgba(56, 70, 120, 0.96) 0%, rgba(34, 47, 86, 0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -8px 14px rgba(66, 91, 180, 0.24),
+    0 16px 30px rgba(8, 22, 58, 0.32);
 }
 
 .app-header__icon-button:disabled {

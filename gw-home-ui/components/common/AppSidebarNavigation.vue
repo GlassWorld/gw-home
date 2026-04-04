@@ -49,64 +49,34 @@ async function toggleFavorite(path: string) {
 <template>
   <Teleport to="body">
     <div v-if="visible" class="app-sidebar" @keydown.esc="emit('close')">
-      <button type="button" class="app-sidebar__backdrop" aria-label="사이드메뉴 닫기" @click="emit('close')" />
+      <Transition name="app-sidebar-backdrop" appear>
+        <button
+          v-if="visible"
+          type="button"
+          class="app-sidebar__backdrop"
+          aria-label="사이드메뉴 닫기"
+          @click="emit('close')"
+        />
+      </Transition>
 
-      <aside class="app-sidebar__panel">
-        <div class="app-sidebar__header">
-          <div>
-            <p class="app-sidebar__eyebrow">Navigation</p>
-            <h2 class="app-sidebar__title">메뉴</h2>
-          </div>
-          <button type="button" class="app-sidebar__close" aria-label="사이드메뉴 닫기" @click="emit('close')">
-            X
-          </button>
-        </div>
-
-        <nav class="app-sidebar__section">
-          <div
-            v-for="item in primaryNavigationItems"
-            :key="item.to"
-            class="app-sidebar__item"
-          >
-            <button
-              type="button"
-              class="app-sidebar__favorite-button"
-              :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-              :disabled="navigationFavoriteStore.isSaving"
-              :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-              @click.stop="toggleFavorite(item.to)"
-            >
-              {{ isFavorite(item.to) ? '★' : '☆' }}
+      <Transition name="app-sidebar-slide" appear>
+        <aside v-if="visible" class="app-sidebar__panel">
+          <div class="app-sidebar__header">
+            <div>
+              <p class="app-sidebar__eyebrow">Navigation</p>
+              <h2 class="app-sidebar__title">메뉴</h2>
+            </div>
+            <button type="button" class="app-sidebar__close" aria-label="사이드메뉴 닫기" @click="emit('close')">
+              X
             </button>
-            <NuxtLink
-              :to="item.to"
-              class="app-sidebar__link"
-              :class="{ 'app-sidebar__link--active': isActive(item.to) }"
-              @click="emit('close')"
-            >
-              {{ item.label }}
-            </NuxtLink>
           </div>
-        </nav>
 
-        <section class="app-sidebar__admin">
-          <p class="app-sidebar__section-title">개인</p>
           <nav class="app-sidebar__section">
             <div
-              v-for="item in personalNavigationItems"
+              v-for="item in primaryNavigationItems"
               :key="item.to"
               class="app-sidebar__item"
             >
-              <button
-                type="button"
-                class="app-sidebar__favorite-button"
-                :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-                :disabled="navigationFavoriteStore.isSaving"
-                :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-                @click.stop="toggleFavorite(item.to)"
-              >
-                {{ isFavorite(item.to) ? '★' : '☆' }}
-              </button>
               <NuxtLink
                 :to="item.to"
                 class="app-sidebar__link"
@@ -115,45 +85,109 @@ async function toggleFavorite(path: string) {
               >
                 {{ item.label }}
               </NuxtLink>
-            </div>
-          </nav>
-        </section>
-
-        <section v-if="authStore.currentUser?.role === 'ADMIN'" class="app-sidebar__admin">
-          <p class="app-sidebar__section-title">관리자</p>
-          <nav class="app-sidebar__section">
-            <div
-              v-for="item in adminNavigationItems"
-              :key="item.to"
-              class="app-sidebar__item"
-            >
               <button
                 type="button"
                 class="app-sidebar__favorite-button"
                 :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
                 :disabled="navigationFavoriteStore.isSaving"
                 :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                :aria-pressed="isFavorite(item.to)"
                 @click.stop="toggleFavorite(item.to)"
               >
                 {{ isFavorite(item.to) ? '★' : '☆' }}
               </button>
-              <NuxtLink
-                :to="item.to"
-                class="app-sidebar__link"
-                :class="{ 'app-sidebar__link--active': isActive(item.to) }"
-                @click="emit('close')"
-              >
-                {{ item.label }}
-              </NuxtLink>
             </div>
           </nav>
-        </section>
-      </aside>
+
+          <section class="app-sidebar__admin">
+            <p class="app-sidebar__section-title">개인</p>
+            <nav class="app-sidebar__section">
+              <div
+                v-for="item in personalNavigationItems"
+                :key="item.to"
+                class="app-sidebar__item"
+              >
+                <NuxtLink
+                  :to="item.to"
+                  class="app-sidebar__link"
+                  :class="{ 'app-sidebar__link--active': isActive(item.to) }"
+                  @click="emit('close')"
+                >
+                  {{ item.label }}
+                </NuxtLink>
+                <button
+                  type="button"
+                  class="app-sidebar__favorite-button"
+                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                  :disabled="navigationFavoriteStore.isSaving"
+                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                  :aria-pressed="isFavorite(item.to)"
+                  @click.stop="toggleFavorite(item.to)"
+                >
+                  {{ isFavorite(item.to) ? '★' : '☆' }}
+                </button>
+              </div>
+            </nav>
+          </section>
+
+          <section v-if="authStore.currentUser?.role === 'ADMIN'" class="app-sidebar__admin">
+            <p class="app-sidebar__section-title">관리자</p>
+            <nav class="app-sidebar__section">
+              <div
+                v-for="item in adminNavigationItems"
+                :key="item.to"
+                class="app-sidebar__item"
+              >
+                <NuxtLink
+                  :to="item.to"
+                  class="app-sidebar__link"
+                  :class="{ 'app-sidebar__link--active': isActive(item.to) }"
+                  @click="emit('close')"
+                >
+                  {{ item.label }}
+                </NuxtLink>
+                <button
+                  type="button"
+                  class="app-sidebar__favorite-button"
+                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                  :disabled="navigationFavoriteStore.isSaving"
+                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                  :aria-pressed="isFavorite(item.to)"
+                  @click.stop="toggleFavorite(item.to)"
+                >
+                  {{ isFavorite(item.to) ? '★' : '☆' }}
+                </button>
+              </div>
+            </nav>
+          </section>
+        </aside>
+      </Transition>
     </div>
   </Teleport>
 </template>
 
 <style scoped>
+.app-sidebar-backdrop-enter-active,
+.app-sidebar-backdrop-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.app-sidebar-backdrop-enter-from,
+.app-sidebar-backdrop-leave-to {
+  opacity: 0;
+}
+
+.app-sidebar-slide-enter-active,
+.app-sidebar-slide-leave-active {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-sidebar-slide-enter-from,
+.app-sidebar-slide-leave-to {
+  transform: translateX(calc(-100% - 24px));
+}
+
 .app-sidebar {
   position: fixed;
   inset: 0;
@@ -164,7 +198,9 @@ async function toggleFavorite(path: string) {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(4, 14, 26, 0.52);
+  background: rgba(4, 14, 26, 0.34);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .app-sidebar__panel {
@@ -177,11 +213,14 @@ async function toggleFavorite(path: string) {
   display: grid;
   align-content: start;
   gap: 18px;
-  background:
-    linear-gradient(180deg, rgba(5, 21, 38, 0.98), rgba(8, 29, 51, 0.96)),
-    rgba(5, 21, 38, 0.96);
-  border-right: 1px solid rgba(147, 210, 255, 0.16);
-  box-shadow: 20px 0 48px rgba(0, 0, 0, 0.24);
+  background: linear-gradient(180deg, rgba(8, 18, 32, 0.42) 0%, rgba(11, 28, 48, 0.34) 100%);
+  backdrop-filter: blur(26px) saturate(135%);
+  -webkit-backdrop-filter: blur(26px) saturate(135%);
+  border-right: 1px solid rgba(193, 223, 255, 0.12);
+  box-shadow:
+    20px 0 48px rgba(0, 0, 0, 0.1),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  will-change: transform;
 }
 
 .app-sidebar__header {
@@ -213,9 +252,9 @@ async function toggleFavorite(path: string) {
 
 .app-sidebar__item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
 }
 
 .app-sidebar__admin {
@@ -225,53 +264,60 @@ async function toggleFavorite(path: string) {
 
 .app-sidebar__link {
   padding: 12px 14px;
-  border-radius: 14px;
-  color: var(--color-text-muted);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid transparent;
+  border-radius: 8px;
+  color: rgba(236, 246, 255, 0.94);
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(176, 195, 255, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
-    transform 0.18s ease;
+    box-shadow 0.18s ease;
 }
 
 .app-sidebar__link:hover,
 .app-sidebar__link--active {
   color: #f7fbff;
-  border-color: rgba(147, 210, 255, 0.24);
-  background: rgba(95, 186, 255, 0.12);
-  transform: translateX(2px);
+  border-color: rgba(196, 212, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 6px 14px rgba(8, 22, 58, 0.04);
 }
 
 .app-sidebar__close {
   width: 38px;
   height: 38px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #d8f1ff;
+  border: 1px solid rgba(176, 195, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(236, 246, 255, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .app-sidebar__favorite-button {
-  width: 42px;
-  border: 1px solid rgba(147, 210, 255, 0.16);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(216, 241, 255, 0.72);
-  font-size: 1.1rem;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  align-self: center;
+  border: 0;
+  background: transparent;
+  color: rgba(214, 230, 255, 0.42);
+  font-size: 1rem;
+  line-height: 1;
   transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease,
-    color 0.18s ease;
+    color 0.18s ease,
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .app-sidebar__favorite-button:hover:not(:disabled),
 .app-sidebar__favorite-button--active {
-  transform: translateY(-1px);
-  border-color: rgba(255, 210, 120, 0.3);
-  background: rgba(255, 210, 120, 0.12);
   color: #ffd56a;
+  opacity: 1;
+  transform: scale(1.04);
 }
 
 .app-sidebar__favorite-button:disabled {

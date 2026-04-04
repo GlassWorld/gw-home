@@ -30,16 +30,18 @@ defineProps<{
 .board-list-item {
   display: block;
   padding: 20px;
-  border: 1px solid rgba(116, 87, 51, 0.14);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(147, 210, 255, 0.16);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(20, 29, 62, 0.82) 0%, rgba(12, 18, 43, 0.8) 100%);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .board-list-item:hover {
-  transform: translateY(-2px);
-  border-color: rgba(196, 92, 45, 0.24);
-  box-shadow: 0 18px 28px rgba(69, 45, 20, 0.08);
+  transform: none;
+  border-color: rgba(176, 195, 255, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 30px rgba(8, 22, 58, 0.24);
 }
 
 .board-list-item__top {

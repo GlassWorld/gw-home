@@ -9,6 +9,7 @@ import com.gw.api.service.profile.ProfileService;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.RolePolicy;
 import com.gw.share.vo.account.AcctVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,15 +22,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountService {
 
     private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
     private final PasswordEncoder passwordEncoder;
     private final ProfileService profileService;
 
     public AccountService(
             AccountMapper accountMapper,
+            AccountLookupService accountLookupService,
             PasswordEncoder passwordEncoder,
             ProfileService profileService
     ) {
         this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
         this.passwordEncoder = passwordEncoder;
         this.profileService = profileService;
     }
@@ -42,7 +46,7 @@ public class AccountService {
                 .lgnId(request.loginId())
                 .pwd(passwordEncoder.encode(request.password()))
                 .email(request.email())
-                .role("USER")
+                .role(RolePolicy.USER)
                 .createdBy(request.loginId())
                 .build();
 
@@ -112,14 +116,7 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            log.error("getAccountByLoginId 실패 - 원인: 계정을 찾을 수 없습니다. loginId={}", loginId);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     private void validateDuplicate(String loginId, String email) {

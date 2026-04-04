@@ -3,7 +3,7 @@ package com.gw.api.service.vault;
 import com.gw.api.convert.vault.VaultConvert;
 import com.gw.api.dto.vault.CredentialResponse;
 import com.gw.api.dto.vault.SaveCredentialRequest;
-import com.gw.infra.db.mapper.account.AccountMapper;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.vault.VaultCategoryMapper;
 import com.gw.infra.db.mapper.vault.VaultCredentialCategoryMapper;
 import com.gw.infra.db.mapper.vault.VaultMapper;
@@ -20,11 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@Slf4j
 public class VaultService {
 
     private static final Pattern MULTI_WHITESPACE_PATTERN = Pattern.compile("\\s+");
@@ -32,22 +34,24 @@ public class VaultService {
     private final VaultMapper vaultMapper;
     private final VaultCategoryMapper vaultCategoryMapper;
     private final VaultCredentialCategoryMapper vaultCredentialCategoryMapper;
-    private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
 
     public VaultService(
             VaultMapper vaultMapper,
             VaultCategoryMapper vaultCategoryMapper,
             VaultCredentialCategoryMapper vaultCredentialCategoryMapper,
-            AccountMapper accountMapper
+            AccountLookupService accountLookupService
     ) {
         this.vaultMapper = vaultMapper;
         this.vaultCategoryMapper = vaultCategoryMapper;
         this.vaultCredentialCategoryMapper = vaultCredentialCategoryMapper;
-        this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 자격증명 목록을 조회한다.
     public List<CredentialResponse> getCredentialList(String keyword, List<String> categoryUuids, String loginId) {
+        log.info("getCredentialList 시작 - loginId: {}, keyword: {}, categoryUuids: {}", loginId, keyword, categoryUuids);
         AcctVo account = getAccountByLoginId(loginId);
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
         List<CrdVo> credentialList = vaultMapper.selectCredentialList(
@@ -56,22 +60,29 @@ public class VaultService {
                 account.getIdx()
         );
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(credentialList, categoryByIdx);
-
-        return credentialList.stream()
+        List<CredentialResponse> response = credentialList.stream()
                 .map(credential -> VaultConvert.toResponse(credential, categoriesByCredentialIdx))
                 .toList();
+        log.info("getCredentialList 완료 - loginId: {}, count: {}", loginId, response.size());
+        return response;
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 자격증명 상세를 조회한다.
     public CredentialResponse getCredential(String uuid, String loginId) {
+        log.info("getCredential 시작 - loginId: {}, uuid: {}", loginId, uuid);
         AcctVo account = getAccountByLoginId(loginId);
         CrdVo credential = getCredentialVo(uuid, account.getIdx());
         Map<Long, CatVo> categoryByIdx = getCategoryByIdxMap();
         Map<Long, List<CatVo>> categoriesByCredentialIdx = getCategoriesByCredentialIdx(List.of(credential), categoryByIdx);
-        return VaultConvert.toResponse(credential, categoriesByCredentialIdx);
+        CredentialResponse response = VaultConvert.toResponse(credential, categoriesByCredentialIdx);
+        log.info("getCredential 완료 - loginId: {}, uuid: {}", loginId, uuid);
+        return response;
     }
 
+    // 로그인 사용자의 자격증명을 생성한다.
     public CredentialResponse saveCredential(SaveCredentialRequest request, String loginId) {
+        log.info("saveCredential 시작 - loginId: {}, title: {}", loginId, request.title());
         AcctVo account = getAccountByLoginId(loginId);
         List<Long> categoryIdxList = getCategoryIndexes(request.categoryUuids());
 
@@ -86,10 +97,14 @@ public class VaultService {
         vaultMapper.insertCredential(credential);
         replaceCredentialCategoryMappings(credential.getIdx(), categoryIdxList);
 
-        return getCredentialByIndex(credential.getIdx());
+        CredentialResponse response = getCredentialByIndex(credential.getIdx());
+        log.info("saveCredential 완료 - loginId: {}, uuid: {}", loginId, response.credentialUuid());
+        return response;
     }
 
+    // 로그인 사용자의 자격증명을 수정한다.
     public CredentialResponse updateCredential(String uuid, SaveCredentialRequest request, String loginId) {
+        log.info("updateCredential 시작 - loginId: {}, uuid: {}", loginId, uuid);
         AcctVo account = getAccountByLoginId(loginId);
         CrdVo credential = getCredentialVo(uuid, account.getIdx());
         List<Long> categoryIdxList = getCategoryIndexes(request.categoryUuids());
@@ -103,20 +118,26 @@ public class VaultService {
         vaultMapper.updateCredential(credential);
         replaceCredentialCategoryMappings(credential.getIdx(), categoryIdxList);
 
-        return getCredential(uuid, loginId);
+        CredentialResponse response = getCredential(uuid, loginId);
+        log.info("updateCredential 완료 - loginId: {}, uuid: {}", loginId, uuid);
+        return response;
     }
 
+    // 로그인 사용자의 자격증명을 삭제한다.
     public void deleteCredential(String uuid, String loginId) {
+        log.info("deleteCredential 시작 - loginId: {}, uuid: {}", loginId, uuid);
         AcctVo account = getAccountByLoginId(loginId);
         CrdVo credential = getCredentialVo(uuid, account.getIdx());
         vaultCredentialCategoryMapper.deleteCredentialCategoryMappings(credential.getIdx());
         vaultMapper.deleteCredential(uuid, account.getIdx(), loginId);
+        log.info("deleteCredential 완료 - loginId: {}, uuid: {}", loginId, uuid);
     }
 
     private CrdVo getCredentialVo(String uuid, Long mbrAcctIdx) {
         CrdVo credential = vaultMapper.selectCredential(uuid, mbrAcctIdx);
 
         if (credential == null) {
+            log.error("getCredentialVo 실패 - 원인: 자격증명 정보를 찾을 수 없습니다. uuid={}, memberAccountIdx={}", uuid, mbrAcctIdx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "자격증명 정보를 찾을 수 없습니다.");
         }
 
@@ -128,6 +149,7 @@ public class VaultService {
         CrdVo credential = vaultMapper.selectCredentialByIdx(idx);
 
         if (credential == null) {
+            log.error("getCredentialByIndex 실패 - 원인: 자격증명 정보를 찾을 수 없습니다. idx={}", idx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "자격증명 정보를 찾을 수 없습니다.");
         }
 
@@ -137,13 +159,7 @@ public class VaultService {
     }
 
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     private List<String> normalizeKeywordTokens(String keyword) {
@@ -191,6 +207,7 @@ public class VaultService {
             CatVo category = vaultCategoryMapper.selectCategory(categoryUuid);
 
             if (category == null) {
+                log.error("getCategoryIndexes 실패 - 원인: 카테고리를 찾을 수 없습니다. categoryUuid={}", categoryUuid);
                 throw new BusinessException(ErrorCode.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
             }
 

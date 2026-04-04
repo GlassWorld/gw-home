@@ -1,65 +1,142 @@
 <script setup lang="ts">
-import DOMPurify from 'dompurify'
-import { marked } from 'marked'
+import DashboardBoardSection from '~/features/dashboard/components/DashboardBoardSection.vue'
+import DashboardNoticeSection from '~/features/dashboard/components/DashboardNoticeSection.vue'
+import DashboardStatsSection from '~/features/dashboard/components/DashboardStatsSection.vue'
+import DashboardWeeklyReportSection from '~/features/dashboard/components/DashboardWeeklyReportSection.vue'
+import DashboardWorkSection from '~/features/dashboard/components/DashboardWorkSection.vue'
+import NoticeDetailModal from '~/features/notice/components/NoticeDetailModal.vue'
 import type { BoardSummary } from '~/types/api/board'
 import type { NoticeDetail, NoticeSummary } from '~/types/api/notice'
+import type { DailyReport, WeeklyReport, WorkUnit } from '~/features/work/types/work.types'
+import { getWeekRange, isDateInCurrentWeek, sortByDateDesc, formatDate } from '~/utils/date'
 
 definePageMeta({
   middleware: 'auth'
 })
 
-const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const { fetchBoardList } = useBoard()
 const { fetchDashboardNotices, fetchNotice } = useNoticeApi()
+const { fetchWeeklyReports } = useWeeklyReportApi()
+const { fetchDailyReports } = useDailyReportApi()
+const { fetchWorkUnitList } = useWorkUnitApi()
+
 const recentBoards = ref<BoardSummary[]>([])
 const recentNotices = ref<NoticeSummary[]>([])
+const recentWeeklyReports = ref<WeeklyReport[]>([])
+const recentDailyReports = ref<DailyReport[]>([])
+const activeWorkUnits = ref<WorkUnit[]>([])
 const selectedNotice = ref<NoticeDetail | null>(null)
+
 const errorMessage = ref('')
 const noticeErrorMessage = ref('')
+const reportErrorMessage = ref('')
+const workErrorMessage = ref('')
 const detailErrorMessage = ref('')
 const isDetailLoading = ref(false)
+
 const selectedNoticeUuid = computed(() =>
   typeof route.query.noticeUuid === 'string' ? route.query.noticeUuid : ''
 )
 const isDetailModalVisible = computed(() => Boolean(selectedNoticeUuid.value))
 
-try {
-  const [boardResponse, noticeResponse] = await Promise.all([
-    fetchBoardList({
-      page: 1,
-      size: 5,
-      sortBy: 'createdAt',
-      sortDirection: 'DESC'
-    }),
-    fetchDashboardNotices(5)
-  ])
-
-  recentBoards.value = boardResponse.content
-  recentNotices.value = noticeResponse
-} catch (error) {
-  const fetchError = error as { data?: { message?: string } }
-  errorMessage.value = fetchError.data?.message ?? '대시보드 정보를 불러오지 못했습니다.'
+function getReportExcerpt(content: string | null | undefined): string {
+  const normalized = content?.replace(/\s+/g, ' ').trim()
+  return normalized ? normalized.slice(0, 84) : '작성된 요약이 아직 없습니다.'
 }
 
-function renderMarkdown(rawValue: string | null | undefined): string {
-  const normalizedValue = rawValue?.trim()
-
-  if (!normalizedValue) {
-    return '<p>내용이 없습니다.</p>'
+function getWorkStatusLabel(status: WorkUnit['status']): string {
+  if (status === 'DONE') {
+    return '완료'
   }
 
-  const parsedHtml = marked.parse(normalizedValue, { async: false })
-
-  if (!import.meta.client) {
-    return parsedHtml
+  if (status === 'ON_HOLD') {
+    return '보류'
   }
 
-  return DOMPurify.sanitize(parsedHtml)
+  return '진행'
 }
 
-const renderedContent = computed(() => renderMarkdown(selectedNotice.value?.content))
+const [boardResult, noticeResult, weeklyReportResult, dailyReportResult, workUnitResult] = await Promise.allSettled([
+  fetchBoardList({
+    page: 1,
+    size: 4,
+    sortBy: 'createdAt',
+    sortDirection: 'DESC'
+  }),
+  fetchDashboardNotices(4),
+  fetchWeeklyReports(),
+  fetchDailyReports({
+    page: 1,
+    size: 12
+  }),
+  fetchWorkUnitList({
+    useYn: 'Y',
+    sort: 'recent'
+  })
+])
+
+if (boardResult.status === 'fulfilled') {
+  recentBoards.value = boardResult.value.content
+} else {
+  errorMessage.value = '게시글 정보를 불러오지 못했습니다.'
+}
+
+if (noticeResult.status === 'fulfilled') {
+  recentNotices.value = noticeResult.value
+} else {
+  noticeErrorMessage.value = '공지사항 정보를 불러오지 못했습니다.'
+}
+
+if (weeklyReportResult.status === 'fulfilled') {
+  recentWeeklyReports.value = sortByDateDesc(weeklyReportResult.value, item => item.weekEndDate).slice(0, 3)
+} else {
+  reportErrorMessage.value = '주간보고 정보를 불러오지 못했습니다.'
+}
+
+if (dailyReportResult.status === 'fulfilled') {
+  recentDailyReports.value = sortByDateDesc(dailyReportResult.value.content, item => item.reportDate)
+} else if (!reportErrorMessage.value) {
+  reportErrorMessage.value = '일일보고 정보를 불러오지 못했습니다.'
+}
+
+if (workUnitResult.status === 'fulfilled') {
+  activeWorkUnits.value = workUnitResult.value.filter(item => item.useYn === 'Y').slice(0, 4)
+} else {
+  workErrorMessage.value = '업무 정보를 불러오지 못했습니다.'
+}
+
+const currentWeekLabel = computed(() => {
+  const { start, end } = getWeekRange()
+  return `${formatDate(start.toISOString(), { month: 'numeric', day: 'numeric' })} - ${formatDate(end.toISOString(), { month: 'numeric', day: 'numeric' })}`
+})
+
+const reportStats = computed(() => {
+  const thisWeekDailyCount = recentDailyReports.value.filter(report => isDateInCurrentWeek(report.reportDate)).length
+  const thisWeekWorkUnitCount = recentDailyReports.value
+    .filter(report => isDateInCurrentWeek(report.reportDate))
+    .reduce((sum, report) => sum + report.workUnits.length, 0)
+
+  return [
+    {
+      label: '이번 주 일일보고',
+      value: `${thisWeekDailyCount}건`
+    },
+    {
+      label: '주간보고',
+      value: `${recentWeeklyReports.value.length}건`
+    },
+    {
+      label: '활성 업무',
+      value: `${activeWorkUnits.value.length}건`
+    },
+    {
+      label: '보고된 업무',
+      value: `${thisWeekWorkUnitCount}건`
+    }
+  ]
+})
 
 async function loadSelectedNotice(noticeUuid: string) {
   isDetailLoading.value = true
@@ -112,114 +189,40 @@ watch(
 
 <template>
   <main class="page-container dashboard-page">
-    <section class="dashboard-page__hero content-panel">
-      <div>
-        <p class="dashboard-page__eyebrow">Dashboard</p>
-        <h1 class="section-title">{{ authStore.currentUser?.nickname }}님, 다시 오셨네요.</h1>
-        <p class="section-description">
-          {{ authStore.currentUser?.email }} 계정으로 로그인 중이며, 최근 글 흐름을 바로 확인할 수 있습니다.
-        </p>
-      </div>
+    <p v-if="errorMessage && !recentBoards.length && !recentNotices.length" class="message-error">
+      {{ errorMessage }}
+    </p>
 
-      <div class="dashboard-page__profile-card">
-        <span>Login ID</span>
-        <strong>{{ authStore.currentUser?.loginId }}</strong>
-        <span>권한 {{ authStore.currentUser?.role }}</span>
-      </div>
+    <section class="dashboard-page__summary-grid">
+      <DashboardNoticeSection
+        :notices="recentNotices"
+        :error-message="noticeErrorMessage"
+        @open="openNoticeDetail"
+      />
+      <DashboardBoardSection :boards="recentBoards" />
     </section>
 
-    <section class="dashboard-page__section content-panel">
-      <div class="dashboard-page__section-header">
-        <div>
-          <h2>최근 공지</h2>
-          <p class="message-muted">운영 안내와 변경 사항을 먼저 확인하세요.</p>
-        </div>
-        <CommonBaseButton variant="secondary" to="/notices">
-          전체 공지
-        </CommonBaseButton>
-      </div>
-
-      <p v-if="noticeErrorMessage" class="message-error">
-        {{ noticeErrorMessage }}
-      </p>
-      <div v-else-if="recentNotices.length" class="dashboard-page__notice-list">
-        <button
-          v-for="notice in recentNotices"
-          :key="notice.noticeUuid"
-          class="dashboard-page__notice-item"
-          type="button"
-          @click="openNoticeDetail(notice.noticeUuid)"
-        >
-          <strong>{{ notice.title }}</strong>
-          <span>{{ new Date(notice.createdAt).toLocaleDateString() }}</span>
-        </button>
-      </div>
-      <p v-else class="message-muted">
-        표시할 공지사항이 아직 없습니다.
-      </p>
+    <section class="dashboard-page__content-grid">
+      <DashboardWeeklyReportSection
+        :reports="recentWeeklyReports"
+        :error-message="reportErrorMessage"
+        :get-report-excerpt="getReportExcerpt"
+      />
+      <DashboardStatsSection :current-week-label="currentWeekLabel" :stats="reportStats" />
+      <DashboardWorkSection
+        :work-units="activeWorkUnits"
+        :error-message="workErrorMessage"
+        :get-work-status-label="getWorkStatusLabel"
+      />
     </section>
 
-    <section class="dashboard-page__section content-panel">
-      <div class="dashboard-page__section-header">
-        <div>
-          <h2>최근 게시글</h2>
-          <p class="message-muted">최신 5건을 먼저 보여줍니다.</p>
-        </div>
-
-        <div class="dashboard-page__actions">
-          <CommonBaseButton variant="secondary" to="/board">
-            전체 게시글
-          </CommonBaseButton>
-          <CommonBaseButton to="/board/create">
-            게시글 작성
-          </CommonBaseButton>
-        </div>
-      </div>
-
-      <p v-if="errorMessage" class="message-error">
-        {{ errorMessage }}
-      </p>
-
-      <div v-else-if="recentBoards.length" class="dashboard-page__board-list">
-        <BoardBoardListItem
-          v-for="board in recentBoards"
-          :key="board.boardPostUuid"
-          :board="board"
-        />
-      </div>
-
-      <p v-else class="message-muted">
-        표시할 게시글이 아직 없습니다.
-      </p>
-    </section>
-
-    <CommonBaseModal
+    <NoticeDetailModal
       :visible="isDetailModalVisible"
-      :title="selectedNotice?.title ?? '공지사항 상세'"
-      eyebrow="Notice"
-      width="min(920px, 100%)"
+      :notice="selectedNotice"
+      :is-loading="isDetailLoading"
+      :error-message="detailErrorMessage"
       @close="closeNoticeDetail"
-    >
-      <p v-if="detailErrorMessage" class="message-error">
-        {{ detailErrorMessage }}
-      </p>
-
-      <p v-else-if="isDetailLoading" class="message-muted">
-        공지사항 상세를 불러오는 중입니다.
-      </p>
-
-      <template v-else-if="selectedNotice">
-        <header class="dashboard-page__notice-detail-header">
-          <div class="meta-row">
-            <span>작성 {{ selectedNotice.createdBy || '관리자' }}</span>
-            <span>등록일 {{ new Date(selectedNotice.createdAt).toLocaleString() }}</span>
-            <span>조회 {{ selectedNotice.viewCount }}</span>
-          </div>
-        </header>
-
-        <article class="dashboard-page__notice-detail-content" v-html="renderedContent" />
-      </template>
-    </CommonBaseModal>
+    />
   </main>
 </template>
 
@@ -229,153 +232,30 @@ watch(
   gap: 24px;
 }
 
-.dashboard-page__hero,
-.dashboard-page__section {
-  padding: 28px;
-}
-
-.dashboard-page__hero {
+.dashboard-page__summary-grid,
+.dashboard-page__content-grid {
   display: grid;
-  grid-template-columns: 1.3fr 0.7fr;
-  gap: 20px;
-  align-items: center;
+  gap: 24px;
 }
 
-.dashboard-page__eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-accent);
-  font-weight: 700;
+.dashboard-page__summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.dashboard-page__profile-card {
-  display: grid;
-  gap: 8px;
-  padding: 20px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.06);
+.dashboard-page__content-grid {
+  grid-template-columns: 1.15fr 0.85fr 0.9fr;
+  align-items: start;
 }
 
-.dashboard-page__profile-card span {
-  color: var(--color-text-muted);
-}
-
-.dashboard-page__profile-card strong {
-  font-size: 1.4rem;
-}
-
-.dashboard-page__section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 18px;
-}
-
-.dashboard-page__section-header h2 {
-  margin: 0;
-}
-
-.dashboard-page__actions,
-.dashboard-page__board-list,
-.dashboard-page__notice-list {
-  display: grid;
-  gap: 14px;
-}
-
-.dashboard-page__notice-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(147, 210, 255, 0.12);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dashboard-page__notice-item span {
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
-.dashboard-page__notice-item:hover {
-  transform: translateY(-1px);
-  border-color: rgba(147, 210, 255, 0.26);
-}
-
-.dashboard-page__notice-item:focus-visible {
-  outline: 2px solid rgba(110, 193, 255, 0.24);
-  outline-offset: 2px;
-}
-
-.dashboard-page__notice-detail-header {
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.dashboard-page__notice-detail-content {
-  line-height: 1.7;
-  word-break: break-word;
-}
-
-.dashboard-page__notice-detail-content:deep(p:first-child) {
-  margin-top: 0;
-}
-
-.dashboard-page__notice-detail-content:deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.dashboard-page__notice-detail-content:deep(code) {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.dashboard-page__notice-detail-content:deep(pre) {
-  margin: 12px 0 0;
-  padding: 14px;
-  overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.dashboard-page__notice-detail-content:deep(pre code) {
-  padding: 0;
-  background: transparent;
-}
-
-.dashboard-page__notice-detail-content:deep(a) {
-  color: #8bd0ff;
-  text-decoration: underline;
-}
-
-.dashboard-page__notice-detail-content:deep(ul),
-.dashboard-page__notice-detail-content:deep(ol) {
-  padding-left: 20px;
+@media (max-width: 1080px) {
+  .dashboard-page__content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .dashboard-page__hero {
+  .dashboard-page__summary-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dashboard-page__section-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dashboard-page__notice-item {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 </style>

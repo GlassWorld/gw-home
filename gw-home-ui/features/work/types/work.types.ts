@@ -173,6 +173,20 @@ export interface WeeklyReport {
   updatedAt: string
 }
 
+export interface OpenWeeklyReportMember {
+  memberUuid: string
+  loginId: string
+  nickname: string | null
+  openReportCount: number
+  lastPublishedAt: string | null
+}
+
+export interface OpenWeeklyReport extends WeeklyReport {
+  memberUuid: string
+  loginId: string
+  nickname: string | null
+}
+
 export interface SaveWeeklyReportPayload {
   weekStartDate: string
   weekEndDate: string
