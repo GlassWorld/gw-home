@@ -21,7 +21,7 @@ services:
     depends_on:
       - db
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: dev
       DB_URL: jdbc:postgresql://db:5432/gw?currentSchema=home
       DB_USERNAME: gw
       DB_PASSWORD: ${DB_PASSWORD}

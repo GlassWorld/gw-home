@@ -4,6 +4,7 @@ services:
     container_name: gw-fe-app
     restart: always
     environment:
+      NODE_ENV: development
       NUXT_PUBLIC_API_BASE: /api
     networks:
       app-network:
