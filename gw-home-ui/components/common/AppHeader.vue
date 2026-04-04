@@ -89,18 +89,7 @@ function closeMemo() {
           aria-label="메모 열기"
           @click="openMemo"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7 4.5h10A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5H7A2.5 2.5 0 0 1 4.5 17V7A2.5 2.5 0 0 1 7 4.5Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-linejoin="round"
-              stroke-width="1.7"
-            />
-            <path d="M8 9h8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-            <path d="M8 12h8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-            <path d="M8 15h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-          </svg>
+          <IconsIconMemo />
         </button>
 
         <button
@@ -110,18 +99,7 @@ function closeMemo() {
           :disabled="isSubmitting"
           @click="handleLogout"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M10 4.5H7A2.5 2.5 0 0 0 4.5 7v10A2.5 2.5 0 0 0 7 19.5h3"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.7"
-            />
-            <path d="M13 8.5 17.5 12 13 15.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
-            <path d="M9 12h8.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" />
-          </svg>
+          <IconsIconLogout />
         </button>
       </div>
     </div>

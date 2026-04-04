@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import DOMPurify from 'dompurify'
-import { marked } from 'marked'
+import DashboardBoardSection from '~/features/dashboard/components/DashboardBoardSection.vue'
+import DashboardNoticeSection from '~/features/dashboard/components/DashboardNoticeSection.vue'
+import DashboardStatsSection from '~/features/dashboard/components/DashboardStatsSection.vue'
+import DashboardWeeklyReportSection from '~/features/dashboard/components/DashboardWeeklyReportSection.vue'
+import DashboardWorkSection from '~/features/dashboard/components/DashboardWorkSection.vue'
+import NoticeDetailModal from '~/features/notice/components/NoticeDetailModal.vue'
 import type { BoardSummary } from '~/types/api/board'
 import type { NoticeDetail, NoticeSummary } from '~/types/api/notice'
 import type { DailyReport, WeeklyReport, WorkUnit } from '~/features/work/types/work.types'
+import { getWeekRange, isDateInCurrentWeek, sortByDateDesc, formatDate } from '~/utils/date'
 
 definePageMeta({
   middleware: 'auth'
@@ -35,70 +40,6 @@ const selectedNoticeUuid = computed(() =>
   typeof route.query.noticeUuid === 'string' ? route.query.noticeUuid : ''
 )
 const isDetailModalVisible = computed(() => Boolean(selectedNoticeUuid.value))
-
-function sortByDateDesc<T>(items: T[], selector: (item: T) => string): T[] {
-  return [...items].sort((left, right) => {
-    return new Date(selector(right)).getTime() - new Date(selector(left)).getTime()
-  })
-}
-
-function getWeekRange(date = new Date()) {
-  const current = new Date(date)
-  const day = current.getDay()
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const start = new Date(current)
-  start.setDate(current.getDate() + diffToMonday)
-  start.setHours(0, 0, 0, 0)
-
-  const end = new Date(start)
-  end.setDate(start.getDate() + 6)
-  end.setHours(23, 59, 59, 999)
-
-  return { start, end }
-}
-
-function isDateInCurrentWeek(value: string): boolean {
-  if (!value) {
-    return false
-  }
-
-  const target = new Date(value)
-
-  if (Number.isNaN(target.getTime())) {
-    return false
-  }
-
-  const { start, end } = getWeekRange()
-  return target >= start && target <= end
-}
-
-function formatDate(value: string | null | undefined, options?: Intl.DateTimeFormatOptions): string {
-  if (!value) {
-    return '-'
-  }
-
-  const parsedDate = new Date(value)
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return '-'
-  }
-
-  return parsedDate.toLocaleDateString('ko-KR', options)
-}
-
-function formatDateTime(value: string | null | undefined): string {
-  if (!value) {
-    return '-'
-  }
-
-  const parsedDate = new Date(value)
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return '-'
-  }
-
-  return parsedDate.toLocaleString('ko-KR')
-}
 
 function getReportExcerpt(content: string | null | undefined): string {
   const normalized = content?.replace(/\s+/g, ' ').trim()
@@ -197,24 +138,6 @@ const reportStats = computed(() => {
   ]
 })
 
-function renderMarkdown(rawValue: string | null | undefined): string {
-  const normalizedValue = rawValue?.trim()
-
-  if (!normalizedValue) {
-    return '<p>내용이 없습니다.</p>'
-  }
-
-  const parsedHtml = marked.parse(normalizedValue, { async: false })
-
-  if (!import.meta.client) {
-    return parsedHtml
-  }
-
-  return DOMPurify.sanitize(parsedHtml)
-}
-
-const renderedContent = computed(() => renderMarkdown(selectedNotice.value?.content))
-
 async function loadSelectedNotice(noticeUuid: string) {
   isDetailLoading.value = true
   detailErrorMessage.value = ''
@@ -271,179 +194,35 @@ watch(
     </p>
 
     <section class="dashboard-page__summary-grid">
-      <article class="dashboard-page__section content-panel">
-        <div class="dashboard-page__section-header">
-          <div>
-            <h2>공지사항</h2>
-            <p class="message-muted">최신 안내 4건</p>
-          </div>
-          <CommonBaseButton variant="secondary" to="/notices">
-            전체
-          </CommonBaseButton>
-        </div>
-
-        <p v-if="noticeErrorMessage" class="message-error">
-          {{ noticeErrorMessage }}
-        </p>
-        <div v-else-if="recentNotices.length" class="dashboard-page__compact-list">
-          <button
-            v-for="notice in recentNotices"
-            :key="notice.noticeUuid"
-            class="dashboard-page__compact-item"
-            type="button"
-            @click="openNoticeDetail(notice.noticeUuid)"
-          >
-            <strong>{{ notice.title }}</strong>
-            <span>{{ formatDate(notice.createdAt, { month: 'numeric', day: 'numeric' }) }}</span>
-          </button>
-        </div>
-        <p v-else class="message-muted">
-          공지사항이 없습니다.
-        </p>
-      </article>
-
-      <article class="dashboard-page__section content-panel">
-        <div class="dashboard-page__section-header">
-          <div>
-            <h2>게시글</h2>
-            <p class="message-muted">최근 등록 4건</p>
-          </div>
-          <CommonBaseButton variant="secondary" to="/board">
-            전체
-          </CommonBaseButton>
-        </div>
-
-        <div v-if="recentBoards.length" class="dashboard-page__compact-list">
-          <NuxtLink
-            v-for="board in recentBoards"
-            :key="board.boardPostUuid"
-            class="dashboard-page__compact-item dashboard-page__compact-item--link"
-            :to="`/board/${board.boardPostUuid}`"
-          >
-            <strong>{{ board.title }}</strong>
-            <span>{{ board.author }} · 댓글 {{ board.commentCount }}</span>
-          </NuxtLink>
-        </div>
-        <p v-else class="message-muted">
-          게시글이 없습니다.
-        </p>
-      </article>
+      <DashboardNoticeSection
+        :notices="recentNotices"
+        :error-message="noticeErrorMessage"
+        @open="openNoticeDetail"
+      />
+      <DashboardBoardSection :boards="recentBoards" />
     </section>
 
     <section class="dashboard-page__content-grid">
-      <article class="dashboard-page__section content-panel">
-        <div class="dashboard-page__section-header">
-          <div>
-            <h2>주간보고</h2>
-            <p class="message-muted">최근 작성 내역</p>
-          </div>
-          <CommonBaseButton variant="secondary" to="/work/weekly-reports">
-            이동
-          </CommonBaseButton>
-        </div>
-
-        <p v-if="reportErrorMessage" class="message-error">
-          {{ reportErrorMessage }}
-        </p>
-        <div v-else-if="recentWeeklyReports.length" class="dashboard-page__report-list">
-          <article
-            v-for="weeklyReport in recentWeeklyReports"
-            :key="weeklyReport.uuid"
-            class="dashboard-page__report-card"
-          >
-            <div class="dashboard-page__report-card-header">
-              <strong>{{ weeklyReport.title }}</strong>
-              <span>{{ formatDate(weeklyReport.weekEndDate, { month: 'numeric', day: 'numeric' }) }}</span>
-            </div>
-            <p>{{ getReportExcerpt(weeklyReport.content) }}</p>
-          </article>
-        </div>
-        <p v-else class="message-muted">
-          주간보고가 없습니다.
-        </p>
-      </article>
-
-      <article class="dashboard-page__section content-panel">
-        <div class="dashboard-page__section-header">
-          <div>
-            <h2>보고통계</h2>
-            <p class="message-muted">{{ currentWeekLabel }}</p>
-          </div>
-        </div>
-
-        <div class="dashboard-page__stat-grid">
-          <div
-            v-for="stat in reportStats"
-            :key="stat.label"
-            class="dashboard-page__stat-card"
-          >
-            <span>{{ stat.label }}</span>
-            <strong>{{ stat.value }}</strong>
-          </div>
-        </div>
-      </article>
-
-      <article class="dashboard-page__section content-panel">
-        <div class="dashboard-page__section-header">
-          <div>
-            <h2>활성화된 업무내역</h2>
-            <p class="message-muted">최근 사용 기준 4건</p>
-          </div>
-          <CommonBaseButton variant="secondary" to="/work">
-            전체
-          </CommonBaseButton>
-        </div>
-
-        <p v-if="workErrorMessage" class="message-error">
-          {{ workErrorMessage }}
-        </p>
-        <div v-else-if="activeWorkUnits.length" class="dashboard-page__work-list">
-          <article
-            v-for="workUnit in activeWorkUnits"
-            :key="workUnit.workUnitUuid"
-            class="dashboard-page__work-item"
-          >
-            <div class="dashboard-page__work-item-header">
-              <strong>{{ workUnit.title }}</strong>
-              <span>{{ getWorkStatusLabel(workUnit.status) }}</span>
-            </div>
-            <p>{{ workUnit.category || '카테고리 없음' }}</p>
-            <small>사용 {{ workUnit.useCount }}회 · 최근 {{ formatDate(workUnit.lastUsedAt) }}</small>
-          </article>
-        </div>
-        <p v-else class="message-muted">
-          활성화된 업무가 없습니다.
-        </p>
-      </article>
+      <DashboardWeeklyReportSection
+        :reports="recentWeeklyReports"
+        :error-message="reportErrorMessage"
+        :get-report-excerpt="getReportExcerpt"
+      />
+      <DashboardStatsSection :current-week-label="currentWeekLabel" :stats="reportStats" />
+      <DashboardWorkSection
+        :work-units="activeWorkUnits"
+        :error-message="workErrorMessage"
+        :get-work-status-label="getWorkStatusLabel"
+      />
     </section>
 
-    <CommonBaseModal
+    <NoticeDetailModal
       :visible="isDetailModalVisible"
-      :title="selectedNotice?.title ?? '공지사항 상세'"
-      eyebrow="Notice"
-      width="min(920px, 100%)"
+      :notice="selectedNotice"
+      :is-loading="isDetailLoading"
+      :error-message="detailErrorMessage"
       @close="closeNoticeDetail"
-    >
-      <p v-if="detailErrorMessage" class="message-error">
-        {{ detailErrorMessage }}
-      </p>
-
-      <p v-else-if="isDetailLoading" class="message-muted">
-        공지사항 상세를 불러오는 중입니다.
-      </p>
-
-      <template v-else-if="selectedNotice">
-        <header class="dashboard-page__notice-detail-header">
-          <div class="meta-row">
-            <span>작성 {{ selectedNotice.createdBy || '관리자' }}</span>
-            <span>등록일 {{ formatDateTime(selectedNotice.createdAt) }}</span>
-            <span>조회 {{ selectedNotice.viewCount }}</span>
-          </div>
-        </header>
-
-        <article class="dashboard-page__notice-detail-content" v-html="renderedContent" />
-      </template>
-    </CommonBaseModal>
+    />
   </main>
 </template>
 
@@ -468,170 +247,6 @@ watch(
   align-items: start;
 }
 
-.dashboard-page__section {
-  padding: 24px;
-}
-
-.dashboard-page__section-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.dashboard-page__section-header h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.dashboard-page__section-header p {
-  margin: 6px 0 0;
-}
-
-.dashboard-page__compact-list,
-.dashboard-page__report-list,
-.dashboard-page__work-list {
-  display: grid;
-  gap: 12px;
-}
-
-.dashboard-page__compact-item,
-.dashboard-page__report-card,
-.dashboard-page__work-item {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.dashboard-page__compact-item {
-  width: 100%;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dashboard-page__compact-item--link {
-  text-decoration: none;
-}
-
-.dashboard-page__compact-item strong,
-.dashboard-page__report-card strong,
-.dashboard-page__work-item strong {
-  font-size: 0.96rem;
-  line-height: 1.4;
-}
-
-.dashboard-page__compact-item span,
-.dashboard-page__report-card span,
-.dashboard-page__work-item p,
-.dashboard-page__work-item small {
-  color: var(--color-text-muted);
-}
-
-.dashboard-page__compact-item:hover,
-.dashboard-page__compact-item--link:hover {
-  border-color: rgba(147, 210, 255, 0.24);
-}
-
-.dashboard-page__compact-item:focus-visible {
-  outline: 2px solid rgba(110, 193, 255, 0.24);
-  outline-offset: 2px;
-}
-
-.dashboard-page__report-card-header,
-.dashboard-page__work-item-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.dashboard-page__report-card p,
-.dashboard-page__work-item p,
-.dashboard-page__work-item small {
-  margin: 0;
-  line-height: 1.5;
-}
-
-.dashboard-page__stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.dashboard-page__stat-card {
-  display: grid;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid rgba(147, 210, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.dashboard-page__stat-card span {
-  color: var(--color-text-muted);
-  font-size: 0.88rem;
-}
-
-.dashboard-page__stat-card strong {
-  font-size: 1.32rem;
-}
-
-.dashboard-page__notice-detail-header {
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.dashboard-page__notice-detail-content {
-  line-height: 1.7;
-  word-break: break-word;
-}
-
-.dashboard-page__notice-detail-content:deep(p:first-child) {
-  margin-top: 0;
-}
-
-.dashboard-page__notice-detail-content:deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.dashboard-page__notice-detail-content:deep(code) {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.dashboard-page__notice-detail-content:deep(pre) {
-  margin: 12px 0 0;
-  padding: 14px;
-  overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.dashboard-page__notice-detail-content:deep(pre code) {
-  padding: 0;
-  background: transparent;
-}
-
-.dashboard-page__notice-detail-content:deep(a) {
-  color: #8bd0ff;
-  text-decoration: underline;
-}
-
-.dashboard-page__notice-detail-content:deep(ul),
-.dashboard-page__notice-detail-content:deep(ol) {
-  padding-left: 20px;
-}
-
 @media (max-width: 1080px) {
   .dashboard-page__content-grid {
     grid-template-columns: 1fr;
@@ -639,26 +254,8 @@ watch(
 }
 
 @media (max-width: 768px) {
-  .dashboard-page__summary-grid,
-  .dashboard-page__stat-grid {
+  .dashboard-page__summary-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dashboard-page__section-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dashboard-page__compact-item,
-  .dashboard-page__report-card-header,
-  .dashboard-page__work-item-header {
-    gap: 8px;
-  }
-
-  .dashboard-page__report-card-header,
-  .dashboard-page__work-item-header {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 </style>

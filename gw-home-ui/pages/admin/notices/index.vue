@@ -1,197 +1,43 @@
 <script setup lang="ts">
-import DOMPurify from 'dompurify'
-import { marked } from 'marked'
-import type { NoticeDetail, NoticeSummary, SaveNoticeForm } from '~/types/api/notice'
+import NoticeDetailModal from '~/features/notice/components/NoticeDetailModal.vue'
+import { useAdminNoticeManagement } from '~/features/admin/composables/use-admin-notice-management'
 
 definePageMeta({
   middleware: 'admin'
 })
 
-const { fetchAdminNoticeList, createNotice, updateNotice, deleteNotice, fetchAdminNotice } = useNoticeApi()
-const { showToast } = useToast()
-const { confirm } = useDialog()
-
-const noticeList = ref<NoticeSummary[]>([])
-const keyword = ref('')
-const page = ref(1)
-const totalPages = ref(0)
-const isSubmitting = ref(false)
-const isLoading = ref(false)
-const isPreviewLoading = ref(false)
-const isEditorVisible = ref(false)
-const editingNoticeUuid = ref('')
-const previewNotice = ref<NoticeDetail | null>(null)
-const previewNoticeUuid = ref('')
-const formState = reactive<SaveNoticeForm>({
-  title: '',
-  content: ''
-})
-
-function renderMarkdown(rawValue: string | null | undefined): string {
-  const normalizedValue = rawValue?.trim()
-
-  if (!normalizedValue) {
-    return '<p>내용이 없습니다.</p>'
-  }
-
-  const parsedHtml = marked.parse(normalizedValue, { async: false })
-
-  if (!import.meta.client) {
-    return parsedHtml
-  }
-
-  return DOMPurify.sanitize(parsedHtml)
-}
-
-const renderedPreviewContent = computed(() => renderMarkdown(previewNotice.value?.content))
-
-async function loadNoticeList() {
-  isLoading.value = true
-
-  try {
-    const response = await fetchAdminNoticeList({
-      keyword: keyword.value || undefined,
-      page: page.value,
-      size: 10,
-      sortBy: 'createdAt',
-      sortDirection: 'DESC'
-    })
-
-    noticeList.value = response.content
-    totalPages.value = response.totalPages
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    noticeList.value = []
-    showToast(fetchError.data?.message ?? '공지 목록을 불러오지 못했습니다.', { variant: 'error' })
-  } finally {
-    isLoading.value = false
-  }
-}
-
-function resetForm() {
-  editingNoticeUuid.value = ''
-  formState.title = ''
-  formState.content = ''
-}
-
-function openCreateModal() {
-  resetForm()
-  isEditorVisible.value = true
-}
-
-function closeEditorModal() {
-  isEditorVisible.value = false
-  resetForm()
-}
-
-async function startEdit(noticeUuid: string) {
-  try {
-    const notice = await fetchAdminNotice(noticeUuid)
-    editingNoticeUuid.value = notice.noticeUuid
-    formState.title = notice.title
-    formState.content = notice.content
-    isEditorVisible.value = true
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '공지 상세를 불러오지 못했습니다.', { variant: 'error' })
-  }
-}
-
-async function openPreview(noticeUuid: string) {
-  isPreviewLoading.value = true
-  previewNoticeUuid.value = noticeUuid
-  previewNotice.value = null
-
-  try {
-    previewNotice.value = await fetchAdminNotice(noticeUuid)
-  } catch (error) {
-    previewNoticeUuid.value = ''
-    const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '공지 상세를 불러오지 못했습니다.', { variant: 'error' })
-  } finally {
-    isPreviewLoading.value = false
-  }
-}
-
-function closePreview() {
-  previewNoticeUuid.value = ''
-  previewNotice.value = null
-  isPreviewLoading.value = false
-}
-
-async function handleSubmit() {
-  if (isSubmitting.value) {
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    const payload: SaveNoticeForm = {
-      title: formState.title.trim(),
-      content: formState.content.trim()
-    }
-
-    if (editingNoticeUuid.value) {
-      await updateNotice(editingNoticeUuid.value, payload)
-      showToast('공지사항을 수정했습니다.', { variant: 'success' })
-    } else {
-      await createNotice(payload)
-      showToast('공지사항을 등록했습니다.', { variant: 'success' })
-    }
-
-    closeEditorModal()
-    await loadNoticeList()
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '공지사항 저장에 실패했습니다.', { variant: 'error' })
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-async function handleDelete(noticeUuid: string) {
-  const shouldDelete = await confirm('공지사항을 삭제할까요?', {
-    title: '공지사항 삭제',
-    confirmText: '삭제',
-    cancelText: '취소'
-  })
-
-  if (!shouldDelete) {
-    return
-  }
-
-  try {
-    await deleteNotice(noticeUuid)
-    showToast('공지사항을 삭제했습니다.', { variant: 'success' })
-
-    if (editingNoticeUuid.value === noticeUuid) {
-      resetForm()
-    }
-
-    await loadNoticeList()
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '공지사항 삭제에 실패했습니다.', { variant: 'error' })
-  }
-}
-
-async function handleSearch() {
-  page.value = 1
-  await loadNoticeList()
-}
-
-async function movePage(nextPage: number) {
-  page.value = nextPage
-  await loadNoticeList()
-}
+const {
+  noticeList,
+  keyword,
+  page,
+  totalPages,
+  isSubmitting,
+  isLoading,
+  isPreviewLoading,
+  isEditorVisible,
+  editingNoticeUuid,
+  previewNotice,
+  previewNoticeUuid,
+  formState,
+  formatDateTime,
+  loadNoticeList,
+  openCreateModal,
+  closeEditorModal,
+  startEdit,
+  openPreview,
+  closePreview,
+  handleSubmit,
+  handleDelete,
+  handleSearch,
+  movePage
+} = useAdminNoticeManagement()
 
 await loadNoticeList()
 </script>
 
 <template>
   <main class="page-container notice-admin-page">
-    <section class="content-panel notice-admin-page__panel">
+    <section class="content-panel notice-admin-page__panel page-panel-padding-md">
       <div class="notice-admin-page__header">
         <div>
           <p class="notice-admin-page__eyebrow">Admin</p>
@@ -203,7 +49,7 @@ await loadNoticeList()
       </div>
     </section>
 
-    <section class="content-panel notice-admin-page__panel">
+    <section class="content-panel notice-admin-page__panel page-panel-padding-md">
       <div class="notice-admin-page__toolbar">
         <form class="notice-admin-page__search" @submit.prevent="handleSearch">
           <input v-model="keyword" class="input-field" type="search" placeholder="공지 제목 검색">
@@ -226,7 +72,7 @@ await loadNoticeList()
           <div class="notice-admin-page__item-main">
             <strong>{{ notice.title }}</strong>
             <div class="meta-row">
-              <span>{{ new Date(notice.createdAt).toLocaleString() }}</span>
+              <span>{{ formatDateTime(notice.createdAt) }}</span>
               <span>조회 {{ notice.viewCount }}</span>
             </div>
           </div>
@@ -297,29 +143,13 @@ await loadNoticeList()
       </form>
     </CommonBaseModal>
 
-    <CommonBaseModal
+    <NoticeDetailModal
       :visible="Boolean(previewNoticeUuid)"
-      :title="previewNotice?.title ?? '공지사항 미리보기'"
-      eyebrow="Notice Preview"
-      width="min(920px, 100%)"
+      :notice="previewNotice"
+      :is-loading="isPreviewLoading"
+      error-message=""
       @close="closePreview"
-    >
-      <p v-if="isPreviewLoading" class="message-muted">
-        공지사항 상세를 불러오는 중입니다.
-      </p>
-
-      <template v-else-if="previewNotice">
-        <header class="notice-admin-page__preview-header">
-          <div class="meta-row">
-            <span>작성 {{ previewNotice.createdBy || '관리자' }}</span>
-            <span>등록일 {{ new Date(previewNotice.createdAt).toLocaleString() }}</span>
-            <span>조회 {{ previewNotice.viewCount }}</span>
-          </div>
-        </header>
-
-        <article class="notice-admin-page__preview-content" v-html="renderedPreviewContent" />
-      </template>
-    </CommonBaseModal>
+    />
   </main>
 </template>
 
@@ -327,10 +157,6 @@ await loadNoticeList()
 .notice-admin-page {
   display: grid;
   gap: 24px;
-}
-
-.notice-admin-page__panel {
-  padding: 22px;
 }
 
 .notice-admin-page__header {
@@ -417,56 +243,6 @@ await loadNoticeList()
 
 .notice-admin-page__detail-link:hover {
   border-color: rgba(147, 210, 255, 0.3);
-}
-
-.notice-admin-page__preview-header {
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.notice-admin-page__preview-content {
-  line-height: 1.7;
-  word-break: break-word;
-}
-
-.notice-admin-page__preview-content:deep(p:first-child) {
-  margin-top: 0;
-}
-
-.notice-admin-page__preview-content:deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.notice-admin-page__preview-content:deep(code) {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.notice-admin-page__preview-content:deep(pre) {
-  margin: 12px 0 0;
-  padding: 14px;
-  overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
-}
-
-.notice-admin-page__preview-content:deep(pre code) {
-  padding: 0;
-  background: transparent;
-}
-
-.notice-admin-page__preview-content:deep(a) {
-  color: #8bd0ff;
-  text-decoration: underline;
-}
-
-.notice-admin-page__preview-content:deep(ul),
-.notice-admin-page__preview-content:deep(ol) {
-  padding-left: 20px;
 }
 
 .notice-admin-page__pagination {

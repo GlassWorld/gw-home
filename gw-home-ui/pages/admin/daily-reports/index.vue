@@ -1,112 +1,28 @@
 <script setup lang="ts">
-import type { AdminDailyReport, AdminDailyReportMissing } from '~/types/work'
+import { useAdminDailyReportManagement } from '~/features/admin/composables/use-admin-daily-report-management'
 
 definePageMeta({
   middleware: 'admin'
 })
 
-const { fetchAdminDailyReports, fetchAdminMissingDailyReports } = useDailyReportApi()
-const { showToast } = useToast()
-
-function formatDateInput(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function getMonthStartInput(): string {
-  const now = new Date()
-  return formatDateInput(new Date(now.getFullYear(), now.getMonth(), 1))
-}
-
-function formatDate(value: string | null): string {
-  if (!value) {
-    return '-'
-  }
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(new Date(value))
-}
-
-const filters = reactive({
-  dateFrom: getMonthStartInput(),
-  dateTo: formatDateInput(new Date()),
-  keyword: '',
-  page: 1,
-  size: 20
-})
-
-const dailyReportPage = ref({
-  content: [] as AdminDailyReport[],
-  page: 1,
-  size: 20,
-  totalCount: 0,
-  totalPages: 0
-})
-const missingMembers = ref<AdminDailyReportMissing[]>([])
-const isLoading = ref(false)
-
-async function loadDailyReports() {
-  isLoading.value = true
-
-  try {
-    dailyReportPage.value = await fetchAdminDailyReports({
-      dateFrom: filters.dateFrom,
-      dateTo: filters.dateTo,
-      keyword: filters.keyword.trim() || undefined,
-      page: filters.page,
-      size: filters.size
-    })
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    dailyReportPage.value.content = []
-    showToast(fetchError.data?.message ?? '관리자 일일보고 목록을 불러오지 못했습니다.', { variant: 'error' })
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function loadMissingMembers() {
-  try {
-    missingMembers.value = await fetchAdminMissingDailyReports({
-      dateFrom: filters.dateFrom,
-      dateTo: filters.dateTo
-    })
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    missingMembers.value = []
-    showToast(fetchError.data?.message ?? '누락 현황을 불러오지 못했습니다.', { variant: 'error' })
-  }
-}
-
-async function reloadAll() {
-  await Promise.all([loadDailyReports(), loadMissingMembers()])
-}
-
-async function handleSearch() {
-  filters.page = 1
-  await reloadAll()
-}
-
-async function movePage(nextPage: number) {
-  if (nextPage < 1 || nextPage > Math.max(dailyReportPage.value.totalPages, 1) || nextPage === filters.page) {
-    return
-  }
-
-  filters.page = nextPage
-  await loadDailyReports()
-}
+const {
+  filters,
+  dailyReportPage,
+  missingMembers,
+  isLoading,
+  formatDate,
+  resetFilters,
+  reloadAll,
+  handleSearch,
+  movePage
+} = useAdminDailyReportManagement()
 
 await reloadAll()
 </script>
 
 <template>
   <main class="page-container admin-daily-report-page">
-    <section class="content-panel admin-daily-report-page__panel">
+    <section class="content-panel admin-daily-report-page__panel page-panel-padding-md">
       <div class="admin-daily-report-page__header">
         <div>
           <p class="admin-daily-report-page__eyebrow">Admin</p>
@@ -128,7 +44,7 @@ await reloadAll()
           <input v-model="filters.keyword" class="input-field" type="search" placeholder="업무명, 로그인 ID, 닉네임">
         </label>
         <div class="admin-daily-report-page__filter-actions">
-          <CommonBaseButton variant="secondary" type="button" @click="filters.dateFrom = getMonthStartInput(); filters.dateTo = formatDateInput(new Date()); filters.keyword = ''; void handleSearch()">
+          <CommonBaseButton variant="secondary" type="button" @click="resetFilters(); void handleSearch()">
             초기화
           </CommonBaseButton>
           <CommonBaseButton type="submit">
@@ -138,7 +54,7 @@ await reloadAll()
       </form>
     </section>
 
-    <section class="content-panel admin-daily-report-page__panel">
+    <section class="content-panel admin-daily-report-page__panel page-panel-padding-md">
       <div class="admin-daily-report-page__section-header">
         <h2>누락 현황</h2>
         <strong>{{ missingMembers.length }}명</strong>
@@ -155,13 +71,13 @@ await reloadAll()
             <p>최근 작성일: {{ formatDate(missingMember.lastWrittenDate) }}</p>
           </div>
           <p class="admin-daily-report-page__missing-dates">
-            {{ missingMember.missingDates.length ? missingMember.missingDates.map(formatDate).join(', ') : '누락 없음' }}
+            {{ missingMember.missingDates.length ? missingMember.missingDates.map((missingDate) => formatDate(missingDate)).join(', ') : '누락 없음' }}
           </p>
         </article>
       </div>
     </section>
 
-    <section class="content-panel admin-daily-report-page__panel">
+    <section class="content-panel admin-daily-report-page__panel page-panel-padding-md">
       <div class="admin-daily-report-page__section-header">
         <h2>전체 일일보고</h2>
         <span v-if="isLoading">불러오는 중...</span>
@@ -213,7 +129,6 @@ await reloadAll()
 }
 
 .admin-daily-report-page__panel {
-  padding: 22px;
   display: grid;
   gap: 18px;
 }

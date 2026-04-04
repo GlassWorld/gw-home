@@ -205,6 +205,113 @@ textarea.input-field {
   color: var(--color-text-muted);
 }
 
+.page-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.page-panel-padding-md {
+  padding: 22px;
+}
+
+.page-panel-padding-lg {
+  padding: 28px;
+}
+
+.page-hero-split {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 22px;
+  align-items: stretch;
+}
+
+.page-info-card {
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(95, 186, 255, 0.16), transparent 55%),
+    rgba(255, 255, 255, 0.05);
+}
+
+.page-info-card span,
+.page-info-card p {
+  color: var(--color-text-muted);
+}
+
+.page-info-card strong {
+  font-size: 1.5rem;
+}
+
+.page-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.page-section-header h2,
+.page-section-header h3,
+.page-section-header p {
+  margin: 0;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.page-form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.otp-setup {
+  display: grid;
+  gap: 18px;
+}
+
+.otp-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.otp-setup-panel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.otp-setup-panel h3 {
+  margin: 0;
+}
+
+.otp-setup-url {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(7, 21, 39, 0.65);
+  color: #bfe7ff;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.otp-setup-qr-image {
+  width: min(100%, 220px);
+  max-width: 100%;
+  padding: 12px;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
 .meta-row {
   display: flex;
   gap: 10px;
@@ -213,9 +320,38 @@ textarea.input-field {
   font-size: 0.94rem;
 }
 
+@media (max-width: 900px) {
+  .page-hero-split,
+  .otp-setup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .page-container {
     width: min(100% - 20px, 100%);
     padding-top: 18px;
+  }
+
+  .page-panel-padding-md,
+  .page-panel-padding-lg {
+    padding: 22px;
+  }
+
+  .page-section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-actions {
+    justify-content: stretch;
+  }
+
+  .page-actions > * {
+    width: 100%;
+  }
+
+  .otp-setup-grid {
+    grid-template-columns: 1fr;
   }
 }

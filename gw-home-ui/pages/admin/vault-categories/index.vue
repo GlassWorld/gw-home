@@ -1,110 +1,28 @@
 <script setup lang="ts">
-import type { SaveVaultCategoryPayload, VaultCategory } from '~/types/vault'
+import { useAdminVaultCategoryManagement } from '~/features/admin/composables/use-admin-vault-category-management'
 
 definePageMeta({
   middleware: 'admin'
 })
 
-const { fetchAdminCategoryList, createCategory, updateCategory, removeCategory } = useVaultCategoryApi()
-const { showToast } = useToast()
-const { confirm } = useDialog()
-
-const categoryList = ref<VaultCategory[]>([])
-const editingCategoryUuid = ref('')
-const isSubmitting = ref(false)
-const formState = reactive<SaveVaultCategoryPayload>({
-  name: '',
-  description: '',
-  sortOrder: 0,
-  color: '#6ec1ff'
-})
-
-async function loadCategoryList() {
-  try {
-    categoryList.value = await fetchAdminCategoryList()
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    categoryList.value = []
-    showToast(fetchError.data?.message ?? '카테고리 목록을 불러오지 못했습니다.', { variant: 'error' })
-  }
-}
-
-function resetForm() {
-  editingCategoryUuid.value = ''
-  formState.name = ''
-  formState.description = ''
-  formState.sortOrder = 0
-  formState.color = '#6ec1ff'
-}
-
-function startEdit(category: VaultCategory) {
-  editingCategoryUuid.value = category.categoryUuid
-  formState.name = category.name
-  formState.description = category.description ?? ''
-  formState.sortOrder = category.sortOrder
-  formState.color = category.color ?? '#6ec1ff'
-}
-
-async function handleSubmit() {
-  if (isSubmitting.value) {
-    return
-  }
-
-  isSubmitting.value = true
-
-  const payload: SaveVaultCategoryPayload = {
-    name: formState.name.trim(),
-    description: formState.description?.trim() || '',
-    sortOrder: Number(formState.sortOrder || 0),
-    color: formState.color || '#6ec1ff'
-  }
-
-  try {
-    if (editingCategoryUuid.value) {
-      await updateCategory(editingCategoryUuid.value, payload)
-      showToast('카테고리를 수정했습니다.', { variant: 'success' })
-    } else {
-      await createCategory(payload)
-      showToast('카테고리를 등록했습니다.', { variant: 'success' })
-    }
-
-    resetForm()
-    await loadCategoryList()
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '카테고리 저장에 실패했습니다.', { variant: 'error' })
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-async function handleDelete(categoryUuid: string) {
-  const shouldDelete = await confirm('카테고리를 삭제할까요?', {
-    title: '카테고리 삭제',
-    confirmText: '삭제',
-    cancelText: '취소'
-  })
-
-  if (!shouldDelete) {
-    return
-  }
-
-  try {
-    await removeCategory(categoryUuid)
-    showToast('카테고리를 삭제했습니다.', { variant: 'success' })
-    await loadCategoryList()
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string } }
-    showToast(fetchError.data?.message ?? '카테고리 삭제에 실패했습니다.', { variant: 'error' })
-  }
-}
+const {
+  categoryList,
+  editingCategoryUuid,
+  isSubmitting,
+  formState,
+  resetForm,
+  startEdit,
+  handleSubmit,
+  handleDelete,
+  loadCategoryList
+} = useAdminVaultCategoryManagement()
 
 await loadCategoryList()
 </script>
 
 <template>
   <main class="page-container vault-category-admin-page">
-    <section class="content-panel vault-category-admin-page__panel">
+    <section class="content-panel vault-category-admin-page__panel page-panel-padding-md">
       <div class="vault-category-admin-page__header">
         <div>
           <p class="vault-category-admin-page__eyebrow">Admin</p>
@@ -144,7 +62,7 @@ await loadCategoryList()
       </form>
     </section>
 
-    <section class="content-panel vault-category-admin-page__panel">
+    <section class="content-panel vault-category-admin-page__panel page-panel-padding-md">
       <div class="vault-category-admin-page__list">
         <article
           v-for="category in categoryList"
@@ -185,10 +103,6 @@ await loadCategoryList()
 .vault-category-admin-page {
   display: grid;
   gap: 24px;
-}
-
-.vault-category-admin-page__panel {
-  padding: 22px;
 }
 
 .vault-category-admin-page__header {
