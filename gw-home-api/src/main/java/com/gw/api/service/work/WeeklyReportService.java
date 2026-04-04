@@ -2,6 +2,8 @@ package com.gw.api.service.work;
 
 import com.gw.api.convert.work.WeeklyReportConvert;
 import com.gw.api.dto.work.CreateWeeklyReportRequest;
+import com.gw.api.dto.work.OpenWeeklyReportMemberResponse;
+import com.gw.api.dto.work.OpenWeeklyReportResponse;
 import com.gw.api.dto.work.UpdateWeeklyReportRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
@@ -13,6 +15,7 @@ import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.policy.UseYnPolicy;
 import com.gw.share.common.policy.WorkPolicy;
+import com.gw.share.jvo.work.OpenWeeklyReportJvo;
 import com.gw.share.util.DateUtil;
 import com.gw.share.util.StringUtil;
 import com.gw.share.util.ValidationUtil;
@@ -80,6 +83,75 @@ public class WeeklyReportService {
         } catch (BusinessException exception) {
             log.error(
                     "getWeeklyReport 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    uuid,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    // 공개된 주간보고를 가진 회원 목록을 조회한다.
+    @Transactional(readOnly = true)
+    public List<OpenWeeklyReportMemberResponse> getOpenWeeklyReportMembers(String loginId) {
+        log.info("getOpenWeeklyReportMembers 시작 - loginId: {}", loginId);
+        try {
+            getAccountByLoginId(loginId);
+            List<OpenWeeklyReportMemberResponse> response = dailyReportMapper.selectOpenWeeklyReportMembers().stream()
+                    .map(WeeklyReportConvert::toOpenMemberResponse)
+                    .toList();
+            log.info("getOpenWeeklyReportMembers 완료 - loginId: {}, count: {}", loginId, response.size());
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getOpenWeeklyReportMembers 실패 - loginId: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    // 회원 기준으로 공개된 주간보고 목록을 조회한다.
+    @Transactional(readOnly = true)
+    public List<OpenWeeklyReportResponse> getOpenWeeklyReports(String loginId, String memberUuid) {
+        log.info("getOpenWeeklyReports 시작 - loginId: {}, memberUuid: {}", loginId, memberUuid);
+        try {
+            getAccountByLoginId(loginId);
+            List<OpenWeeklyReportResponse> response = dailyReportMapper.selectOpenWeeklyReportList(normalizeText(memberUuid)).stream()
+                    .map(WeeklyReportConvert::toOpenResponse)
+                    .toList();
+            log.info("getOpenWeeklyReports 완료 - loginId: {}, memberUuid: {}, count: {}", loginId, memberUuid, response.size());
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getOpenWeeklyReports 실패 - loginId: {}, memberUuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
+                    memberUuid,
+                    exception.getMessage(),
+                    exception.getDetailMessage(),
+                    exception
+            );
+            throw exception;
+        }
+    }
+
+    // 공개된 주간보고 상세 정보를 조회한다.
+    @Transactional(readOnly = true)
+    public OpenWeeklyReportResponse getOpenWeeklyReport(String loginId, String uuid) {
+        log.info("getOpenWeeklyReport 시작 - loginId: {}, uuid: {}", loginId, uuid);
+        try {
+            getAccountByLoginId(loginId);
+            OpenWeeklyReportResponse response = WeeklyReportConvert.toOpenResponse(getOpenWeeklyReport(uuid));
+            log.info("getOpenWeeklyReport 완료 - loginId: {}, uuid: {}", loginId, uuid);
+            return response;
+        } catch (BusinessException exception) {
+            log.error(
+                    "getOpenWeeklyReport 실패 - loginId: {}, uuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     uuid,
                     exception.getMessage(),
@@ -253,6 +325,18 @@ public class WeeklyReportService {
         if (weeklyReport == null) {
             log.error("getWeeklyReportByIdx 실패 - 원인: 주간보고를 찾을 수 없습니다. idx={}", idx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "주간보고를 찾을 수 없습니다.");
+        }
+
+        return weeklyReport;
+    }
+
+    // UUID로 공개된 주간보고를 조회한다.
+    private OpenWeeklyReportJvo getOpenWeeklyReport(String uuid) {
+        OpenWeeklyReportJvo weeklyReport = dailyReportMapper.selectOpenWeeklyReport(uuid);
+
+        if (weeklyReport == null) {
+            log.error("getOpenWeeklyReport 실패 - 원인: 공개된 주간보고를 찾을 수 없습니다. uuid={}", uuid);
+            throw new BusinessException(ErrorCode.NOT_FOUND, "공개된 주간보고를 찾을 수 없습니다.");
         }
 
         return weeklyReport;

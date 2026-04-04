@@ -48,6 +48,13 @@ const emit = defineEmits<{
 <style scoped>
 .dashboard-section {
   padding: 24px;
+  background: linear-gradient(180deg, rgba(11, 24, 46, 0.54) 0%, rgba(9, 20, 38, 0.42) 100%);
+  border-color: rgba(176, 210, 255, 0.14);
+  box-shadow:
+    0 16px 34px rgba(3, 12, 28, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
 }
 
 .dashboard-section__header {
@@ -74,12 +81,15 @@ const emit = defineEmits<{
 
 .dashboard-compact-list__item {
   width: 100%;
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.12);
+  border: 1px solid rgba(166, 214, 255, 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.018) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -87,16 +97,23 @@ const emit = defineEmits<{
 }
 
 .dashboard-compact-list__item strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.96rem;
   line-height: 1.4;
 }
 
 .dashboard-compact-list__item span {
+  flex-shrink: 0;
   color: var(--color-text-muted);
 }
 
 .dashboard-compact-list__item:hover {
-  border-color: rgba(147, 210, 255, 0.24);
+  border-color: rgba(170, 221, 255, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.026) 100%);
 }
 
 .dashboard-compact-list__item:focus-visible {

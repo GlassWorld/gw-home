@@ -163,6 +163,8 @@ async function handleActivateOtp() {
   justify-content: center;
   padding: 32px 24px;
   overflow: hidden;
+  isolation: isolate;
+  background: transparent;
 }
 
 .login-page::before,
@@ -174,26 +176,18 @@ async function handleActivateOtp() {
 
 .login-page::before {
   inset: 0;
-  background:
-    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.6px),
-    radial-gradient(circle at 78% 12%, rgba(255, 255, 255, 0.72) 0 1.2px, transparent 2px),
-    radial-gradient(circle at 67% 28%, rgba(175, 224, 255, 0.78) 0 1px, transparent 1.8px),
-    radial-gradient(circle at 24% 72%, rgba(255, 255, 255, 0.75) 0 1.1px, transparent 2px),
-    radial-gradient(circle at 82% 68%, rgba(166, 215, 255, 0.78) 0 1.3px, transparent 2px),
-    radial-gradient(circle at 38% 42%, rgba(255, 255, 255, 0.46) 0 0.8px, transparent 1.6px),
-    radial-gradient(circle at 12% 86%, rgba(255, 255, 255, 0.52) 0 0.9px, transparent 1.8px),
-    radial-gradient(circle at 92% 34%, rgba(255, 255, 255, 0.45) 0 0.9px, transparent 1.7px);
-  opacity: 0.9;
+  background: linear-gradient(180deg, rgba(10, 20, 42, 0.02) 0%, rgba(10, 20, 42, 0.14) 100%);
+  opacity: 0.72;
 }
 
 .login-page::after {
   inset: -12%;
   background:
-    radial-gradient(circle at 22% 24%, rgba(54, 153, 255, 0.26) 0%, rgba(54, 153, 255, 0) 24%),
-    radial-gradient(circle at 76% 22%, rgba(170, 92, 255, 0.22) 0%, rgba(170, 92, 255, 0) 22%),
-    radial-gradient(circle at 52% 82%, rgba(53, 212, 196, 0.16) 0%, rgba(53, 212, 196, 0) 20%);
-  filter: blur(42px);
-  opacity: 0.95;
+    radial-gradient(circle at 18% 18%, rgba(161, 228, 255, 0.24) 0%, rgba(161, 228, 255, 0) 20%),
+    radial-gradient(circle at 78% 20%, rgba(138, 200, 255, 0.18) 0%, rgba(138, 200, 255, 0) 20%),
+    radial-gradient(circle at 52% 82%, rgba(105, 238, 224, 0.16) 0%, rgba(105, 238, 224, 0) 22%);
+  filter: blur(46px);
+  opacity: 0.82;
 }
 
 .login-page__shell {

@@ -1,6 +1,8 @@
 package com.gw.api.controller.work;
 
 import com.gw.api.dto.work.CreateWeeklyReportRequest;
+import com.gw.api.dto.work.OpenWeeklyReportMemberResponse;
+import com.gw.api.dto.work.OpenWeeklyReportResponse;
 import com.gw.api.dto.work.UpdateWeeklyReportRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
@@ -43,6 +45,27 @@ public class WeeklyReportController {
     @GetMapping("/{uuid}")
     public ApiResponse<WeeklyReportResponse> getWeeklyReport(Principal principal, @PathVariable String uuid) {
         return ApiResponse.ok(weeklyReportService.getWeeklyReport(getLoginId(principal), uuid));
+    }
+
+    // 공개된 주간보고를 가진 회원 목록을 조회한다.
+    @GetMapping("/open/members")
+    public ApiResponse<List<OpenWeeklyReportMemberResponse>> getOpenWeeklyReportMembers(Principal principal) {
+        return ApiResponse.ok(weeklyReportService.getOpenWeeklyReportMembers(getLoginId(principal)));
+    }
+
+    // 회원 기준으로 공개된 주간보고 목록을 조회한다.
+    @GetMapping("/open")
+    public ApiResponse<List<OpenWeeklyReportResponse>> getOpenWeeklyReports(
+            Principal principal,
+            @RequestParam(required = false) String memberUuid
+    ) {
+        return ApiResponse.ok(weeklyReportService.getOpenWeeklyReports(getLoginId(principal), memberUuid));
+    }
+
+    // 공개된 주간보고 상세 정보를 조회한다.
+    @GetMapping("/open/{uuid}")
+    public ApiResponse<OpenWeeklyReportResponse> getOpenWeeklyReport(Principal principal, @PathVariable String uuid) {
+        return ApiResponse.ok(weeklyReportService.getOpenWeeklyReport(getLoginId(principal), uuid));
     }
 
     // 로그인 사용자의 주간보고 작성용 일일보고 원본을 조회한다.

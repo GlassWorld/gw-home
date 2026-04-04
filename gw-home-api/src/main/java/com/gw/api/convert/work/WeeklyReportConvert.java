@@ -2,7 +2,10 @@ package com.gw.api.convert.work;
 
 import com.gw.api.dto.work.WeeklyReportDailySourceResponse;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
+import com.gw.api.dto.work.OpenWeeklyReportMemberResponse;
+import com.gw.api.dto.work.OpenWeeklyReportResponse;
 import com.gw.api.dto.work.WeeklyReportResponse;
+import com.gw.share.jvo.work.OpenWeeklyReportJvo;
 import com.gw.share.vo.work.DailyReportVo;
 import com.gw.share.vo.work.WeeklyReportVo;
 
@@ -15,6 +18,36 @@ public final class WeeklyReportConvert {
     public static WeeklyReportResponse toResponse(WeeklyReportVo weeklyReport) {
         return new WeeklyReportResponse(
                 weeklyReport.getUuid(),
+                weeklyReport.getWkStrtDt(),
+                weeklyReport.getWkEndDt(),
+                weeklyReport.getTtl(),
+                weeklyReport.getCntn(),
+                weeklyReport.getOpnYn(),
+                weeklyReport.getPblsAt(),
+                weeklyReport.getGenType(),
+                weeklyReport.getCreatedAt(),
+                weeklyReport.getUpdatedAt()
+        );
+    }
+
+    // 공개 주간보고 조회용 회원 요약 응답으로 변환한다.
+    public static OpenWeeklyReportMemberResponse toOpenMemberResponse(OpenWeeklyReportJvo weeklyReport) {
+        return new OpenWeeklyReportMemberResponse(
+                weeklyReport.getMbrAcctUuid(),
+                weeklyReport.getLgnId(),
+                weeklyReport.getNickNm(),
+                weeklyReport.getOpenRptCnt(),
+                weeklyReport.getLastPblsAt()
+        );
+    }
+
+    // 공개 주간보고 조회용 응답으로 변환한다.
+    public static OpenWeeklyReportResponse toOpenResponse(OpenWeeklyReportJvo weeklyReport) {
+        return new OpenWeeklyReportResponse(
+                weeklyReport.getUuid(),
+                weeklyReport.getMbrAcctUuid(),
+                weeklyReport.getLgnId(),
+                weeklyReport.getNickNm(),
                 weeklyReport.getWkStrtDt(),
                 weeklyReport.getWkEndDt(),
                 weeklyReport.getTtl(),

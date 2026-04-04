@@ -116,9 +116,11 @@ function closeMemo() {
   position: sticky;
   top: 0;
   z-index: 10;
-  backdrop-filter: blur(14px);
-  background: rgba(10, 22, 40, 0.85);
-  border-bottom: 1px solid rgba(147, 210, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  background: linear-gradient(180deg, rgba(8, 20, 36, 0.58) 0%, rgba(8, 20, 36, 0.42) 100%);
+  border-bottom: 1px solid rgba(147, 210, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(5, 14, 28, 0.12);
 }
 
 .app-header__inner {

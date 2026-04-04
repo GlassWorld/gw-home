@@ -338,6 +338,87 @@
           AND del_at IS NULL
     </select>
 
+    <select id="selectOpenWeeklyReportMembers" resultType="OpenWeeklyReportJvo">
+        SELECT
+            ma.mbr_acct_uuid,
+            ma.lgn_id,
+            mp.nick_nm,
+            COUNT(wr.wrk_wkl_rpt_idx) AS open_rpt_cnt,
+            MAX(wr.pbls_at) AS last_pbls_at
+        FROM tb_wrk_wkl_rpt wr
+        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = wr.mbr_acct_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = wr.mbr_acct_idx
+        WHERE wr.del_at IS NULL
+          AND ma.del_at IS NULL
+          AND wr.opn_yn = 'Y'
+          AND wr.pbls_at IS NOT NULL
+        GROUP BY ma.mbr_acct_uuid, ma.lgn_id, mp.nick_nm
+        ORDER BY COALESCE(mp.nick_nm, ma.lgn_id) ASC, ma.lgn_id ASC
+    </select>
+
+    <select id="selectOpenWeeklyReportList" resultType="OpenWeeklyReportJvo">
+        SELECT
+            wr.wrk_wkl_rpt_idx AS idx,
+            wr.wrk_wkl_rpt_uuid AS uuid,
+            wr.mbr_acct_idx,
+            ma.mbr_acct_uuid,
+            ma.lgn_id,
+            mp.nick_nm,
+            wr.wk_strt_dt AS wk_strt_dt,
+            wr.wk_end_dt AS wk_end_dt,
+            wr.ttl,
+            wr.cntn,
+            wr.opn_yn,
+            wr.pbls_at,
+            wr.gen_type,
+            wr.created_by,
+            wr.updated_by,
+            wr.created_at,
+            wr.updated_at,
+            wr.del_at
+        FROM tb_wrk_wkl_rpt wr
+        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = wr.mbr_acct_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = wr.mbr_acct_idx
+        WHERE wr.del_at IS NULL
+          AND ma.del_at IS NULL
+          AND wr.opn_yn = 'Y'
+          AND wr.pbls_at IS NOT NULL
+        <if test="memberUuid != null and memberUuid != ''">
+            AND ma.mbr_acct_uuid = CAST(#{memberUuid} AS UUID)
+        </if>
+        ORDER BY wr.pbls_at DESC, wr.updated_at DESC
+    </select>
+
+    <select id="selectOpenWeeklyReport" resultType="OpenWeeklyReportJvo">
+        SELECT
+            wr.wrk_wkl_rpt_idx AS idx,
+            wr.wrk_wkl_rpt_uuid AS uuid,
+            wr.mbr_acct_idx,
+            ma.mbr_acct_uuid,
+            ma.lgn_id,
+            mp.nick_nm,
+            wr.wk_strt_dt AS wk_strt_dt,
+            wr.wk_end_dt AS wk_end_dt,
+            wr.ttl,
+            wr.cntn,
+            wr.opn_yn,
+            wr.pbls_at,
+            wr.gen_type,
+            wr.created_by,
+            wr.updated_by,
+            wr.created_at,
+            wr.updated_at,
+            wr.del_at
+        FROM tb_wrk_wkl_rpt wr
+        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = wr.mbr_acct_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = wr.mbr_acct_idx
+        WHERE wr.wrk_wkl_rpt_uuid = CAST(#{uuid} AS UUID)
+          AND wr.del_at IS NULL
+          AND ma.del_at IS NULL
+          AND wr.opn_yn = 'Y'
+          AND wr.pbls_at IS NOT NULL
+    </select>
+
     <insert id="insertWeeklyReport" parameterType="WeeklyReportVo" useGeneratedKeys="true" keyProperty="idx">
         INSERT INTO tb_wrk_wkl_rpt (
             mbr_acct_idx,

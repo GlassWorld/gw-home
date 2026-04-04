@@ -77,16 +77,6 @@ async function toggleFavorite(path: string) {
               :key="item.to"
               class="app-sidebar__item"
             >
-              <button
-                type="button"
-                class="app-sidebar__favorite-button"
-                :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-                :disabled="navigationFavoriteStore.isSaving"
-                :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-                @click.stop="toggleFavorite(item.to)"
-              >
-                {{ isFavorite(item.to) ? '★' : '☆' }}
-              </button>
               <NuxtLink
                 :to="item.to"
                 class="app-sidebar__link"
@@ -95,6 +85,17 @@ async function toggleFavorite(path: string) {
               >
                 {{ item.label }}
               </NuxtLink>
+              <button
+                type="button"
+                class="app-sidebar__favorite-button"
+                :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                :disabled="navigationFavoriteStore.isSaving"
+                :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                :aria-pressed="isFavorite(item.to)"
+                @click.stop="toggleFavorite(item.to)"
+              >
+                {{ isFavorite(item.to) ? '★' : '☆' }}
+              </button>
             </div>
           </nav>
 
@@ -106,16 +107,6 @@ async function toggleFavorite(path: string) {
                 :key="item.to"
                 class="app-sidebar__item"
               >
-                <button
-                  type="button"
-                  class="app-sidebar__favorite-button"
-                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-                  :disabled="navigationFavoriteStore.isSaving"
-                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-                  @click.stop="toggleFavorite(item.to)"
-                >
-                  {{ isFavorite(item.to) ? '★' : '☆' }}
-                </button>
                 <NuxtLink
                   :to="item.to"
                   class="app-sidebar__link"
@@ -124,6 +115,17 @@ async function toggleFavorite(path: string) {
                 >
                   {{ item.label }}
                 </NuxtLink>
+                <button
+                  type="button"
+                  class="app-sidebar__favorite-button"
+                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                  :disabled="navigationFavoriteStore.isSaving"
+                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                  :aria-pressed="isFavorite(item.to)"
+                  @click.stop="toggleFavorite(item.to)"
+                >
+                  {{ isFavorite(item.to) ? '★' : '☆' }}
+                </button>
               </div>
             </nav>
           </section>
@@ -136,16 +138,6 @@ async function toggleFavorite(path: string) {
                 :key="item.to"
                 class="app-sidebar__item"
               >
-                <button
-                  type="button"
-                  class="app-sidebar__favorite-button"
-                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-                  :disabled="navigationFavoriteStore.isSaving"
-                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-                  @click.stop="toggleFavorite(item.to)"
-                >
-                  {{ isFavorite(item.to) ? '★' : '☆' }}
-                </button>
                 <NuxtLink
                   :to="item.to"
                   class="app-sidebar__link"
@@ -154,6 +146,17 @@ async function toggleFavorite(path: string) {
                 >
                   {{ item.label }}
                 </NuxtLink>
+                <button
+                  type="button"
+                  class="app-sidebar__favorite-button"
+                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                  :disabled="navigationFavoriteStore.isSaving"
+                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                  :aria-pressed="isFavorite(item.to)"
+                  @click.stop="toggleFavorite(item.to)"
+                >
+                  {{ isFavorite(item.to) ? '★' : '☆' }}
+                </button>
               </div>
             </nav>
           </section>
@@ -195,7 +198,9 @@ async function toggleFavorite(path: string) {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(4, 14, 26, 0.52);
+  background: rgba(4, 14, 26, 0.34);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .app-sidebar__panel {
@@ -208,11 +213,13 @@ async function toggleFavorite(path: string) {
   display: grid;
   align-content: start;
   gap: 18px;
-  background:
-    linear-gradient(180deg, rgba(5, 21, 38, 0.98), rgba(8, 29, 51, 0.96)),
-    rgba(5, 21, 38, 0.96);
-  border-right: 1px solid rgba(147, 210, 255, 0.16);
-  box-shadow: 20px 0 48px rgba(0, 0, 0, 0.24);
+  background: linear-gradient(180deg, rgba(8, 18, 32, 0.42) 0%, rgba(11, 28, 48, 0.34) 100%);
+  backdrop-filter: blur(26px) saturate(135%);
+  -webkit-backdrop-filter: blur(26px) saturate(135%);
+  border-right: 1px solid rgba(193, 223, 255, 0.12);
+  box-shadow:
+    20px 0 48px rgba(0, 0, 0, 0.1),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06);
   will-change: transform;
 }
 
@@ -245,9 +252,9 @@ async function toggleFavorite(path: string) {
 
 .app-sidebar__item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
 }
 
 .app-sidebar__admin {
@@ -259,11 +266,10 @@ async function toggleFavorite(path: string) {
   padding: 12px 14px;
   border-radius: 8px;
   color: rgba(236, 246, 255, 0.94);
-  background: linear-gradient(180deg, rgba(24, 33, 68, 0.88) 0%, rgba(14, 21, 48, 0.86) 100%);
-  border: 1px solid rgba(176, 195, 255, 0.18);
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(176, 195, 255, 0.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -8px 14px rgba(40, 58, 120, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
@@ -273,48 +279,45 @@ async function toggleFavorite(path: string) {
 .app-sidebar__link:hover,
 .app-sidebar__link--active {
   color: #f7fbff;
-  border-color: rgba(196, 212, 255, 0.34);
-  background: linear-gradient(180deg, rgba(56, 70, 120, 0.96) 0%, rgba(34, 47, 86, 0.94) 100%);
+  border-color: rgba(196, 212, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -8px 14px rgba(66, 91, 180, 0.22),
-    0 12px 24px rgba(8, 22, 58, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 6px 14px rgba(8, 22, 58, 0.04);
 }
 
 .app-sidebar__close {
   width: 38px;
   height: 38px;
-  border: 1px solid rgba(176, 195, 255, 0.26);
+  border: 1px solid rgba(176, 195, 255, 0.1);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(236, 246, 255, 0.94);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -8px 14px rgba(56, 79, 162, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .app-sidebar__favorite-button {
-  width: 42px;
-  border: 1px solid rgba(176, 195, 255, 0.18);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(24, 33, 68, 0.88) 0%, rgba(14, 21, 48, 0.86) 100%);
-  color: rgba(236, 246, 255, 0.78);
-  font-size: 1.1rem;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  align-self: center;
+  border: 0;
+  background: transparent;
+  color: rgba(214, 230, 255, 0.42);
+  font-size: 1rem;
+  line-height: 1;
   transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
     color 0.18s ease,
-    box-shadow 0.18s ease;
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .app-sidebar__favorite-button:hover:not(:disabled),
 .app-sidebar__favorite-button--active {
-  border-color: rgba(255, 210, 120, 0.34);
-  background: linear-gradient(180deg, rgba(77, 62, 34, 0.94) 0%, rgba(52, 40, 20, 0.92) 100%);
   color: #ffd56a;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 243, 199, 0.12),
-    0 10px 18px rgba(68, 44, 8, 0.18);
+  opacity: 1;
+  transform: scale(1.04);
 }
 
 .app-sidebar__favorite-button:disabled {
