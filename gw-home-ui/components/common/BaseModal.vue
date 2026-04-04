@@ -5,10 +5,12 @@ const props = withDefaults(defineProps<{
   eyebrow?: string
   width?: string
   zIndex?: number
+  immersive?: boolean
 }>(), {
   eyebrow: '',
   width: '720px',
-  zIndex: 30
+  zIndex: 30,
+  immersive: false
 })
 
 const emit = defineEmits<{
@@ -18,9 +20,9 @@ const emit = defineEmits<{
 
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="base-modal" :style="{ zIndex: String(zIndex) }">
+    <div v-if="visible" class="base-modal" :class="{ 'base-modal--immersive': immersive }" :style="{ zIndex: String(zIndex) }">
       <div class="base-modal__backdrop" @click="emit('close')" />
-      <section class="base-modal__panel content-panel" :style="{ width, maxWidth: width }">
+      <section class="base-modal__panel content-panel" :class="{ 'base-modal__panel--immersive': immersive }" :style="{ width, maxWidth: width }">
         <header class="base-modal__header">
           <div class="base-modal__title-box">
             <p v-if="eyebrow" class="base-modal__eyebrow">{{ eyebrow }}</p>
@@ -78,6 +80,16 @@ const emit = defineEmits<{
   padding: 20px;
   display: grid;
   gap: 16px;
+}
+
+.base-modal--immersive {
+  padding: 12px;
+}
+
+.base-modal__panel--immersive {
+  max-height: calc(100vh - 24px);
+  min-height: calc(100vh - 24px);
+  padding: 24px;
 }
 
 .base-modal__header {
@@ -150,6 +162,12 @@ const emit = defineEmits<{
   .base-modal__panel {
     padding: 16px;
     gap: 14px;
+  }
+
+  .base-modal__panel--immersive {
+    max-height: calc(100vh - 24px);
+    min-height: calc(100vh - 24px);
+    padding: 16px;
   }
 
   .base-modal__actions {

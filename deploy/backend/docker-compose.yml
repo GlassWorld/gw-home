@@ -25,6 +25,9 @@ services:
       DB_URL: jdbc:postgresql://db:5432/gw?currentSchema=home
       DB_USERNAME: gw
       DB_PASSWORD: ${DB_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_PRIMARY_MODEL: ${OPENAI_PRIMARY_MODEL:-gpt-5.4-mini}
+      OPENAI_FALLBACK_MODEL: ${OPENAI_FALLBACK_MODEL:-gpt-5-mini}
     ports:
       - "8080:8080"
     networks:

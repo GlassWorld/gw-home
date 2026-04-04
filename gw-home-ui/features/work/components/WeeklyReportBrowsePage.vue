@@ -5,7 +5,11 @@ import { useOpenWeeklyReportBrowse } from '../composables/use-open-weekly-report
 
 const {
   changeSelectedOpenMember,
+  changeSelectedYearMonth,
+  changeSelectedWeekOfMonth,
   closeOpenWeeklyReportDetail,
+  availableYearMonths,
+  filteredOpenWeeklyReports,
   formatDate,
   isLoadingOpenMembers,
   isLoadingOpenWeeklyReportDetail,
@@ -13,9 +17,12 @@ const {
   isOpenDetailVisible,
   openOpenWeeklyReportDetail,
   openWeeklyReportMembers,
-  openWeeklyReports,
   selectedOpenMemberUuid,
+  selectedWeekOfMonth,
   selectedOpenWeeklyReport
+  ,
+  selectedYearMonth,
+  resolveWeekOfMonth
 } = useOpenWeeklyReportBrowse()
 </script>
 
@@ -40,12 +47,18 @@ const {
 
     <WeeklyReportOpenBrowseSection
       :members="openWeeklyReportMembers"
-      :reports="openWeeklyReports"
+      :reports="filteredOpenWeeklyReports"
       :selected-member-uuid="selectedOpenMemberUuid"
+      :selected-year-month="selectedYearMonth"
+      :selected-week-of-month="selectedWeekOfMonth"
+      :available-year-months="availableYearMonths"
       :is-loading-members="isLoadingOpenMembers"
       :is-loading-reports="isLoadingOpenWeeklyReports"
       :format-date="formatDate"
+      :resolve-week-of-month="resolveWeekOfMonth"
       @update:selected-member-uuid="changeSelectedOpenMember"
+      @update:selected-year-month="changeSelectedYearMonth"
+      @update:selected-week-of-month="changeSelectedWeekOfMonth"
       @open="openOpenWeeklyReportDetail"
     />
 

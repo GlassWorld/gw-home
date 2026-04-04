@@ -215,7 +215,7 @@ export interface WeeklyReportAiDraft {
 export interface WeeklyReportAiDraftPayload {
   weekStartDate: string
   weekEndDate: string
-  additionalPrompt?: string
+  sourceDailyReports?: WeeklyReportDailySource[]
 }
 
 export type DailyReportPage = PageResponse<DailyReport>

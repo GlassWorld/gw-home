@@ -90,6 +90,7 @@ jobs:
             test -f "${COMPOSE_FILE}"
             cat <<'EOF' > .env
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             EOF
             mv .env "${ENV_FILE}"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin

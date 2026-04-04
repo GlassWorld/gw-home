@@ -8,6 +8,8 @@ import com.gw.api.dto.work.UpdateWeeklyReportRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftRequest;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
 import com.gw.api.dto.work.WeeklyReportDailySourceResponse;
+import com.gw.api.dto.work.WeeklyReportAiDraftSourceRequest;
+import com.gw.api.dto.work.WeeklyReportAiDraftWorkUnitRequest;
 import com.gw.api.dto.work.WeeklyReportResponse;
 import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.work.DailyReportMapper;
@@ -21,9 +23,11 @@ import com.gw.share.util.StringUtil;
 import com.gw.share.util.ValidationUtil;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.work.DailyReportVo;
+import com.gw.share.vo.work.WorkUnitVo;
 import com.gw.share.vo.work.WeeklyReportVo;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -278,13 +282,11 @@ public class WeeklyReportService {
     public WeeklyReportAiDraftResponse generateWeeklyReportDraft(String loginId, WeeklyReportAiDraftRequest request) {
         log.info("generateWeeklyReportDraft 시작 - loginId: {}, request: {}", loginId, request);
         try {
-            AcctVo account = getAccountByLoginId(loginId);
+            getAccountByLoginId(loginId);
             LocalDate weekStartDate = requireDate(request.weekStartDate(), "weekStartDate");
             LocalDate weekEndDate = requireDate(request.weekEndDate(), "weekEndDate");
             validateWeekRange(weekStartDate, weekEndDate);
-            List<DailyReportVo> sourceReports = dailyReportMapper.selectWeeklySourceDailyReports(account.getIdx(), weekStartDate, weekEndDate).stream()
-                    .map(this::enrichDailyReport)
-                    .toList();
+            List<DailyReportVo> sourceReports = normalizeDraftSourceReports(request.sourceDailyReports(), weekStartDate, weekEndDate);
 
             WeeklyReportAiDraftResponse response = weeklyReportDraftService.generateDraft(
                     weekStartDate,
@@ -304,6 +306,50 @@ public class WeeklyReportService {
             );
             throw exception;
         }
+    }
+
+    private List<DailyReportVo> normalizeDraftSourceReports(
+            List<WeeklyReportAiDraftSourceRequest> sourceDailyReports,
+            LocalDate weekStartDate,
+            LocalDate weekEndDate
+    ) {
+        if (sourceDailyReports == null || sourceDailyReports.isEmpty()) {
+            return List.of();
+        }
+
+        return sourceDailyReports.stream()
+                .filter(source -> source != null && source.reportDate() != null)
+                .filter(source -> !source.reportDate().isBefore(weekStartDate) && !source.reportDate().isAfter(weekEndDate))
+                .sorted(Comparator.comparing(WeeklyReportAiDraftSourceRequest::reportDate))
+                .limit(5)
+                .map(this::toDailyReportVo)
+                .toList();
+    }
+
+    private DailyReportVo toDailyReportVo(WeeklyReportAiDraftSourceRequest source) {
+        return DailyReportVo.builder()
+                .uuid(source.uuid())
+                .rptDt(source.reportDate())
+                .cntn(source.content())
+                .spclNote(null)
+                .workUnits(toWorkUnitVos(source.workUnits()))
+                .build();
+    }
+
+    private List<WorkUnitVo> toWorkUnitVos(List<WeeklyReportAiDraftWorkUnitRequest> workUnits) {
+        if (workUnits == null || workUnits.isEmpty()) {
+            return List.of();
+        }
+
+        return workUnits.stream()
+                .map(workUnit -> {
+                    WorkUnitVo workUnitVo = new WorkUnitVo();
+                    workUnitVo.setUuid(workUnit.workUnitUuid());
+                    workUnitVo.setTtl(workUnit.title());
+                    workUnitVo.setCtgr(workUnit.category());
+                    return workUnitVo;
+                })
+                .toList();
     }
 
     // UUID와 소유 계정으로 주간보고를 조회한다.

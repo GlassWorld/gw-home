@@ -20,6 +20,7 @@ const emit = defineEmits<{
 
 const { fetchWeeklyReport, fetchWeeklyDailySources, createWeeklyReport, updateWeeklyReport, generateWeeklyAiDraft } = useWeeklyReportApi()
 const { showToast } = useToast()
+const { confirm } = useDialog()
 
 function formatDateInput(date: Date): string {
   const year = date.getFullYear()
@@ -103,9 +104,9 @@ const isInitializing = ref(false)
 const isLoadingSources = ref(false)
 const isSaving = ref(false)
 const isGeneratingAi = ref(false)
-const aiAdditionalPrompt = ref('')
 const sourceDailyReports = ref<WeeklyReportDailySource[]>([])
 const selectedDailySourceDate = ref('')
+const contentTextarea = ref<HTMLTextAreaElement | null>(null)
 
 const formState = reactive<SaveWeeklyReportPayload>({
   weekStartDate: defaultWeekStartDate,
@@ -131,6 +132,28 @@ const selectedSourceItem = computed(() =>
   weekdaySources.value.find((item) => item.reportDate === selectedDailySourceDate.value) ?? null
 )
 
+function resizeTextarea(element: HTMLTextAreaElement | null) {
+  if (!element) {
+    return
+  }
+
+  element.style.height = 'auto'
+  element.style.height = `${element.scrollHeight}px`
+}
+
+function handleContentInput(event: Event) {
+  const target = event.target as HTMLTextAreaElement
+  nextTick(() => resizeTextarea(target))
+}
+
+function setScrollLock(locked: boolean) {
+  if (!import.meta.client) {
+    return
+  }
+
+  document.body.style.overflow = locked ? 'hidden' : ''
+}
+
 function resetFormState() {
   const nextWeekStartDate = getWeekStartDate()
   formState.weekStartDate = nextWeekStartDate
@@ -139,7 +162,6 @@ function resetFormState() {
   formState.content = ''
   formState.openYn = 'N'
   formState.generationType = 'MANUAL'
-  aiAdditionalPrompt.value = ''
   sourceDailyReports.value = []
   selectedDailySourceDate.value = ''
 }
@@ -208,6 +230,8 @@ async function initializeModal() {
     showToast(fetchError.data?.message ?? '주간보고 정보를 불러오지 못했습니다.', { variant: 'error' })
   } finally {
     isInitializing.value = false
+    await nextTick()
+    resizeTextarea(contentTextarea.value)
   }
 }
 
@@ -248,13 +272,28 @@ async function handleGenerateAiDraft() {
     return
   }
 
+  const shouldGenerate = await confirm('AI 초안을 생성할까요?', {
+    title: 'AI 초안 생성',
+    confirmText: '생성',
+    cancelText: '취소'
+  })
+
+  if (!shouldGenerate) {
+    return
+  }
+
+  const availableSourceReports = weekdaySources.value
+    .map((item) => item.source)
+    .filter((source): source is WeeklyReportDailySource => Boolean(source))
+    .slice(0, 5)
+
   isGeneratingAi.value = true
 
   try {
     const draft = await generateWeeklyAiDraft({
       weekStartDate: formState.weekStartDate,
       weekEndDate: formState.weekEndDate,
-      additionalPrompt: aiAdditionalPrompt.value.trim() || undefined
+      sourceDailyReports: availableSourceReports
     })
     formState.title = draft.title
     formState.content = draft.content
@@ -279,6 +318,41 @@ watch(
   },
   { immediate: true }
 )
+
+watch(isGeneratingAi, (value) => {
+  setScrollLock(value)
+})
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (!visible && isGeneratingAi.value) {
+      isGeneratingAi.value = false
+    }
+
+    if (!visible) {
+      setScrollLock(false)
+    }
+  }
+)
+
+watch(
+  () => formState.content,
+  async () => {
+    await nextTick()
+    resizeTextarea(contentTextarea.value)
+  },
+  { immediate: true }
+)
+
+onMounted(async () => {
+  await nextTick()
+  resizeTextarea(contentTextarea.value)
+})
+
+onBeforeUnmount(() => {
+  setScrollLock(false)
+})
 </script>
 
 <template>
@@ -286,7 +360,8 @@ watch(
     :visible="visible"
     eyebrow="Weekly Report"
     :title="isEditing ? '주간보고 수정' : '주간보고 작성'"
-    width="min(1440px, 96vw)"
+    width="calc(100vw - 24px)"
+    immersive
     :z-index="30"
     @close="emit('close')"
   >
@@ -384,16 +459,6 @@ watch(
               <input v-model="formState.title" class="input-field" type="text" maxlength="200">
             </label>
 
-            <label>
-              <span>AI 초안 보조 메모</span>
-              <textarea
-                v-model="aiAdditionalPrompt"
-                class="weekly-report-form-modal__textarea"
-                rows="3"
-                placeholder="강조할 포인트나 표현 톤이 있으면 입력하세요."
-              />
-            </label>
-
             <div class="weekly-report-form-modal__editor-actions">
               <label class="weekly-report-form-modal__toggle">
                 <input v-model="formState.openYn" type="checkbox" true-value="Y" false-value="N">
@@ -412,11 +477,32 @@ watch(
 
             <label>
               <span>본문</span>
-              <textarea v-model="formState.content" class="weekly-report-form-modal__textarea weekly-report-form-modal__textarea--large" rows="18" />
+              <textarea
+                ref="contentTextarea"
+                v-model="formState.content"
+                class="weekly-report-form-modal__textarea weekly-report-form-modal__textarea--large"
+                rows="18"
+                @input="handleContentInput"
+              />
             </label>
           </section>
         </div>
       </template>
+
+      <div
+        v-if="isGeneratingAi"
+        class="weekly-report-form-modal__ai-loading-mask"
+        aria-live="polite"
+        aria-busy="true"
+        @wheel.prevent
+        @touchmove.prevent
+      >
+        <div class="weekly-report-form-modal__ai-loading-card">
+          <span class="weekly-report-form-modal__ai-loading-spinner" aria-hidden="true" />
+          <strong>AI 초안 생성 중</strong>
+          <p>왼쪽 일일보고를 취합해 초안을 만들고 있습니다. 잠시만 기다려주세요.</p>
+        </div>
+      </div>
     </section>
 
     <template #actions>
@@ -466,6 +552,45 @@ watch(
   border-radius: var(--radius-medium);
   background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-muted);
+}
+
+.weekly-report-form-modal__ai-loading-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(12, 16, 24, 0.56);
+  backdrop-filter: blur(4px);
+}
+
+.weekly-report-form-modal__ai-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  min-width: min(420px, calc(100vw - 48px));
+  padding: 24px 28px;
+  border-radius: var(--radius-large);
+  border: 1px solid rgba(147, 210, 255, 0.22);
+  background: rgba(18, 24, 36, 0.94);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.weekly-report-form-modal__ai-loading-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.weekly-report-form-modal__ai-loading-spinner {
+  width: 42px;
+  height: 42px;
+  border: 3px solid rgba(147, 210, 255, 0.2);
+  border-top-color: var(--color-accent);
+  border-radius: 999px;
+  animation: weekly-report-form-modal-spin 0.9s linear infinite;
 }
 
 .weekly-report-form-modal__layout {
@@ -524,13 +649,17 @@ watch(
 }
 
 .weekly-report-form-modal__textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 96px;
   padding: 14px 16px;
   border-radius: var(--radius-small);
   border: 1px solid rgba(143, 208, 255, 0.18);
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text);
-  resize: vertical;
+  overflow: hidden;
+  resize: none;
   font: inherit;
 }
 
@@ -654,6 +783,12 @@ watch(
 .weekly-report-form-modal-slide-leave-to {
   opacity: 0;
   transform: translateX(18px);
+}
+
+@keyframes weekly-report-form-modal-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 1180px) {

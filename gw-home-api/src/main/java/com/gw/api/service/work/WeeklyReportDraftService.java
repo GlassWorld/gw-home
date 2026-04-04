@@ -8,10 +8,12 @@ import com.gw.share.common.policy.WorkPolicy;
 import com.gw.share.vo.work.DailyReportVo;
 import com.gw.share.vo.work.WorkUnitVo;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -26,21 +28,30 @@ import org.springframework.stereotype.Service;
 public class WeeklyReportDraftService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM.dd");
+    private static final String SYSTEM_PROMPT_PATH = "prompts/weekly-report-system-prompt.txt";
+    private static final String EXAMPLE_PROMPT_PATH = "prompts/weekly-report-example.txt";
 
     private final ObjectMapper objectMapper;
     private final String openAiApiKey;
-    private final String openAiModel;
+    private final String openAiPrimaryModel;
+    private final String openAiFallbackModel;
     private final HttpClient httpClient;
+    private final String systemPromptTemplate;
+    private final String examplePrompt;
 
     public WeeklyReportDraftService(
             ObjectMapper objectMapper,
             @Value("${openai.api-key:}") String openAiApiKey,
-            @Value("${openai.model:gpt-4.1-mini}") String openAiModel
+            @Value("${openai.primary-model}") String openAiPrimaryModel,
+            @Value("${openai.fallback-model}") String openAiFallbackModel
     ) {
         this.objectMapper = objectMapper;
         this.openAiApiKey = openAiApiKey;
-        this.openAiModel = openAiModel;
+        this.openAiPrimaryModel = openAiPrimaryModel;
+        this.openAiFallbackModel = openAiFallbackModel;
         this.httpClient = HttpClient.newHttpClient();
+        this.systemPromptTemplate = readPromptTemplate(SYSTEM_PROMPT_PATH);
+        this.examplePrompt = readPromptTemplate(EXAMPLE_PROMPT_PATH);
     }
 
     // 주차 범위와 일일보고를 바탕으로 주간보고 초안을 생성한다.
@@ -59,9 +70,21 @@ public class WeeklyReportDraftService {
         }
 
         try {
-            return requestOpenAiDraft(weekStartDate, weekEndDate, dailyReports, additionalPrompt);
-        } catch (Exception exception) {
-            log.warn("OpenAI 초안 생성에 실패해 규칙 기반 초안으로 대체합니다.", exception);
+            return requestOpenAiDraft(weekStartDate, weekEndDate, dailyReports, additionalPrompt, openAiPrimaryModel);
+        } catch (Exception primaryException) {
+            log.warn("OpenAI 기본 모델 초안 생성에 실패했습니다. fallback 모델로 재시도합니다. model={}", openAiPrimaryModel, primaryException);
+
+            try {
+                return requestOpenAiDraft(weekStartDate, weekEndDate, dailyReports, additionalPrompt, openAiFallbackModel);
+            } catch (Exception fallbackException) {
+                log.warn(
+                        "OpenAI fallback 모델 초안 생성에도 실패해 규칙 기반 초안으로 대체합니다. primaryModel={}, fallbackModel={}",
+                        openAiPrimaryModel,
+                        openAiFallbackModel,
+                        fallbackException
+                );
+            }
+
             return buildRuleBasedDraft(weekStartDate, weekEndDate, dailyReports, additionalPrompt);
         }
     }
@@ -70,15 +93,16 @@ public class WeeklyReportDraftService {
             LocalDate weekStartDate,
             LocalDate weekEndDate,
             List<DailyReportVo> dailyReports,
-            String additionalPrompt
+            String additionalPrompt,
+            String modelName
     ) throws IOException, InterruptedException {
         Map<String, Object> requestBody = new LinkedHashMap<>();
-        requestBody.put("model", openAiModel);
+        requestBody.put("model", modelName);
         requestBody.put("temperature", 0.4);
         requestBody.put("messages", List.of(
                 Map.of(
                         "role", "system",
-                        "content", "당신은 주간보고 초안을 작성하는 비서입니다. 반드시 JSON 문자열만 반환하세요. keys: title, content"
+                        "content", systemPromptTemplate
                 ),
                 Map.of(
                         "role", "user",
@@ -114,7 +138,7 @@ public class WeeklyReportDraftService {
             throw new IOException("OpenAI 초안 내용이 비어 있습니다.");
         }
 
-        return WeeklyReportConvert.toAiDraftResponse(title, body, WorkPolicy.GENERATION_TYPE_OPENAI, dailyReports.size(), openAiModel);
+        return WeeklyReportConvert.toAiDraftResponse(title, body, WorkPolicy.GENERATION_TYPE_OPENAI, dailyReports.size(), modelName);
     }
 
     private WeeklyReportAiDraftResponse buildRuleBasedDraft(
@@ -124,7 +148,7 @@ public class WeeklyReportDraftService {
             String additionalPrompt
     ) {
         StringBuilder builder = new StringBuilder();
-        builder.append("## 이번 주 주요 업무\n");
+        builder.append("## 주요 작업 요약\n");
 
         for (DailyReportVo dailyReport : dailyReports) {
             builder.append("- ")
@@ -132,10 +156,25 @@ public class WeeklyReportDraftService {
                     .append(" ")
                     .append(resolveWorkSummary(dailyReport))
                     .append('\n');
+        }
+
+        builder.append('\n')
+                .append("## 상세 작업\n");
+
+        for (DailyReportVo dailyReport : dailyReports) {
+            builder.append("### ")
+                    .append(dailyReport.getRptDt().format(DATE_FORMATTER))
+                    .append(" ")
+                    .append(resolveWorkSummary(dailyReport))
+                    .append('\n');
+
+            appendContentLines(builder, dailyReport.getCntn());
 
             if (dailyReport.getSpclNote() != null && !dailyReport.getSpclNote().isBlank()) {
-                builder.append("  - 특이사항: ").append(dailyReport.getSpclNote()).append('\n');
+                builder.append("- 특이사항: ").append(dailyReport.getSpclNote().trim()).append('\n');
             }
+
+            builder.append('\n');
         }
 
         builder.append('\n')
@@ -166,31 +205,76 @@ public class WeeklyReportDraftService {
             String additionalPrompt
     ) {
         StringBuilder builder = new StringBuilder();
-        builder.append("주간보고 초안을 작성하세요.\n")
-                .append("- 기간: ").append(weekStartDate).append(" ~ ").append(weekEndDate).append('\n')
-                .append("- 출력 형식: JSON 문자열, markdown fence 금지\n")
-                .append("- title: 주간보고 제목\n")
-                .append("- content: markdown 형식의 주간보고 본문\n")
-                .append("- 본문은 이번 주 주요 업무, 이슈/특이사항, 다음 주 계획 순서로 작성\n");
+        builder.append("- 기간: ").append(weekStartDate).append(" ~ ").append(weekEndDate).append('\n');
 
         if (additionalPrompt != null && !additionalPrompt.isBlank()) {
             builder.append("- 추가 지시: ").append(additionalPrompt.trim()).append('\n');
         }
 
+        builder.append('\n')
+                .append(examplePrompt)
+                .append('\n')
+                .append('\n');
+
         builder.append("일일보고 원본:\n");
 
         for (DailyReportVo dailyReport : dailyReports) {
-            builder.append("* 날짜: ").append(dailyReport.getRptDt())
-                    .append(", 업무내용: ").append(resolveWorkSummary(dailyReport));
-
-            if (dailyReport.getSpclNote() != null && !dailyReport.getSpclNote().isBlank()) {
-                builder.append(", 특이사항: ").append(dailyReport.getSpclNote());
-            }
-
+            builder.append("### 날짜: ").append(dailyReport.getRptDt()).append('\n')
+                    .append("- 업무 분류: ").append(resolveWorkSummary(dailyReport)).append('\n')
+                    .append("- 오늘 수행 내용:\n");
+            appendContentBlock(builder, dailyReport.getCntn());
             builder.append('\n');
         }
 
         return builder.toString();
+    }
+
+    private void appendContentBlock(StringBuilder builder, String content) {
+        if (content == null || content.isBlank()) {
+            builder.append("  - 작성된 내용 없음\n");
+            return;
+        }
+
+        for (String line : content.strip().split("\\R")) {
+            if (line.isBlank()) {
+                continue;
+            }
+
+            builder.append("  ").append(line.strip()).append('\n');
+        }
+    }
+
+    private void appendContentLines(StringBuilder builder, String content) {
+        if (content == null || content.isBlank()) {
+            builder.append("- 작성된 내용 없음\n");
+            return;
+        }
+
+        for (String line : content.strip().split("\\R")) {
+            if (line.isBlank()) {
+                continue;
+            }
+
+            String trimmedLine = line.trim();
+            if (trimmedLine.startsWith("-")) {
+                builder.append(trimmedLine).append('\n');
+                continue;
+            }
+
+            builder.append("- ").append(trimmedLine).append('\n');
+        }
+    }
+
+    private String readPromptTemplate(String path) {
+        try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("프롬프트 리소스를 찾을 수 없습니다. path=" + path);
+            }
+
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8).trim();
+        } catch (IOException exception) {
+            throw new IllegalStateException("프롬프트 리소스를 읽지 못했습니다. path=" + path, exception);
+        }
     }
 
     private String buildTitle(LocalDate weekStartDate, LocalDate weekEndDate) {
