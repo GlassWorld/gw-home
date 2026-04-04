@@ -13,6 +13,7 @@ import com.gw.api.dto.auth.LoginRequest;
 import com.gw.api.dto.auth.LoginResponse;
 import com.gw.api.dto.auth.TokenResponse;
 import com.gw.api.jwt.JwtProvider;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.auth.AuthService;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.auth.AuthMapper;
@@ -40,6 +41,9 @@ class AuthServiceTest {
     private AccountMapper accountMapper;
 
     @Mock
+    private AccountLookupService accountLookupService;
+
+    @Mock
     private OtpSecretEncryptor otpSecretEncryptor;
 
     @Mock
@@ -60,6 +64,7 @@ class AuthServiceTest {
     void setUp() {
         authService = new AuthService(
                 authMapper,
+                accountLookupService,
                 accountMapper,
                 jwtProvider,
                 passwordEncoder,

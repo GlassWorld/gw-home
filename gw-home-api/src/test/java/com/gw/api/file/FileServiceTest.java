@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.gw.api.config.FileUploadProperties;
 import com.gw.api.dto.file.FileUploadResponse;
-import com.gw.api.service.account.AccountService;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.file.FileService;
 import com.gw.infra.db.mapper.file.FileMapper;
 import com.gw.share.common.exception.BusinessException;
@@ -31,7 +31,7 @@ class FileServiceTest {
     private FileMapper fileMapper;
 
     @Mock
-    private AccountService accountService;
+    private AccountLookupService accountLookupService;
 
     @TempDir
     java.nio.file.Path tempDir;
@@ -44,12 +44,12 @@ class FileServiceTest {
         properties.setPath(tempDir.toString());
         properties.setBaseUrl("http://localhost:8080/files");
         properties.setAllowedTypes(java.util.List.of("image/png"));
-        fileService = new FileService(fileMapper, accountService, properties);
+        fileService = new FileService(fileMapper, accountLookupService, properties);
     }
 
     @Test
     void uploadFileReturnsStoredMetadata() throws Exception {
-        when(accountService.getAccountByLoginId("tester_01")).thenReturn(
+        when(accountLookupService.getAccountByLoginId("tester_01")).thenReturn(
                 AcctVo.builder().idx(1L).lgnId("tester_01").build()
         );
         doAnswer(invocation -> {
@@ -88,7 +88,7 @@ class FileServiceTest {
 
     @Test
     void uploadFileRejectsInvalidUploaderType() {
-        when(accountService.getAccountByLoginId("tester_01")).thenReturn(
+        when(accountLookupService.getAccountByLoginId("tester_01")).thenReturn(
                 AcctVo.builder().idx(1L).lgnId("tester_01").build()
         );
 

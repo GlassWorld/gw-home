@@ -11,8 +11,8 @@ import static org.mockito.Mockito.when;
 
 import com.gw.api.dto.vault.CredentialResponse;
 import com.gw.api.dto.vault.SaveCredentialRequest;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.vault.VaultService;
-import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.vault.VaultCategoryMapper;
 import com.gw.infra.db.mapper.vault.VaultCredentialCategoryMapper;
 import com.gw.infra.db.mapper.vault.VaultMapper;
@@ -42,7 +42,7 @@ class VaultServiceTest {
     private VaultCredentialCategoryMapper vaultCredentialCategoryMapper;
 
     @Mock
-    private AccountMapper accountMapper;
+    private AccountLookupService accountLookupService;
 
     private VaultService vaultService;
 
@@ -52,13 +52,13 @@ class VaultServiceTest {
                 vaultMapper,
                 vaultCategoryMapper,
                 vaultCredentialCategoryMapper,
-                accountMapper
+                accountLookupService
         );
     }
 
     @Test
     void getCredentialListUsesMemberAccountIndex() {
-        when(accountMapper.selectAccountByLoginId("tester_a")).thenReturn(createAccount(7L, "tester_a"));
+        when(accountLookupService.getAccountByLoginId("tester_a")).thenReturn(createAccount(7L, "tester_a"));
         when(vaultCategoryMapper.selectCategoryList()).thenReturn(List.of());
         when(vaultMapper.selectCredentialList(List.of("mail"), List.of("category-uuid"), 7L)).thenReturn(List.of());
 
@@ -69,7 +69,7 @@ class VaultServiceTest {
 
     @Test
     void getCredentialThrowsWhenOtherAccountTriesToAccess() {
-        when(accountMapper.selectAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
+        when(accountLookupService.getAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
         when(vaultMapper.selectCredential("credential-uuid", 9L)).thenReturn(null);
 
         BusinessException exception = assertThrows(
@@ -91,7 +91,7 @@ class VaultServiceTest {
                 "개인 메모"
         );
 
-        when(accountMapper.selectAccountByLoginId("tester_a")).thenReturn(createAccount(7L, "tester_a"));
+        when(accountLookupService.getAccountByLoginId("tester_a")).thenReturn(createAccount(7L, "tester_a"));
         doAnswer(invocation -> {
             CrdVo credential = invocation.getArgument(0);
             credential.setIdx(15L);
@@ -136,7 +136,7 @@ class VaultServiceTest {
                 "개인 메모"
         );
 
-        when(accountMapper.selectAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
+        when(accountLookupService.getAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
         when(vaultMapper.selectCredential("credential-uuid", 9L)).thenReturn(null);
 
         BusinessException exception = assertThrows(
@@ -151,7 +151,7 @@ class VaultServiceTest {
 
     @Test
     void deleteCredentialThrowsWhenOtherAccountTriesToDelete() {
-        when(accountMapper.selectAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
+        when(accountLookupService.getAccountByLoginId("tester_b")).thenReturn(createAccount(9L, "tester_b"));
         when(vaultMapper.selectCredential("credential-uuid", 9L)).thenReturn(null);
 
         BusinessException exception = assertThrows(

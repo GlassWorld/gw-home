@@ -2,12 +2,11 @@ package com.gw.api.favorite;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.gw.api.dto.favorite.FavoriteResponse;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.favorite.FavoriteService;
-import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.board.BoardMapper;
 import com.gw.infra.db.mapper.favorite.FavoriteMapper;
 import com.gw.share.jvo.board.BrdPstJvo;
@@ -28,13 +27,13 @@ class FavoriteServiceTest {
     private BoardMapper boardMapper;
 
     @Mock
-    private AccountMapper accountMapper;
+    private AccountLookupService accountLookupService;
 
     private FavoriteService favoriteService;
 
     @BeforeEach
     void setUp() {
-        favoriteService = new FavoriteService(favoriteMapper, boardMapper, accountMapper);
+        favoriteService = new FavoriteService(favoriteMapper, boardMapper, accountLookupService);
     }
 
     @Test
@@ -42,7 +41,7 @@ class FavoriteServiceTest {
         when(boardMapper.selectBoardPostByUuid("board-uuid")).thenReturn(
                 BrdPstJvo.builder().idx(10L).uuid("board-uuid").build()
         );
-        when(accountMapper.selectAccountByLoginId("admin")).thenReturn(
+        when(accountLookupService.getAccountByLoginId("admin")).thenReturn(
                 AcctVo.builder().idx(3L).lgnId("admin").build()
         );
         when(favoriteMapper.existsFavorite("BOARD_POST", 10L, 3L)).thenReturn(false);

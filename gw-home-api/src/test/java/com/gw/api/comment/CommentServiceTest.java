@@ -3,7 +3,7 @@ package com.gw.api.comment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.gw.api.service.account.AccountService;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.comment.CommentService;
 import com.gw.infra.db.mapper.board.BoardMapper;
 import com.gw.infra.db.mapper.comment.CommentMapper;
@@ -27,13 +27,13 @@ class CommentServiceTest {
     private BoardMapper boardMapper;
 
     @Mock
-    private AccountService accountService;
+    private AccountLookupService accountLookupService;
 
     private CommentService commentService;
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentMapper, boardMapper, accountService);
+        commentService = new CommentService(commentMapper, boardMapper, accountLookupService);
     }
 
     @Test
