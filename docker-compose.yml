@@ -6,6 +6,9 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_PRIMARY_MODEL: ${OPENAI_PRIMARY_MODEL:-gpt-5.4-mini}
+      OPENAI_FALLBACK_MODEL: ${OPENAI_FALLBACK_MODEL:-gpt-5-mini}
     networks:
       - app-network
     restart: unless-stopped

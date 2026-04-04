@@ -83,11 +83,20 @@ function toWeeklyBody(payload: SaveWeeklyReportPayload): Record<string, string> 
   }
 }
 
-function toDraftBody(payload: WeeklyReportAiDraftPayload): Record<string, string> {
+function toDraftBody(payload: WeeklyReportAiDraftPayload): Record<string, unknown> {
   return {
     week_start_date: payload.weekStartDate,
     week_end_date: payload.weekEndDate,
-    additional_prompt: payload.additionalPrompt ?? ''
+    source_daily_reports: (payload.sourceDailyReports ?? []).slice(0, 5).map((report) => ({
+      uuid: report.uuid,
+      report_date: report.reportDate,
+      work_units: report.workUnits.map((workUnit) => ({
+        work_unit_uuid: workUnit.workUnitUuid,
+        title: workUnit.title,
+        category: workUnit.category
+      })),
+      content: report.content
+    }))
   }
 }
 

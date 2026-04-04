@@ -20,7 +20,8 @@ const emit = defineEmits<{
     :visible="visible"
     eyebrow="Daily Report"
     :title="dailyReportUuid ? '일일보고 수정' : '일일보고 작성'"
-    width="min(1380px, 96vw)"
+    width="calc(100vw - 24px)"
+    immersive
     :z-index="40"
     @close="emit('close')"
   >

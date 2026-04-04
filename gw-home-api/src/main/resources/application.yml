@@ -19,5 +19,10 @@ work:
   git:
     encryption-key: Z3ctaG9tZS1naXQta2V5IQ==
 
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  primary-model: ${OPENAI_PRIMARY_MODEL:gpt-5.4-mini}
+  fallback-model: ${OPENAI_FALLBACK_MODEL:gpt-5-mini}
+
 server:
   port: 8080

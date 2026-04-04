@@ -5,13 +5,19 @@ const props = defineProps<{
   members: OpenWeeklyReportMember[]
   reports: OpenWeeklyReport[]
   selectedMemberUuid: string
+  selectedYearMonth: string
+  selectedWeekOfMonth: string
+  availableYearMonths: string[]
   isLoadingMembers: boolean
   isLoadingReports: boolean
   formatDate: (value: string) => string
+  resolveWeekOfMonth: (value: string) => number
 }>()
 
 const emit = defineEmits<{
   'update:selectedMemberUuid': [memberUuid: string]
+  'update:selectedYearMonth': [value: string]
+  'update:selectedWeekOfMonth': [value: string]
   open: [reportUuid: string]
 }>()
 
@@ -21,6 +27,22 @@ const memberOptions = computed(() => {
     label: `${member.nickname || member.loginId} · ${member.openReportCount}건`
   }))
 })
+
+const yearMonthOptions = computed(() => {
+  return props.availableYearMonths.map((value) => ({
+    value,
+    label: value.replace('-', '년 ') + '월'
+  }))
+})
+
+const weekOptions = [
+  { value: '', label: '전체 주차' },
+  { value: '1', label: '1주차' },
+  { value: '2', label: '2주차' },
+  { value: '3', label: '3주차' },
+  { value: '4', label: '4주차' },
+  { value: '5', label: '5주차' }
+]
 
 function getAuthorLabel(report: OpenWeeklyReport): string {
   return report.nickname || report.loginId
@@ -46,15 +68,37 @@ function getExcerpt(content: string): string {
       <span v-if="props.isLoadingMembers || props.isLoadingReports">불러오는 중...</span>
     </div>
 
-    <label class="weekly-report-open-section__filter">
-      <span>조회할 사용자</span>
-      <CommonSearchableSelect
-        :options="memberOptions"
-        :model-value="props.selectedMemberUuid"
-        placeholder="사용자를 선택하세요"
-        @update:model-value="emit('update:selectedMemberUuid', $event)"
-      />
-    </label>
+    <div class="weekly-report-open-section__filters">
+      <label class="weekly-report-open-section__filter">
+        <span>조회할 사용자</span>
+        <CommonSearchableSelect
+          :options="memberOptions"
+          :model-value="props.selectedMemberUuid"
+          placeholder="사용자를 선택하세요"
+          @update:model-value="emit('update:selectedMemberUuid', $event)"
+        />
+      </label>
+
+      <label class="weekly-report-open-section__filter">
+        <span>조회 월</span>
+        <CommonSearchableSelect
+          :options="yearMonthOptions"
+          :model-value="props.selectedYearMonth"
+          placeholder="월을 선택하세요"
+          @update:model-value="emit('update:selectedYearMonth', $event)"
+        />
+      </label>
+
+      <label class="weekly-report-open-section__filter">
+        <span>주차</span>
+        <CommonSearchableSelect
+          :options="weekOptions"
+          :model-value="props.selectedWeekOfMonth"
+          placeholder="주차를 선택하세요"
+          @update:model-value="emit('update:selectedWeekOfMonth', $event)"
+        />
+      </label>
+    </div>
 
     <p v-if="!props.members.length" class="weekly-report-open-section__empty">
       공개된 주간보고가 있는 사용자가 없습니다.
@@ -70,6 +114,7 @@ function getExcerpt(content: string): string {
           <div class="weekly-report-open-section__meta">
             <strong>{{ getAuthorLabel(report) }}</strong>
             <span>{{ props.formatDate(report.weekStartDate) }} ~ {{ props.formatDate(report.weekEndDate) }}</span>
+            <span>{{ props.resolveWeekOfMonth(report.weekStartDate) }}주차</span>
           </div>
           <strong class="weekly-report-open-section__title">{{ report.title }}</strong>
           <p class="weekly-report-open-section__excerpt">{{ getExcerpt(report.content) }}</p>
@@ -114,6 +159,12 @@ function getExcerpt(content: string): string {
 .weekly-report-open-section__filter {
   display: grid;
   gap: 8px;
+}
+
+.weekly-report-open-section__filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .weekly-report-open-section__filter span {
@@ -172,10 +223,11 @@ function getExcerpt(content: string): string {
 }
 
 @media (max-width: 768px) {
+  .weekly-report-open-section__filters,
   .weekly-report-open-section__header,
   .weekly-report-open-section__card {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .weekly-report-open-section__actions {

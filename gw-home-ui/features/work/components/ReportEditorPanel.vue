@@ -24,6 +24,30 @@ const emit = defineEmits<{
   'open-work-import': []
 }>()
 
+const workSummaryTextarea = ref<HTMLTextAreaElement | null>(null)
+const issueNoteTextarea = ref<HTMLTextAreaElement | null>(null)
+
+function resizeTextarea(element: HTMLTextAreaElement | null) {
+  if (!element) {
+    return
+  }
+
+  element.style.height = 'auto'
+  element.style.height = `${element.scrollHeight}px`
+}
+
+function handleWorkSummaryInput(event: Event) {
+  const target = event.target as HTMLTextAreaElement
+  emit('update:work-summary', target.value)
+  nextTick(() => resizeTextarea(target))
+}
+
+function handleIssueNoteInput(event: Event) {
+  const target = event.target as HTMLTextAreaElement
+  emit('update:issue-note', target.value)
+  nextTick(() => resizeTextarea(target))
+}
+
 function renderMarkdown(rawValue: string): string {
   const normalizedValue = rawValue.trim()
 
@@ -48,6 +72,30 @@ const selectedWorkUnitSummary = computed(() => {
   }
 
   return props.selectedWorkUnits.map((workUnit) => workUnit.title).join(', ')
+})
+
+watch(
+  () => props.workSummary,
+  async () => {
+    await nextTick()
+    resizeTextarea(workSummaryTextarea.value)
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.issueNote,
+  async () => {
+    await nextTick()
+    resizeTextarea(issueNoteTextarea.value)
+  },
+  { immediate: true }
+)
+
+onMounted(async () => {
+  await nextTick()
+  resizeTextarea(workSummaryTextarea.value)
+  resizeTextarea(issueNoteTextarea.value)
 })
 </script>
 
@@ -109,22 +157,24 @@ const selectedWorkUnitSummary = computed(() => {
           <label class="report-editor-panel__field">
             <span>오늘 수행 내용</span>
             <textarea
+              ref="workSummaryTextarea"
               :value="workSummary"
               class="report-editor-panel__textarea report-editor-panel__textarea--large"
               rows="8"
               placeholder="예: ## 완료한 작업, - 점검 항목, `코드`처럼 마크다운으로 작성할 수 있습니다."
-              @input="emit('update:work-summary', ($event.target as HTMLTextAreaElement).value)"
+              @input="handleWorkSummaryInput"
             />
           </label>
 
           <label class="report-editor-panel__field">
             <span>이슈 / 특이사항</span>
             <textarea
+              ref="issueNoteTextarea"
               :value="issueNote"
               class="report-editor-panel__textarea"
               rows="4"
               placeholder="예: 재현 조건, 블로커, 공유가 필요한 특이사항을 마크다운으로 정리하세요."
-              @input="emit('update:issue-note', ($event.target as HTMLTextAreaElement).value)"
+              @input="handleIssueNoteInput"
             />
           </label>
         </div>
@@ -270,13 +320,17 @@ const selectedWorkUnitSummary = computed(() => {
 }
 
 .report-editor-panel__textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 128px;
   padding: 14px 16px;
   border-radius: var(--radius-small);
   border: 1px solid rgba(143, 208, 255, 0.18);
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text);
-  resize: vertical;
+  overflow: hidden;
+  resize: none;
   font: inherit;
 }
 
@@ -334,8 +388,6 @@ const selectedWorkUnitSummary = computed(() => {
 
 .report-editor-panel__preview-body {
   min-height: 120px;
-  max-height: 320px;
-  overflow-y: auto;
   line-height: 1.6;
 }
 

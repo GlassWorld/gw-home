@@ -206,8 +206,6 @@ const previewContentHtml = computed(() => renderMarkdown(props.previewReport?.co
 
 .daily-report-history-sidebar__preview-body {
   min-height: 0;
-  max-height: min(38vh, 360px);
-  overflow-y: auto;
   line-height: 1.6;
 }
 
