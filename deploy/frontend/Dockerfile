@@ -24,7 +24,7 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
