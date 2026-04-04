@@ -1,5 +1,6 @@
 package com.gw.api.service.account;
 
+import com.gw.api.convert.account.AdminAccountConvert;
 import com.gw.api.dto.account.AdminAccountDetailResponse;
 import com.gw.api.dto.account.AdminAccountListResponse;
 import com.gw.api.dto.account.AdminPasswordResetResponse;
@@ -29,15 +30,18 @@ public class AdminAccountService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
     private final PasswordEncoder passwordEncoder;
     private final ProfileService profileService;
 
     public AdminAccountService(
             AccountMapper accountMapper,
+            AccountLookupService accountLookupService,
             PasswordEncoder passwordEncoder,
             ProfileService profileService
     ) {
         this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
         this.passwordEncoder = passwordEncoder;
         this.profileService = profileService;
     }
@@ -66,7 +70,7 @@ public class AdminAccountService {
                         offset,
                         normalizedSize
                 ).stream()
-                .map(this::toListResponse)
+                .map(AdminAccountConvert::toListResponse)
                 .toList();
         long totalCount = accountMapper.countAllAccounts(normalizedLoginId, normalizedRole, normalizedAcctStat);
         int totalPages = (int) Math.ceil((double) totalCount / normalizedSize);
@@ -76,13 +80,15 @@ public class AdminAccountService {
     }
 
     @Transactional(readOnly = true)
+    // 관리자 계정 상세를 조회한다.
     public AdminAccountDetailResponse getAccount(String uuid) {
         log.info("getAccount 시작 - uuid: {}", uuid);
-        AdminAccountDetailResponse response = toDetailResponse(getAccountByUuid(uuid));
+        AdminAccountDetailResponse response = AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
         log.info("getAccount 완료 - uuid: {}", uuid);
         return response;
     }
 
+    // 관리자 권한으로 계정을 생성한다.
     public AdminAccountDetailResponse createAccount(AdminCreateAccountRequest request, String adminLoginId) {
         log.info("createAccount 시작 - loginId: {}, role: {}, adminLoginId: {}",
                 request.loginId(), request.role(), adminLoginId);
@@ -103,9 +109,10 @@ public class AdminAccountService {
         AcctVo savedAccount = getAccountByLoginId(loginId);
         profileService.createDefaultProfile(savedAccount);
         log.info("createAccount 완료 - createdLoginId: {}", loginId);
-        return toDetailResponse(savedAccount);
+        return AdminAccountConvert.toDetailResponse(savedAccount);
     }
 
+    // 관리자 권한으로 계정 권한을 변경한다.
     public AdminAccountDetailResponse updateRole(String uuid, UpdateRoleRequest request, String adminLoginId) {
         log.info("updateRole 시작 - uuid: {}, role: {}, adminLoginId: {}", uuid, request.role(), adminLoginId);
         AcctVo account = getAccountByUuid(uuid);
@@ -118,9 +125,10 @@ public class AdminAccountService {
         }
 
         log.info("updateRole 완료 - uuid: {}, role: {}", uuid, request.role());
-        return toDetailResponse(getAccountByUuid(uuid));
+        return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
     }
 
+    // 관리자 권한으로 계정 상태를 변경한다.
     public AdminAccountDetailResponse updateStatus(String uuid, UpdateStatusRequest request, String adminLoginId) {
         log.info("updateStatus 시작 - uuid: {}, status: {}, adminLoginId: {}", uuid, request.status(), adminLoginId);
         AcctVo account = getAccountByUuid(uuid);
@@ -133,9 +141,10 @@ public class AdminAccountService {
         }
 
         log.info("updateStatus 완료 - uuid: {}, status: {}", uuid, request.status());
-        return toDetailResponse(getAccountByUuid(uuid));
+        return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
     }
 
+    // 관리자 권한으로 계정을 삭제한다.
     public void deleteAccount(String uuid, String adminLoginId) {
         log.info("deleteAccount 시작 - uuid: {}, adminLoginId: {}", uuid, adminLoginId);
         AcctVo account = getAccountByUuid(uuid);
@@ -150,6 +159,7 @@ public class AdminAccountService {
         log.info("deleteAccount 완료 - uuid: {}", uuid);
     }
 
+    // 관리자 권한으로 잠긴 계정을 해제한다.
     public AdminAccountDetailResponse unlockAccount(String uuid, String adminLoginId) {
         log.info("unlockAccount 시작 - uuid: {}, adminLoginId: {}", uuid, adminLoginId);
         int updatedCount = accountMapper.unlockAccountByUuid(uuid, adminLoginId);
@@ -160,9 +170,10 @@ public class AdminAccountService {
         }
 
         log.info("unlockAccount 완료 - uuid: {}", uuid);
-        return toDetailResponse(getAccountByUuid(uuid));
+        return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
     }
 
+    // 관리자 권한으로 OTP 실패 횟수를 초기화한다.
     public AdminAccountDetailResponse resetOtpFailure(String uuid, String adminLoginId) {
         log.info("resetOtpFailure 시작 - uuid: {}, adminLoginId: {}", uuid, adminLoginId);
         int updatedCount = accountMapper.resetOtpFailureByUuid(uuid, adminLoginId);
@@ -173,9 +184,10 @@ public class AdminAccountService {
         }
 
         log.info("resetOtpFailure 완료 - uuid: {}", uuid);
-        return toDetailResponse(getAccountByUuid(uuid));
+        return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
     }
 
+    // 관리자 권한으로 OTP 설정을 초기화한다.
     public AdminAccountDetailResponse resetOtp(String uuid, String adminLoginId) {
         log.info("resetOtp 시작 - uuid: {}, adminLoginId: {}", uuid, adminLoginId);
         int updatedCount = accountMapper.resetOtpByUuid(uuid, adminLoginId);
@@ -186,9 +198,10 @@ public class AdminAccountService {
         }
 
         log.info("resetOtp 완료 - uuid: {}", uuid);
-        return toDetailResponse(getAccountByUuid(uuid));
+        return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
     }
 
+    // 관리자 권한으로 임시 비밀번호를 발급한다.
     public AdminPasswordResetResponse resetPassword(String uuid, String adminLoginId) {
         log.info("resetPassword 시작 - uuid: {}, adminLoginId: {}", uuid, adminLoginId);
         getAccountByUuid(uuid);
@@ -201,29 +214,15 @@ public class AdminAccountService {
         }
 
         log.info("resetPassword 완료 - uuid: {}", uuid);
-        return new AdminPasswordResetResponse(temporaryPassword);
+        return AdminAccountConvert.toPasswordResetResponse(temporaryPassword);
     }
 
     private AcctVo getAccountByUuid(String uuid) {
-        AcctVo account = accountMapper.selectAccountByUuid(uuid);
-
-        if (account == null) {
-            log.error("getAccountByUuid 실패 - 원인: 계정을 찾을 수 없습니다. uuid={}", uuid);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByUuid(uuid);
     }
 
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            log.error("getAccountByLoginId 실패 - 원인: 계정을 찾을 수 없습니다. loginId={}", loginId);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     private void validateDuplicate(String loginId, String email) {
@@ -266,29 +265,4 @@ public class AdminAccountService {
         return builder.toString();
     }
 
-    private AdminAccountListResponse toListResponse(AcctVo account) {
-        return new AdminAccountListResponse(
-                account.getUuid(),
-                account.getLgnId(),
-                account.getEmail(),
-                account.getRole(),
-                account.getAcctStat(),
-                account.isLckYn(),
-                account.getCreatedAt()
-        );
-    }
-
-    private AdminAccountDetailResponse toDetailResponse(AcctVo account) {
-        return new AdminAccountDetailResponse(
-                account.getUuid(),
-                account.getLgnId(),
-                account.getEmail(),
-                account.getRole(),
-                account.getAcctStat(),
-                account.isLckYn(),
-                account.getLckAt(),
-                account.getCreatedAt(),
-                account.getUpdatedAt()
-        );
-    }
 }

@@ -7,11 +7,13 @@ import com.gw.api.dto.work.WorkUnitGitCommitResponse;
 import com.gw.api.dto.work.WorkUnitListRequest;
 import com.gw.api.dto.work.WorkUnitOptionResponse;
 import com.gw.api.dto.work.WorkUnitResponse;
-import com.gw.infra.db.mapper.account.AccountMapper;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.work.WorkGitMapper;
 import com.gw.infra.db.mapper.work.WorkUnitMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.UseYnPolicy;
+import com.gw.share.common.policy.WorkPolicy;
 import com.gw.share.util.StringUtil;
 import com.gw.share.util.ValidationUtil;
 import com.gw.share.vo.account.AcctVo;
@@ -40,18 +42,18 @@ public class WorkUnitService {
 
     private final WorkUnitMapper workUnitMapper;
     private final WorkGitMapper workGitMapper;
-    private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
     private final WorkGitCommitClient workGitCommitClient;
 
     public WorkUnitService(
             WorkUnitMapper workUnitMapper,
             WorkGitMapper workGitMapper,
-            AccountMapper accountMapper,
+            AccountLookupService accountLookupService,
             WorkGitCommitClient workGitCommitClient
     ) {
         this.workUnitMapper = workUnitMapper;
         this.workGitMapper = workGitMapper;
-        this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
         this.workGitCommitClient = workGitCommitClient;
     }
 
@@ -113,6 +115,7 @@ public class WorkUnitService {
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 업무 상세를 조회한다.
     public WorkUnitResponse getWorkUnit(String loginId, String uuid) {
         log.info("getWorkUnit 시작 - loginId: {}, uuid: {}", loginId, uuid);
         try {
@@ -147,7 +150,7 @@ public class WorkUnitService {
                     .dscr(normalizeText(request.description()))
                     .ctgr(normalizeText(request.category()))
                     .sts(normalizeStatusOrDefault(request.status()))
-                    .useYn("Y")
+                    .useYn(UseYnPolicy.YES)
                     .createdBy(loginId)
                     .build();
             workUnitMapper.insertWorkUnit(workUnit);
@@ -225,6 +228,7 @@ public class WorkUnitService {
     }
 
     @Transactional(readOnly = true)
+    // 로그인 사용자의 업무와 연결된 Git 커밋을 조회한다.
     public List<WorkUnitGitCommitResponse> getWorkUnitGitCommits(String loginId, String uuid, LocalDate reportDate) {
         log.info("getWorkUnitGitCommits 시작 - loginId: {}, uuid: {}, reportDate: {}", loginId, uuid, reportDate);
         try {
@@ -252,6 +256,7 @@ public class WorkUnitService {
         WorkUnitVo workUnit = workUnitMapper.selectWorkUnit(uuid, mbrAcctIdx);
 
         if (workUnit == null) {
+            log.error("getWorkUnit 실패 - 원인: 업무를 찾을 수 없습니다. uuid={}, memberAccountIdx={}", uuid, mbrAcctIdx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "업무를 찾을 수 없습니다.");
         }
 
@@ -263,6 +268,7 @@ public class WorkUnitService {
         WorkUnitVo workUnit = workUnitMapper.selectWorkUnitByIdx(idx);
 
         if (workUnit == null) {
+            log.error("getWorkUnitByIdx 실패 - 원인: 업무를 찾을 수 없습니다. idx={}", idx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "업무를 찾을 수 없습니다.");
         }
 
@@ -271,18 +277,18 @@ public class WorkUnitService {
 
     // 로그인 ID로 회원 계정을 조회한다.
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     // 동일 회원의 업무명 중복 여부를 검증한다.
     private void validateDuplicateTitle(Long mbrAcctIdx, String title, String excludeUuid) {
         if (workUnitMapper.existsTitle(mbrAcctIdx, title, excludeUuid)) {
+            log.error(
+                    "validateDuplicateTitle 실패 - 원인: 동일한 업무명이 이미 등록되어 있습니다. memberAccountIdx={}, title={}, excludeUuid={}",
+                    mbrAcctIdx,
+                    title,
+                    excludeUuid
+            );
             throw new BusinessException(ErrorCode.DUPLICATE, "동일한 업무명이 이미 등록되어 있습니다.");
         }
     }
@@ -313,15 +319,18 @@ public class WorkUnitService {
         }
 
         return switch (normalized) {
-            case "IN_PROGRESS", "DONE", "ON_HOLD" -> normalized;
-            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "올바르지 않은 업무 상태입니다.");
+            case WorkPolicy.STATUS_IN_PROGRESS, WorkPolicy.STATUS_DONE, WorkPolicy.STATUS_ON_HOLD -> normalized;
+            default -> {
+                log.error("normalizeStatus 실패 - 원인: 올바르지 않은 업무 상태입니다. status={}", status);
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "올바르지 않은 업무 상태입니다.");
+            }
         };
     }
 
     // 업무 상태 입력값이 없으면 기본 상태로 보정한다.
     private String normalizeStatusOrDefault(String status) {
         String normalized = normalizeStatus(status);
-        return normalized == null ? "IN_PROGRESS" : normalized;
+        return normalized == null ? WorkPolicy.STATUS_IN_PROGRESS : normalized;
     }
 
     // 사용 여부 입력값을 정규화하고 기본값을 보정한다.
@@ -329,12 +338,15 @@ public class WorkUnitService {
         String normalized = normalizeText(useYn);
 
         if (normalized == null) {
-            return "Y";
+            return UseYnPolicy.YES;
         }
 
         return switch (normalized) {
-            case "Y", "N" -> normalized;
-            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "useYn은 Y 또는 N 이어야 합니다.");
+            case UseYnPolicy.YES, UseYnPolicy.NO -> normalized;
+            default -> {
+                log.error("normalizeUseYn 실패 - 원인: useYn 값이 올바르지 않습니다. useYn={}", useYn);
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "useYn은 Y 또는 N 이어야 합니다.");
+            }
         };
     }
 
@@ -347,8 +359,11 @@ public class WorkUnitService {
         }
 
         return switch (normalized) {
-            case "Y", "N" -> normalized;
-            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "useYn은 Y 또는 N 이어야 합니다.");
+            case UseYnPolicy.YES, UseYnPolicy.NO -> normalized;
+            default -> {
+                log.error("normalizeOptionalUseYn 실패 - 원인: useYn 값이 올바르지 않습니다. useYn={}", useYn);
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "useYn은 Y 또는 N 이어야 합니다.");
+            }
         };
     }
 
@@ -398,6 +413,12 @@ public class WorkUnitService {
 
         List<WorkGitPrjVo> gitProjects = workGitMapper.selectGitProjectsByUuids(mbrAcctIdx, gitProjectUuids);
         if (gitProjects.size() != gitProjectUuids.size()) {
+            log.error(
+                    "syncGitProjects 실패 - 원인: 연결할 Git 프로젝트를 찾을 수 없습니다. memberAccountIdx={}, requestedCount={}, foundCount={}",
+                    mbrAcctIdx,
+                    gitProjectUuids.size(),
+                    gitProjects.size()
+            );
             throw new BusinessException(ErrorCode.BAD_REQUEST, "연결할 Git 프로젝트를 찾을 수 없습니다.");
         }
 

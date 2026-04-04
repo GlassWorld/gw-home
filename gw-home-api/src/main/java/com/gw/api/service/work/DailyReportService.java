@@ -10,12 +10,13 @@ import com.gw.api.dto.work.DailyReportMissingRequest;
 import com.gw.api.dto.work.DailyReportMissingResponse;
 import com.gw.api.dto.work.DailyReportResponse;
 import com.gw.api.dto.work.UpdateDailyReportRequest;
-import com.gw.infra.db.mapper.account.AccountMapper;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.work.DailyReportMapper;
 import com.gw.infra.db.mapper.work.WorkUnitMapper;
 import com.gw.infra.db.support.PageSortSupport;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.WorkPolicy;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.util.DateUtil;
 import com.gw.share.util.StringUtil;
@@ -40,16 +41,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class DailyReportService {
 
-    private static final String DEFAULT_DAILY_REPORT_STATUS = "IN_PROGRESS";
-
     private final DailyReportMapper dailyReportMapper;
     private final WorkUnitMapper workUnitMapper;
-    private final AccountMapper accountMapper;
+    private final AccountLookupService accountLookupService;
 
-    public DailyReportService(DailyReportMapper dailyReportMapper, WorkUnitMapper workUnitMapper, AccountMapper accountMapper) {
+    public DailyReportService(DailyReportMapper dailyReportMapper, WorkUnitMapper workUnitMapper, AccountLookupService accountLookupService) {
         this.dailyReportMapper = dailyReportMapper;
         this.workUnitMapper = workUnitMapper;
-        this.accountMapper = accountMapper;
+        this.accountLookupService = accountLookupService;
     }
 
     // 로그인 사용자의 일일보고 목록을 조회한다.
@@ -139,7 +138,7 @@ public class DailyReportService {
                     .mbrAcctIdx(account.getIdx())
                     .rptDt(reportDate)
                     .cntn(resolveReportContent(request.content(), request.note()))
-                    .sts(DEFAULT_DAILY_REPORT_STATUS)
+                    .sts(WorkPolicy.STATUS_IN_PROGRESS)
                     .spclNote(normalizeText(request.note()))
                     .createdBy(loginId)
                     .build();
@@ -177,7 +176,7 @@ public class DailyReportService {
                     workUnits.size()
             );
             dailyReport.setCntn(resolveReportContent(request.content(), request.note()));
-            dailyReport.setSts(DEFAULT_DAILY_REPORT_STATUS);
+            dailyReport.setSts(WorkPolicy.STATUS_IN_PROGRESS);
             dailyReport.setSpclNote(normalizeText(request.note()));
             dailyReport.setUpdatedBy(loginId);
             dailyReportMapper.updateDailyReport(dailyReport);
@@ -285,12 +284,11 @@ public class DailyReportService {
                         List<LocalDate> missingDates = resolveMissingDates(member.getMbrAcctIdx(), dateFrom, dateTo);
                         List<LocalDate> writtenDates = dailyReportMapper.selectWrittenDates(member.getMbrAcctIdx(), dateFrom, dateTo);
                         LocalDate lastWrittenDate = writtenDates.isEmpty() ? null : writtenDates.get(writtenDates.size() - 1);
-                        return new AdminDailyReportMissingResponse(
+                        return DailyReportConvert.toAdminMissingResponse(
                                 member.getMbrAcctUuid(),
                                 member.getLgnId(),
                                 member.getNickNm(),
                                 missingDates,
-                                missingDates.size(),
                                 lastWrittenDate
                         );
                     })
@@ -329,6 +327,7 @@ public class DailyReportService {
         DailyReportVo dailyReport = dailyReportMapper.selectDailyReport(uuid, mbrAcctIdx);
 
         if (dailyReport == null) {
+            log.error("getDailyReport 실패 - 원인: 일일보고를 찾을 수 없습니다. uuid={}, memberAccountIdx={}", uuid, mbrAcctIdx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "일일보고를 찾을 수 없습니다.");
         }
 
@@ -340,6 +339,7 @@ public class DailyReportService {
         DailyReportVo dailyReport = dailyReportMapper.selectDailyReportByIdx(idx);
 
         if (dailyReport == null) {
+            log.error("getDailyReportByIdx 실패 - 원인: 일일보고를 찾을 수 없습니다. idx={}", idx);
             throw new BusinessException(ErrorCode.NOT_FOUND, "일일보고를 찾을 수 없습니다.");
         }
 
@@ -348,18 +348,18 @@ public class DailyReportService {
 
     // 로그인 ID로 회원 계정을 조회한다.
     private AcctVo getAccountByLoginId(String loginId) {
-        AcctVo account = accountMapper.selectAccountByLoginId(loginId);
-
-        if (account == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
-        }
-
-        return account;
+        return accountLookupService.getAccountByLoginId(loginId);
     }
 
     // 동일 날짜 일일보고 중복 여부를 검증한다.
     private void validateDuplicateReportDate(Long mbrAcctIdx, LocalDate rptDt, String excludeUuid) {
         if (dailyReportMapper.existsDailyReportByDate(mbrAcctIdx, rptDt, excludeUuid)) {
+            log.error(
+                    "validateDuplicateReportDate 실패 - 원인: 같은 날짜의 일일보고가 이미 존재합니다. memberAccountIdx={}, reportDate={}, excludeUuid={}",
+                    mbrAcctIdx,
+                    rptDt,
+                    excludeUuid
+            );
             throw new BusinessException(ErrorCode.DUPLICATE, "같은 날짜의 일일보고가 이미 존재합니다.");
         }
     }

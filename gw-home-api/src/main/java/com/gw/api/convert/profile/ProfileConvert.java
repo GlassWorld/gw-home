@@ -1,7 +1,10 @@
 package com.gw.api.convert.profile;
 
+import com.gw.api.dto.profile.MemoResponse;
+import com.gw.api.dto.profile.NavigationFavoriteResponse;
 import com.gw.api.dto.profile.ProfileResponse;
 import com.gw.share.vo.profile.PrflVo;
+import java.util.List;
 
 public final class ProfileConvert {
 
@@ -17,5 +20,15 @@ public final class ProfileConvert {
                 profile.getPrflImgUrl(),
                 profile.getCreatedAt()
         );
+    }
+
+    // 메모 문자열을 메모 응답으로 변환한다.
+    public static MemoResponse toMemoResponse(String memo) {
+        return new MemoResponse(memo == null ? "" : memo);
+    }
+
+    // 즐겨찾기 메뉴 목록을 응답으로 변환한다.
+    public static NavigationFavoriteResponse toNavigationFavoriteResponse(List<String> favoriteMenus) {
+        return new NavigationFavoriteResponse(favoriteMenus);
     }
 }

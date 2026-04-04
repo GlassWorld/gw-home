@@ -2,7 +2,9 @@ package com.gw.api.service.work;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gw.api.convert.work.WeeklyReportConvert;
 import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
+import com.gw.share.common.policy.WorkPolicy;
 import com.gw.share.vo.work.DailyReportVo;
 import com.gw.share.vo.work.WorkUnitVo;
 import java.io.IOException;
@@ -41,6 +43,7 @@ public class WeeklyReportDraftService {
         this.httpClient = HttpClient.newHttpClient();
     }
 
+    // 주차 범위와 일일보고를 바탕으로 주간보고 초안을 생성한다.
     public WeeklyReportAiDraftResponse generateDraft(
             LocalDate weekStartDate,
             LocalDate weekEndDate,
@@ -111,7 +114,7 @@ public class WeeklyReportDraftService {
             throw new IOException("OpenAI 초안 내용이 비어 있습니다.");
         }
 
-        return new WeeklyReportAiDraftResponse(title, body, "OPENAI", dailyReports.size(), openAiModel);
+        return WeeklyReportConvert.toAiDraftResponse(title, body, WorkPolicy.GENERATION_TYPE_OPENAI, dailyReports.size(), openAiModel);
     }
 
     private WeeklyReportAiDraftResponse buildRuleBasedDraft(
@@ -147,10 +150,10 @@ public class WeeklyReportDraftService {
                     .append('\n');
         }
 
-        return new WeeklyReportAiDraftResponse(
+        return WeeklyReportConvert.toAiDraftResponse(
                 buildTitle(weekStartDate, weekEndDate),
                 builder.toString().trim(),
-                "RULE_BASED",
+                WorkPolicy.GENERATION_TYPE_RULE_BASED,
                 dailyReports.size(),
                 "local-rule-based"
         );

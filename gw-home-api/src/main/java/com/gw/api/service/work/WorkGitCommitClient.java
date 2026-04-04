@@ -2,8 +2,10 @@ package com.gw.api.service.work;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gw.api.convert.work.WorkGitConvert;
 import com.gw.api.dto.work.WorkGitConnectionTestResponse;
 import com.gw.api.dto.work.WorkUnitGitCommitResponse;
+import com.gw.share.common.policy.GitProviderPolicy;
 import com.gw.share.common.util.WorkGitAccessTokenEncryptor;
 import com.gw.share.vo.work.WorkGitPrjVo;
 import java.io.IOException;
@@ -48,6 +50,7 @@ public class WorkGitCommitClient {
         this.httpClient = HttpClient.newHttpClient();
     }
 
+    // 업무에 연결된 Git 프로젝트의 커밋 목록을 조회한다.
     public List<WorkUnitGitCommitResponse> fetchCommits(List<WorkGitPrjVo> gitProjects, LocalDate reportDate) {
         if (gitProjects == null || gitProjects.isEmpty()) {
             return List.of();
@@ -75,14 +78,12 @@ public class WorkGitCommitClient {
                 .toList();
     }
 
+    // Git 프로젝트 연결 상태를 점검한다.
     public WorkGitConnectionTestResponse testProjectConnection(WorkGitPrjVo gitProject) {
         try {
-            if (!"GITLAB".equals(gitProject.getPrvdCd())) {
-                return new WorkGitConnectionTestResponse(
-                        gitProject.getUuid(),
-                        gitProject.getPrvdCd(),
-                        gitProject.getPrjNm(),
-                        gitProject.getRepoUrl(),
+            if (!GitProviderPolicy.GITLAB.equals(gitProject.getPrvdCd())) {
+                return WorkGitConvert.toConnectionTestResponse(
+                        gitProject,
                         false,
                         "GitLab 프로젝트만 연결 테스트를 지원합니다.",
                         OffsetDateTime.now(KOREA_ZONE_ID)
@@ -98,11 +99,8 @@ public class WorkGitCommitClient {
                     gitProject.getRepoUrl(),
                     exception
             );
-            return new WorkGitConnectionTestResponse(
-                    gitProject.getUuid(),
-                    gitProject.getPrvdCd(),
-                    gitProject.getPrjNm(),
-                    gitProject.getRepoUrl(),
+            return WorkGitConvert.toConnectionTestResponse(
+                    gitProject,
                     false,
                     exception.getMessage(),
                     OffsetDateTime.now(KOREA_ZONE_ID)
@@ -112,7 +110,7 @@ public class WorkGitCommitClient {
 
     private List<WorkUnitGitCommitResponse> fetchCommits(WorkGitPrjVo gitProject, LocalDate reportDate)
             throws IOException, InterruptedException {
-        if (!"GITLAB".equals(gitProject.getPrvdCd())) {
+        if (!GitProviderPolicy.GITLAB.equals(gitProject.getPrvdCd())) {
             return List.of();
         }
 
@@ -176,11 +174,8 @@ public class WorkGitCommitClient {
             if (isMergeCommit(message)) {
                 continue;
             }
-            commits.add(new WorkUnitGitCommitResponse(
-                    gitProject.getUuid(),
-                    gitProject.getPrvdCd(),
-                    gitProject.getRepoUrl(),
-                    gitProject.getPrjNm(),
+            commits.add(WorkGitConvert.toCommitResponse(
+                    gitProject,
                     commitNode.path("id").asText(""),
                     message,
                     authorName,
@@ -217,11 +212,8 @@ public class WorkGitCommitClient {
 
         JsonNode rootNode = objectMapper.readTree(response.body());
         String fullPath = rootNode.path("path_with_namespace").asText(gitProject.getPrjNm());
-        return new WorkGitConnectionTestResponse(
-                gitProject.getUuid(),
-                gitProject.getPrvdCd(),
-                gitProject.getPrjNm(),
-                gitProject.getRepoUrl(),
+        return WorkGitConvert.toConnectionTestResponse(
+                gitProject,
                 true,
                 "연결 성공: " + fullPath,
                 OffsetDateTime.now(KOREA_ZONE_ID)

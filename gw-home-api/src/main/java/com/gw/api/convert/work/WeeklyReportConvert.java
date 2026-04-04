@@ -1,6 +1,7 @@
 package com.gw.api.convert.work;
 
 import com.gw.api.dto.work.WeeklyReportDailySourceResponse;
+import com.gw.api.dto.work.WeeklyReportAiDraftResponse;
 import com.gw.api.dto.work.WeeklyReportResponse;
 import com.gw.share.vo.work.DailyReportVo;
 import com.gw.share.vo.work.WeeklyReportVo;
@@ -35,5 +36,16 @@ public final class WeeklyReportConvert {
                 dailyReport.getCntn(),
                 dailyReport.getSpclNote()
         );
+    }
+
+    // 주간보고 AI 초안 결과를 응답으로 변환한다.
+    public static WeeklyReportAiDraftResponse toAiDraftResponse(
+            String title,
+            String content,
+            String generationType,
+            int sourceCount,
+            String modelName
+    ) {
+        return new WeeklyReportAiDraftResponse(title, content, generationType, sourceCount, modelName);
     }
 }
