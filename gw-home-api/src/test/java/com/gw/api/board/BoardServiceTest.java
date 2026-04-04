@@ -5,9 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.gw.api.dto.board.BoardPostListRequest;
+import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.board.BoardService;
 import com.gw.api.service.tag.TagService;
-import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.board.BoardMapper;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.jvo.board.BrdPstSmryJvo;
@@ -26,7 +26,7 @@ class BoardServiceTest {
     private BoardMapper boardMapper;
 
     @Mock
-    private AccountMapper accountMapper;
+    private AccountLookupService accountLookupService;
 
     @Mock
     private TagService tagService;
@@ -35,7 +35,7 @@ class BoardServiceTest {
 
     @BeforeEach
     void setUp() {
-        boardService = new BoardService(boardMapper, accountMapper, tagService);
+        boardService = new BoardService(boardMapper, accountLookupService, tagService);
     }
 
     @Test
