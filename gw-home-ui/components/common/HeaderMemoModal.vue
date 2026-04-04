@@ -115,13 +115,17 @@ watch(() => props.visible, async (visible) => {
   width: 100%;
   min-height: min(56vh, 560px);
   resize: vertical;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 20px;
-  background: rgba(7, 21, 39, 0.72);
+  border: 1px solid rgba(148, 168, 255, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(8, 13, 31, 0.9) 0%, rgba(12, 20, 45, 0.86) 100%);
   color: #eff8ff;
   padding: 20px 22px;
   font: inherit;
   line-height: 1.6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -10px 18px rgba(58, 80, 176, 0.1),
+    0 10px 24px rgba(2, 8, 24, 0.22);
 }
 
 .header-memo-modal__textarea:focus {

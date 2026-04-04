@@ -11,9 +11,9 @@
   --color-accent: #6ec1ff;
   --color-danger: #e05c5c;
   --shadow-soft: 0 20px 45px rgba(2, 12, 27, 0.45);
-  --radius-large: 28px;
-  --radius-medium: 18px;
-  --radius-small: 12px;
+  --radius-large: 10px;
+  --radius-medium: 8px;
+  --radius-small: 8px;
   --font-display: "Segoe UI", "Noto Sans KR", sans-serif;
   --font-body: "Segoe UI", "Noto Sans KR", sans-serif;
 }
@@ -39,7 +39,10 @@ body {
   min-height: 100dvh;
   font-family: var(--font-body);
   color: var(--color-text);
-  background: linear-gradient(135deg, #0a1628 0%, #0d2847 50%, #0a3d62 100%);
+  background:
+    radial-gradient(circle at top, rgba(116, 82, 255, 0.2) 0%, rgba(116, 82, 255, 0) 30%),
+    radial-gradient(circle at 20% 20%, rgba(65, 192, 255, 0.14) 0%, rgba(65, 192, 255, 0) 24%),
+    linear-gradient(180deg, #040814 0%, #071224 42%, #0b1630 100%);
 }
 
 a {
@@ -68,10 +71,13 @@ button {
 }
 
 .content-panel {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, rgba(17, 27, 58, 0.82) 0%, rgba(10, 17, 40, 0.78) 100%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
-  box-shadow: var(--shadow-soft);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(14px);
 }
 
@@ -83,47 +89,95 @@ button {
   justify-content: center;
   min-height: 44px;
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-small);
   border: 1px solid transparent;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-}
-
-.button-primary:hover,
-.button-secondary:hover,
-.button-danger:hover {
-  transform: translateY(-1px);
+  transition: box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
 }
 
 .button-primary {
-  color: #fff;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
-  box-shadow: 0 16px 30px rgba(29, 124, 184, 0.28);
+  color: #fdfdff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-color: rgba(165, 188, 255, 0.24);
+  background: linear-gradient(135deg, rgba(109, 103, 255, 0.98) 0%, rgba(63, 151, 255, 0.96) 58%, rgba(66, 219, 223, 0.92) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -10px 16px rgba(35, 58, 154, 0.24),
+    0 20px 34px rgba(18, 34, 106, 0.34),
+    0 0 28px rgba(79, 104, 255, 0.28);
+}
+
+.button-primary:hover {
+  background: linear-gradient(135deg, rgba(129, 122, 255, 1) 0%, rgba(82, 170, 255, 0.98) 58%, rgba(90, 235, 232, 0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -10px 16px rgba(35, 58, 154, 0.18),
+    0 24px 38px rgba(10, 24, 84, 0.42),
+    0 0 30px rgba(80, 124, 255, 0.34);
 }
 
 .button-secondary {
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--color-border);
+  color: rgba(236, 246, 255, 0.94);
+  font-weight: 600;
+  border-color: rgba(176, 195, 255, 0.26);
+  background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -8px 14px rgba(56, 79, 162, 0.2),
+    0 14px 28px rgba(6, 20, 54, 0.28);
+}
+
+.button-secondary:hover {
+  border-color: rgba(196, 212, 255, 0.34);
+  background: linear-gradient(180deg, rgba(56, 70, 120, 0.96) 0%, rgba(34, 47, 86, 0.94) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -8px 14px rgba(66, 91, 180, 0.24),
+    0 16px 30px rgba(8, 22, 58, 0.32);
 }
 
 .button-danger {
   color: #fff;
-  background: var(--color-danger);
+  background: linear-gradient(135deg, #ea6b72 0%, #c93c52 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 16px 28px rgba(122, 20, 44, 0.3);
 }
 
 .input-field {
   width: 100%;
-  min-height: 48px;
+  min-height: 56px;
   padding: 0 16px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
+  border: 1px solid rgba(148, 168, 255, 0.28);
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(8, 13, 31, 0.9) 0%, rgba(12, 20, 45, 0.86) 100%);
   color: var(--color-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -10px 18px rgba(58, 80, 176, 0.1),
+    0 10px 24px rgba(2, 8, 24, 0.22);
+}
+
+textarea.input-field {
+  min-height: 140px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.input-field::placeholder {
+  color: rgba(185, 198, 240, 0.38);
 }
 
 .input-field:focus {
-  outline: 2px solid rgba(110, 193, 255, 0.22);
-  border-color: var(--color-primary);
+  outline: 2px solid rgba(126, 145, 255, 0.22);
+  border-color: rgba(145, 185, 255, 0.88);
+  box-shadow:
+    0 0 0 4px rgba(82, 103, 255, 0.14),
+    inset 0 -12px 20px rgba(74, 98, 205, 0.14),
+    0 16px 30px rgba(3, 10, 28, 0.3);
 }
 
 .section-title {

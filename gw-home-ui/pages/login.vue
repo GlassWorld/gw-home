@@ -223,28 +223,28 @@ async function handleActivateOtp() {
       </div>
 
       <template #actions>
-        <CommonBaseButton variant="secondary" :disabled="isOtpSetupSubmitting" @click="handleSetupOtp">
-          {{ isOtpSetupSubmitting ? 'QR 생성 중...' : 'QR 다시 생성' }}
-        </CommonBaseButton>
-        <CommonBaseButton
-          :disabled="activationOtpCode.length !== 6 || isOtpActivateSubmitting || isOtpSetupSubmitting"
-          @click="handleActivateOtp"
-        >
-          {{ isOtpActivateSubmitting ? '등록 중...' : 'OTP 등록 완료' }}
-        </CommonBaseButton>
+        <div class="login-page__otp-setup-actions">
+          <CommonBaseButton variant="secondary" :disabled="isOtpSetupSubmitting" @click="handleSetupOtp">
+            {{ isOtpSetupSubmitting ? 'QR 생성 중...' : 'QR 다시 생성' }}
+          </CommonBaseButton>
+          <CommonBaseButton
+            :disabled="activationOtpCode.length !== 6 || isOtpActivateSubmitting || isOtpSetupSubmitting"
+            @click="handleActivateOtp"
+          >
+            {{ isOtpActivateSubmitting ? '등록 중...' : 'OTP 등록 완료' }}
+          </CommonBaseButton>
+        </div>
       </template>
     </CommonBaseModal>
   </main>
 </template>
 
 <style scoped>
-:global(body) {
-  background: linear-gradient(135deg, #0a1628 0%, #0d2847 50%, #0a3d62 100%);
-}
-
 .login-page {
   flex: 1;
-  min-height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   display: flex;
   align-items: center;
@@ -257,25 +257,31 @@ async function handleActivateOtp() {
 .login-page::after {
   content: '';
   position: absolute;
-  border-radius: 999px;
   pointer-events: none;
-  filter: blur(10px);
 }
 
 .login-page::before {
-  width: 320px;
-  height: 320px;
-  top: 8%;
-  left: 6%;
-  background: radial-gradient(circle, rgba(110, 193, 255, 0.3) 0%, rgba(110, 193, 255, 0) 72%);
+  inset: 0;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 78% 12%, rgba(255, 255, 255, 0.72) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 67% 28%, rgba(175, 224, 255, 0.78) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 24% 72%, rgba(255, 255, 255, 0.75) 0 1.1px, transparent 2px),
+    radial-gradient(circle at 82% 68%, rgba(166, 215, 255, 0.78) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 38% 42%, rgba(255, 255, 255, 0.46) 0 0.8px, transparent 1.6px),
+    radial-gradient(circle at 12% 86%, rgba(255, 255, 255, 0.52) 0 0.9px, transparent 1.8px),
+    radial-gradient(circle at 92% 34%, rgba(255, 255, 255, 0.45) 0 0.9px, transparent 1.7px);
+  opacity: 0.9;
 }
 
 .login-page::after {
-  width: 420px;
-  height: 420px;
-  right: -8%;
-  bottom: -10%;
-  background: radial-gradient(circle, rgba(13, 148, 214, 0.28) 0%, rgba(13, 148, 214, 0) 70%);
+  inset: -12%;
+  background:
+    radial-gradient(circle at 22% 24%, rgba(54, 153, 255, 0.26) 0%, rgba(54, 153, 255, 0) 24%),
+    radial-gradient(circle at 76% 22%, rgba(170, 92, 255, 0.22) 0%, rgba(170, 92, 255, 0) 22%),
+    radial-gradient(circle at 52% 82%, rgba(53, 212, 196, 0.16) 0%, rgba(53, 212, 196, 0) 20%);
+  filter: blur(42px);
+  opacity: 0.95;
 }
 
 .login-page__shell {
@@ -301,37 +307,40 @@ async function handleActivateOtp() {
   font-size: clamp(3.2rem, 10vw, 5.5rem);
   font-weight: 700;
   white-space: nowrap;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-shadow:
-    0 0 22px rgba(147, 210, 255, 0.35),
+    0 0 18px rgba(190, 214, 255, 0.36),
+    0 0 44px rgba(100, 116, 255, 0.22),
     0 12px 36px rgba(7, 30, 52, 0.55);
 }
 
 .login-page__subtitle {
   margin: 0;
-  color: rgba(147, 210, 255, 0.82);
+  color: rgba(203, 220, 255, 0.8);
   font-size: clamp(1rem, 2.8vw, 1.2rem);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
 }
 
 .login-card {
   width: min(100%, 420px);
   justify-self: center;
   padding: 26px;
-  border: 1px solid rgba(147, 210, 255, 0.25);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(168, 191, 255, 0.26);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(17, 27, 58, 0.86) 0%, rgba(10, 17, 40, 0.82) 100%);
   box-shadow:
-    0 24px 60px rgba(2, 12, 27, 0.45),
-    0 0 0 1px rgba(147, 210, 255, 0.08),
-    0 0 28px rgba(54, 152, 219, 0.22);
+    0 30px 80px rgba(2, 8, 24, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 36px rgba(102, 101, 255, 0.14);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
 }
 
 .login-card__description {
   margin: 0 0 20px;
-  color: rgba(219, 241, 255, 0.76);
+  color: rgba(219, 241, 255, 0.72);
   line-height: 1.6;
   text-align: center;
 }
@@ -382,6 +391,13 @@ async function handleActivateOtp() {
   gap: 18px;
 }
 
+.login-page__otp-setup-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
 .login-page__otp-setup-header {
   display: grid;
   gap: 8px;
@@ -397,16 +413,19 @@ async function handleActivateOtp() {
   display: grid;
   gap: 14px;
   padding: 18px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(168, 191, 255, 0.18);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(20, 29, 62, 0.82) 0%, rgba(12, 18, 43, 0.8) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 40px rgba(4, 10, 28, 0.24);
 }
 
 .login-page__otp-setup-qr {
   width: min(100%, 220px);
   justify-self: center;
   padding: 10px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: #ffffff;
 }
 
@@ -415,7 +434,7 @@ async function handleActivateOtp() {
   max-height: 180px;
   padding: 12px;
   overflow: auto;
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(7, 18, 32, 0.84);
   color: rgba(232, 244, 255, 0.94);
   white-space: normal;
@@ -441,6 +460,10 @@ async function handleActivateOtp() {
   }
 
   .login-otp-panel__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page__otp-setup-actions {
     grid-template-columns: 1fr;
   }
 
