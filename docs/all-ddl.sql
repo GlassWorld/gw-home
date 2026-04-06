@@ -1,6 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 DROP TABLE IF EXISTS tb_brd_pst_tag CASCADE;
+DROP TABLE IF EXISTS tb_brd_pst_file CASCADE;
 DROP TABLE IF EXISTS tb_fav CASCADE;
 DROP TABLE IF EXISTS tb_brd_cmt CASCADE;
 DROP TABLE IF EXISTS tb_auth_rfsh_tkn CASCADE;
@@ -209,7 +210,7 @@ COMMENT ON COLUMN tb_brd_ctgr.created_at IS '생성 일시';
 CREATE TABLE tb_brd_pst (
     brd_pst_idx    BIGSERIAL    PRIMARY KEY,
     brd_pst_uuid   UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    brd_ctgr_idx   BIGINT       NOT NULL,
+    brd_ctgr_idx   BIGINT,
     mbr_acct_idx   BIGINT       NOT NULL,
     ttl            VARCHAR(300) NOT NULL,
     cntnt          TEXT         NOT NULL,
@@ -238,6 +239,32 @@ COMMENT ON COLUMN tb_brd_pst.updated_by IS '수정자 로그인 ID';
 COMMENT ON COLUMN tb_brd_pst.created_at IS '생성 일시';
 COMMENT ON COLUMN tb_brd_pst.updated_at IS '수정 일시';
 COMMENT ON COLUMN tb_brd_pst.del_at IS '삭제 일시';
+
+CREATE TABLE tb_brd_pst_file (
+    brd_pst_file_idx   BIGSERIAL    PRIMARY KEY,
+    brd_pst_file_uuid  UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    brd_pst_idx        BIGINT       NOT NULL,
+    file_idx           BIGINT       NOT NULL,
+    file_role          VARCHAR(30)  NOT NULL,
+    sort_ord           INTEGER      NOT NULL DEFAULT 0,
+    created_by         VARCHAR(100) NOT NULL,
+    created_at         TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    del_at             TIMESTAMPTZ
+);
+
+CREATE INDEX idx_brd_pst_file_brd_pst ON tb_brd_pst_file (brd_pst_idx);
+CREATE INDEX idx_brd_pst_file_file ON tb_brd_pst_file (file_idx);
+
+COMMENT ON TABLE tb_brd_pst_file IS '게시글 첨부파일 매핑';
+COMMENT ON COLUMN tb_brd_pst_file.brd_pst_file_idx IS '게시글 첨부 매핑 PK';
+COMMENT ON COLUMN tb_brd_pst_file.brd_pst_file_uuid IS '게시글 첨부 매핑 UUID';
+COMMENT ON COLUMN tb_brd_pst_file.brd_pst_idx IS '게시글 PK';
+COMMENT ON COLUMN tb_brd_pst_file.file_idx IS '파일 PK';
+COMMENT ON COLUMN tb_brd_pst_file.file_role IS '첨부 역할';
+COMMENT ON COLUMN tb_brd_pst_file.sort_ord IS '정렬 순서';
+COMMENT ON COLUMN tb_brd_pst_file.created_by IS '생성자 로그인 ID';
+COMMENT ON COLUMN tb_brd_pst_file.created_at IS '생성 일시';
+COMMENT ON COLUMN tb_brd_pst_file.del_at IS '삭제 일시';
 
 CREATE TABLE tb_brd_cmt (
     brd_cmt_idx       BIGSERIAL     PRIMARY KEY,

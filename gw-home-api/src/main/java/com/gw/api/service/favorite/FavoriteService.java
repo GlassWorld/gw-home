@@ -76,23 +76,32 @@ public class FavoriteService {
 
     @Transactional(readOnly = true)
     // 게시글 즐겨찾기 개수를 조회한다.
-    public FavoriteResponse getBoardPostFavoriteCount(String boardPostUuid) {
-        log.info("getBoardPostFavoriteCount 시작 - boardPostUuid: {}", boardPostUuid);
+    public FavoriteResponse getBoardPostFavoriteCount(String loginId, String boardPostUuid) {
+        log.info("getBoardPostFavoriteCount 시작 - loginId: {}, boardPostUuid: {}", loginId, boardPostUuid);
         try {
             BrdPstJvo boardPost = getBoardPostByUuid(boardPostUuid);
+            boolean favorited = false;
+
+            if (loginId != null && !loginId.isBlank()) {
+                AcctVo account = getAccountByLoginId(loginId);
+                favorited = favoriteMapper.existsFavorite(FavoritePolicy.TARGET_TYPE_BOARD_POST, boardPost.getIdx(), account.getIdx());
+            }
+
             FavoriteResponse response = FavoriteConvert.toResponse(
-                    false,
+                    favorited,
                     favoriteMapper.countFavorite(FavoritePolicy.TARGET_TYPE_BOARD_POST, boardPost.getIdx())
             );
             log.info(
-                    "getBoardPostFavoriteCount 완료 - boardPostUuid: {}, favoriteCount: {}",
+                    "getBoardPostFavoriteCount 완료 - boardPostUuid: {}, favorited: {}, favoriteCount: {}",
                     boardPostUuid,
+                    response.favorited(),
                     response.favoriteCount()
             );
             return response;
         } catch (BusinessException exception) {
             log.error(
-                    "getBoardPostFavoriteCount 실패 - boardPostUuid: {}, 원인: {}, detailMessage: {}",
+                    "getBoardPostFavoriteCount 실패 - loginId: {}, boardPostUuid: {}, 원인: {}, detailMessage: {}",
+                    loginId,
                     boardPostUuid,
                     exception.getMessage(),
                     exception.getDetailMessage(),

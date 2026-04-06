@@ -33,7 +33,7 @@
             bp.created_at,
             bp.updated_at
         FROM tb_brd_pst bp
-        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
         WHERE bp.brd_pst_uuid = CAST(#{uuid} AS UUID)
           AND bp.del_at IS NULL
@@ -68,7 +68,7 @@
             bp.created_at,
             bp.updated_at
         FROM tb_brd_pst bp
-        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
         WHERE bp.brd_pst_idx = #{idx}
           AND bp.del_at IS NULL
@@ -95,14 +95,31 @@
             ) AS cmt_cnt,
             bp.created_at
         FROM tb_brd_pst bp
-        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
         WHERE bp.del_at IS NULL
         <if test="req.ctgrUuid != null and req.ctgrUuid != ''">
             AND bc.brd_ctgr_uuid = CAST(#{req.ctgrUuid} AS UUID)
         </if>
         <if test="req.kwd != null and req.kwd != ''">
-            AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+            <choose>
+                <when test="req.srchType == 'content'">
+                    AND bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+                </when>
+                <when test="req.srchType == 'author'">
+                    AND mp.nick_nm LIKE CONCAT('%', #{req.kwd}, '%')
+                </when>
+                <when test="req.srchType == 'all'">
+                    AND (
+                        bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                        OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+                        OR mp.nick_nm LIKE CONCAT('%', #{req.kwd}, '%')
+                    )
+                </when>
+                <otherwise>
+                    AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                </otherwise>
+            </choose>
         </if>
         ORDER BY ${req.orderByClause}
         LIMIT #{req.size} OFFSET #{req.offset}
@@ -111,13 +128,40 @@
     <select id="countBoardPostList" resultType="long">
         SELECT COUNT(*)
         FROM tb_brd_pst bp
-        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
         WHERE bp.del_at IS NULL
         <if test="req.ctgrUuid != null and req.ctgrUuid != ''">
             AND bc.brd_ctgr_uuid = CAST(#{req.ctgrUuid} AS UUID)
         </if>
         <if test="req.kwd != null and req.kwd != ''">
-            AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+            <choose>
+                <when test="req.srchType == 'content'">
+                    AND bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+                </when>
+                <when test="req.srchType == 'author'">
+                    AND EXISTS (
+                        SELECT 1
+                        FROM tb_mbr_prfl mp
+                        WHERE mp.mbr_acct_idx = bp.mbr_acct_idx
+                          AND mp.nick_nm LIKE CONCAT('%', #{req.kwd}, '%')
+                    )
+                </when>
+                <when test="req.srchType == 'all'">
+                    AND (
+                        bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                        OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+                        OR EXISTS (
+                            SELECT 1
+                            FROM tb_mbr_prfl mp
+                            WHERE mp.mbr_acct_idx = bp.mbr_acct_idx
+                              AND mp.nick_nm LIKE CONCAT('%', #{req.kwd}, '%')
+                        )
+                    )
+                </when>
+                <otherwise>
+                    AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                </otherwise>
+            </choose>
         </if>
     </select>
 
@@ -165,6 +209,54 @@
           AND del_at IS NULL
     </update>
 
+    <select id="selectBoardAttachments" resultType="BrdPstFileJvo">
+        SELECT
+            bpf.brd_pst_file_idx AS idx,
+            bpf.brd_pst_file_uuid AS uuid,
+            bpf.brd_pst_idx,
+            bpf.file_idx,
+            bpf.file_role,
+            bpf.sort_ord,
+            f.file_uuid,
+            f.orgnl_nm,
+            f.file_url,
+            f.mime_type,
+            f.file_size,
+            f.upldr_type,
+            bpf.created_by,
+            bpf.created_at
+        FROM tb_brd_pst_file bpf
+        INNER JOIN tb_file f ON f.file_idx = bpf.file_idx
+        WHERE bpf.brd_pst_idx = #{brdPstIdx}
+          AND bpf.del_at IS NULL
+          AND f.del_at IS NULL
+        ORDER BY bpf.sort_ord ASC, bpf.created_at ASC
+    </select>
+
+    <insert id="insertBoardAttachment" parameterType="BrdPstFileVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_brd_pst_file (
+            brd_pst_idx,
+            file_idx,
+            file_role,
+            sort_ord,
+            created_by
+        ) VALUES (
+            #{brdPstIdx},
+            #{fileIdx},
+            #{fileRole},
+            #{sortOrd},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="deleteBoardAttachments">
+        UPDATE tb_brd_pst_file
+        SET
+            del_at = now()
+        WHERE brd_pst_idx = #{brdPstIdx}
+          AND del_at IS NULL
+    </update>
+
     <select id="selectAllCategories" resultType="BrdCtgrVo">
         SELECT
             brd_ctgr_idx AS idx,
@@ -177,6 +269,18 @@
         ORDER BY sort_ord ASC, created_at ASC
     </select>
 
+    <select id="selectBoardCategoryByIdx" resultType="BrdCtgrVo">
+        SELECT
+            brd_ctgr_idx AS idx,
+            brd_ctgr_uuid AS uuid,
+            nm,
+            sort_ord,
+            created_by,
+            created_at
+        FROM tb_brd_ctgr
+        WHERE brd_ctgr_idx = #{idx}
+    </select>
+
     <select id="selectBoardCategoryByUuid" resultType="BrdCtgrVo">
         SELECT
             brd_ctgr_idx AS idx,
@@ -187,6 +291,49 @@
             created_at
         FROM tb_brd_ctgr
         WHERE brd_ctgr_uuid = CAST(#{uuid} AS UUID)
+    </select>
+
+    <select id="existsBoardCategoryByName" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM tb_brd_ctgr
+            WHERE nm = #{name}
+            <if test="excludeUuid != null and excludeUuid != ''">
+                AND brd_ctgr_uuid != CAST(#{excludeUuid} AS UUID)
+            </if>
+        )
+    </select>
+
+    <insert id="insertBoardCategory" parameterType="BrdCtgrVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_brd_ctgr (
+            nm,
+            sort_ord,
+            created_by
+        ) VALUES (
+            #{nm},
+            #{sortOrd},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateBoardCategory" parameterType="BrdCtgrVo">
+        UPDATE tb_brd_ctgr
+        SET
+            nm = #{nm},
+            sort_ord = #{sortOrd}
+        WHERE brd_ctgr_uuid = CAST(#{uuid} AS UUID)
+    </update>
+
+    <delete id="deleteBoardCategory">
+        DELETE FROM tb_brd_ctgr
+        WHERE brd_ctgr_uuid = CAST(#{uuid} AS UUID)
+    </delete>
+
+    <select id="countBoardPostsByCategoryIdx" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_brd_pst
+        WHERE brd_ctgr_idx = #{brdCtgrIdx}
+          AND del_at IS NULL
     </select>
 
 </mapper>

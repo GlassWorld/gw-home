@@ -2,6 +2,7 @@ package com.gw.api.dto.board;
 
 public record BoardPostListRequest(
         String categoryUuid,
+        String searchType,
         String keyword,
         Integer page,
         Integer size,

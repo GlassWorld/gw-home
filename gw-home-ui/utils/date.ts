@@ -1,67 +1,109 @@
-type DateInput = string | Date | null | undefined
+type DateFormatOptions = {
+  year?: 'numeric' | '2-digit'
+  month?: 'numeric' | '2-digit'
+  day?: 'numeric' | '2-digit'
+}
 
-function toValidDate(value: DateInput): Date | null {
+function parseDate(value: string | Date | null | undefined): Date | null {
   if (!value) {
     return null
   }
 
-  const parsedDate = value instanceof Date ? new Date(value) : new Date(value)
+  const date = value instanceof Date ? value : new Date(value)
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     return null
   }
 
-  return parsedDate
+  return date
 }
 
-export function formatDate(value: DateInput, options?: Intl.DateTimeFormatOptions): string {
-  const parsedDate = toValidDate(value)
+function padNumber(value: number): string {
+  return String(value).padStart(2, '0')
+}
 
-  if (!parsedDate) {
-    return '-'
+function getKoreanDateParts(value: string | Date | null | undefined) {
+  const date = parseDate(value)
+
+  if (!date) {
+    return null
   }
 
-  return parsedDate.toLocaleDateString('ko-KR', options)
-}
-
-export function formatDateInput(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-export function getMonthStartInput(date = new Date()): string {
-  return formatDateInput(new Date(date.getFullYear(), date.getMonth(), 1))
-}
-
-export function formatDateTime(value: DateInput, options?: Intl.DateTimeFormatOptions): string {
-  const parsedDate = toValidDate(value)
-
-  if (!parsedDate) {
-    return '-'
-  }
-
-  return options
-    ? new Intl.DateTimeFormat('ko-KR', options).format(parsedDate)
-    : parsedDate.toLocaleString('ko-KR')
-}
-
-export function sortByDateDesc<T>(items: T[], selector: (item: T) => DateInput): T[] {
-  return [...items].sort((left, right) => {
-    const leftTime = toValidDate(selector(left))?.getTime() ?? 0
-    const rightTime = toValidDate(selector(right))?.getTime() ?? 0
-    return rightTime - leftTime
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
   })
+
+  const parts = formatter.formatToParts(date)
+  const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)?.value ?? '00'
+
+  return {
+    year: getPart('year'),
+    month: getPart('month'),
+    day: getPart('day'),
+    hour: getPart('hour'),
+    minute: getPart('minute'),
+    second: getPart('second')
+  }
 }
 
-export function getWeekRange(date = new Date()) {
-  const current = new Date(date)
-  const day = current.getDay()
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const start = new Date(current)
-  start.setDate(current.getDate() + diffToMonday)
+export function formatDate(value: string | Date | null | undefined, options: DateFormatOptions = {}): string {
+  const parts = getKoreanDateParts(value)
+
+  if (!parts) {
+    return '-'
+  }
+
+  const year = options.year === '2-digit' ? parts.year.slice(-2) : parts.year
+  const month = options.month === 'numeric' ? String(Number(parts.month)) : parts.month
+  const day = options.day === 'numeric' ? String(Number(parts.day)) : parts.day
+
+  return `${year}.${month}.${day}`
+}
+
+export function formatDateTime(value: string | Date | null | undefined): string {
+  const parts = getKoreanDateParts(value)
+
+  if (!parts) {
+    return '-'
+  }
+
+  return `${parts.year}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`
+}
+
+export function formatDateInput(value: string | Date | null | undefined): string {
+  const parts = getKoreanDateParts(value)
+
+  if (!parts) {
+    return ''
+  }
+
+  return `${parts.year}-${parts.month}-${parts.day}`
+}
+
+export function getMonthStartInput(baseDate: string | Date = new Date()): string {
+  const date = parseDate(baseDate)
+
+  if (!date) {
+    return ''
+  }
+
+  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-01`
+}
+
+export function getWeekRange(baseDate: string | Date = new Date()) {
+  const date = parseDate(baseDate) ?? new Date()
+  const currentDay = date.getDay()
+  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay
+  const start = new Date(date)
   start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() + diffToMonday)
 
   const end = new Date(start)
   end.setDate(start.getDate() + 6)
@@ -70,13 +112,24 @@ export function getWeekRange(date = new Date()) {
   return { start, end }
 }
 
-export function isDateInCurrentWeek(value: DateInput): boolean {
-  const target = toValidDate(value)
+export function isDateInCurrentWeek(value: string | Date | null | undefined, baseDate: string | Date = new Date()): boolean {
+  const date = parseDate(value)
 
-  if (!target) {
+  if (!date) {
     return false
   }
 
-  const { start, end } = getWeekRange()
-  return target >= start && target <= end
+  const { start, end } = getWeekRange(baseDate)
+  return date >= start && date <= end
+}
+
+export function sortByDateDesc<T>(items: T[], selector: (item: T) => string | Date | null | undefined): T[] {
+  return [...items].sort((left, right) => {
+    const leftDate = parseDate(selector(left))
+    const rightDate = parseDate(selector(right))
+    const leftTime = leftDate?.getTime() ?? 0
+    const rightTime = rightDate?.getTime() ?? 0
+
+    return rightTime - leftTime
+  })
 }

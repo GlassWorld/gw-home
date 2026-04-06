@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.unit.DataSize;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -134,10 +137,35 @@ public class FileService {
         }
     }
 
+    @Transactional(readOnly = true)
+    /** 파일 다운로드 리소스를 조회한다. */
+    public Resource downloadFile(String fileUuid) {
+        log.info("파일 다운로드 조회를 시작합니다. fileUuid={}", fileUuid);
+        FileVo file = getFileByUuid(fileUuid);
+        Resource resource = new FileSystemResource(file.getFilePath());
+
+        if (!resource.exists()) {
+            log.warn("파일 다운로드 대상이 존재하지 않습니다. fileUuid={}", fileUuid);
+            throw new BusinessException(ErrorCode.NOT_FOUND, "파일을 찾을 수 없습니다.");
+        }
+
+        log.info("파일 다운로드 조회를 완료했습니다. fileUuid={}", fileUuid);
+        return resource;
+    }
+
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             log.warn("업로드할 파일이 비어 있습니다.");
             throw new BusinessException(ErrorCode.BAD_REQUEST, "업로드할 파일이 없습니다.");
+        }
+
+        if (fileUploadProperties.getMaxSize() != null && !fileUploadProperties.getMaxSize().isBlank()) {
+            long maxFileSize = DataSize.parse(fileUploadProperties.getMaxSize()).toBytes();
+
+            if (file.getSize() > maxFileSize) {
+                log.warn("업로드 파일 용량이 제한을 초과했습니다. fileSize={}, maxFileSize={}", file.getSize(), maxFileSize);
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "업로드 가능한 최대 파일 용량을 초과했습니다.");
+            }
         }
 
         if (file.getContentType() == null || !fileUploadProperties.getAllowedTypes().contains(file.getContentType())) {
