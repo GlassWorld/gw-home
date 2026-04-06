@@ -9,6 +9,7 @@ import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.board.BoardService;
 import com.gw.api.service.tag.TagService;
 import com.gw.infra.db.mapper.board.BoardMapper;
+import com.gw.infra.db.mapper.file.FileMapper;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.jvo.board.BrdPstSmryJvo;
 import java.time.OffsetDateTime;
@@ -29,13 +30,16 @@ class BoardServiceTest {
     private AccountLookupService accountLookupService;
 
     @Mock
+    private FileMapper fileMapper;
+
+    @Mock
     private TagService tagService;
 
     private BoardService boardService;
 
     @BeforeEach
     void setUp() {
-        boardService = new BoardService(boardMapper, accountLookupService, tagService);
+        boardService = new BoardService(boardMapper, fileMapper, accountLookupService, tagService);
     }
 
     @Test
@@ -55,7 +59,7 @@ class BoardServiceTest {
         when(boardMapper.countBoardPostList(any())).thenReturn(1L);
 
         PageResponse<?> response = boardService.getBoardPostList(
-                new BoardPostListRequest(null, "테스트", 1, 20, null, null)
+                new BoardPostListRequest(null, null, "테스트", 1, 20, null, null)
         );
 
         assertEquals(1, response.content().size());

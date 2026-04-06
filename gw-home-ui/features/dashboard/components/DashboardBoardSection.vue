@@ -26,7 +26,7 @@ const props = defineProps<{
         :to="`/board/${board.boardPostUuid}`"
       >
         <strong>{{ board.title }}</strong>
-        <span>{{ board.author }} · 댓글 {{ board.commentCount }}</span>
+        <span>작성자 {{ board.author }} · 댓글 {{ board.commentCount }}</span>
       </NuxtLink>
     </div>
     <p v-else class="message-muted">
@@ -70,8 +70,10 @@ const props = defineProps<{
 }
 
 .dashboard-compact-list__item {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 14px 16px;
   border: 1px solid rgba(166, 214, 255, 0.1);
   border-radius: 8px;
@@ -85,12 +87,20 @@ const props = defineProps<{
 }
 
 .dashboard-compact-list__item strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.96rem;
   line-height: 1.4;
 }
 
 .dashboard-compact-list__item span {
+  flex-shrink: 0;
   color: var(--color-text-muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .dashboard-compact-list__item--link:hover {

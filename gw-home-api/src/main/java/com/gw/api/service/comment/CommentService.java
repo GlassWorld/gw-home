@@ -9,6 +9,7 @@ import com.gw.infra.db.mapper.board.BoardMapper;
 import com.gw.infra.db.mapper.comment.CommentMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
+import com.gw.share.common.policy.RolePolicy;
 import com.gw.share.jvo.board.BrdPstJvo;
 import com.gw.share.jvo.comment.BrdCmtJvo;
 import com.gw.share.vo.account.AcctVo;
@@ -57,6 +58,7 @@ public class CommentService {
             AcctVo account = accountLookupService.getAccountByLoginId(loginId);
             BrdPstJvo boardPost = getBoardPostByUuid(boardPostUuid);
             BrdCmtJvo parentComment = getParentComment(boardPost, request.parentCommentUuid());
+            validateReplyDepth(parentComment);
 
             BrdCmtVo comment = BrdCmtVo.builder()
                     .brdPstIdx(boardPost.getIdx())
@@ -83,7 +85,7 @@ public class CommentService {
         try {
             AcctVo account = accountLookupService.getAccountByLoginId(loginId);
             BrdCmtJvo comment = getCommentByUuid(commentUuid);
-            validateOwner(account, comment);
+            validateManagePermission(account, comment);
 
             BrdCmtVo commentVo = BrdCmtVo.builder()
                     .uuid(comment.getUuid())
@@ -120,7 +122,7 @@ public class CommentService {
         try {
             AcctVo account = accountLookupService.getAccountByLoginId(loginId);
             BrdCmtJvo comment = getCommentByUuid(commentUuid);
-            validateOwner(account, comment);
+            validateManagePermission(account, comment);
 
             int updatedCount = commentMapper.deleteComment(commentUuid);
 
@@ -186,10 +188,23 @@ public class CommentService {
         return parentComment;
     }
 
-    private void validateOwner(AcctVo account, BrdCmtJvo comment) {
-        if (!account.getIdx().equals(comment.getMbrAcctIdx())) {
+    private void validateReplyDepth(BrdCmtJvo parentComment) {
+        if (parentComment == null || parentComment.getPrntBrdCmtIdx() == null) {
+            return;
+        }
+
+        BrdCmtJvo grandParentComment = getCommentByIdx(parentComment.getPrntBrdCmtIdx());
+
+        if (grandParentComment.getPrntBrdCmtIdx() != null) {
+            log.warn("댓글 depth 제한에 걸렸습니다. parentCommentUuid={}", parentComment.getUuid());
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "댓글은 3단계까지만 작성할 수 있습니다.");
+        }
+    }
+
+    private void validateManagePermission(AcctVo account, BrdCmtJvo comment) {
+        if (!account.getIdx().equals(comment.getMbrAcctIdx()) && !RolePolicy.ADMIN.equals(account.getRole())) {
             log.warn("댓글 소유자 검증에 실패했습니다. loginId={}, commentUuid={}", account.getLgnId(), comment.getUuid());
-            throw new BusinessException(ErrorCode.FORBIDDEN, "본인 댓글만 수정 또는 삭제할 수 있습니다.");
+            throw new BusinessException(ErrorCode.FORBIDDEN, "본인 댓글 또는 관리자만 수정 또는 삭제할 수 있습니다.");
         }
     }
 }

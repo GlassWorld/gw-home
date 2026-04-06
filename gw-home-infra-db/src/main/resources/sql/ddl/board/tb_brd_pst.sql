@@ -1,7 +1,7 @@
 CREATE TABLE tb_brd_pst (
     brd_pst_idx    BIGSERIAL    PRIMARY KEY,
     brd_pst_uuid   UUID         NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    brd_ctgr_idx   BIGINT       NOT NULL,
+    brd_ctgr_idx   BIGINT,
     mbr_acct_idx   BIGINT       NOT NULL,
     ttl            VARCHAR(300) NOT NULL,
     cntnt          TEXT         NOT NULL,

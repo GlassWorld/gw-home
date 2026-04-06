@@ -30,8 +30,8 @@ public class FavoriteController {
 
     // 게시글 좋아요 수를 조회한다.
     @GetMapping("/count")
-    public ApiResponse<FavoriteResponse> getFavoriteCount(@PathVariable String boardPostUuid) {
-        return ApiResponse.ok(favoriteService.getBoardPostFavoriteCount(boardPostUuid));
+    public ApiResponse<FavoriteResponse> getFavoriteCount(Principal principal, @PathVariable String boardPostUuid) {
+        return ApiResponse.ok(favoriteService.getBoardPostFavoriteCount(principal == null ? null : principal.getName(), boardPostUuid));
     }
 
     private String getLoginId(Principal principal) {

@@ -1,5 +1,6 @@
 package com.gw.api.controller.board;
 
+import com.gw.api.dto.board.BoardCategoryResponse;
 import com.gw.api.dto.board.BoardPostListRequest;
 import com.gw.api.dto.board.BoardPostResponse;
 import com.gw.api.dto.board.BoardPostSummaryResponse;
@@ -12,6 +13,7 @@ import com.gw.share.common.response.ApiResponse;
 import com.gw.share.common.response.PageResponse;
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +37,12 @@ public class BoardController {
     @GetMapping
     public ApiResponse<PageResponse<BoardPostSummaryResponse>> getBoardPostList(BoardPostListRequest request) {
         return ApiResponse.ok(boardService.getBoardPostList(request));
+    }
+
+    // 게시판 카테고리 목록을 조회한다.
+    @GetMapping("/categories")
+    public ApiResponse<List<BoardCategoryResponse>> getBoardCategories() {
+        return ApiResponse.ok(boardService.getBoardCategories());
     }
 
     // 게시글 상세 정보를 조회한다.

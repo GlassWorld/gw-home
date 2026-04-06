@@ -4,8 +4,9 @@ import type { AccountMeApiResponse, ProfileApiResponse, UserProfile } from '~/ty
 
 interface AuthorizedFetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
-  body?: BodyInit | Record<string, unknown> | null
+  body?: BodyInit | object | null
   query?: Record<string, string | number | undefined>
+  responseType?: 'blob'
 }
 
 type LoginResult =

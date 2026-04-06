@@ -13,6 +13,7 @@ public record BoardPostResponse(
         String author,
         long favoriteCount,
         long commentCount,
+        List<BoardAttachmentResponse> attachments,
         List<TagResponse> tags,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt

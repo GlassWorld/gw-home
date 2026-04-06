@@ -15,5 +15,6 @@ import lombok.experimental.SuperBuilder;
 public class BrdPstListSrchVo extends PageSortSearchVo {
 
     private String ctgrUuid;
+    private String srchType;
     private String kwd;
 }
