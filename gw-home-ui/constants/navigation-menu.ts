@@ -14,6 +14,7 @@ export const primaryNavigationItems: NavigationMenuItem[] = [
 
 export const personalNavigationItems: NavigationMenuItem[] = [
   { key: 'work', to: '/work', label: '업무관리', adminOnly: false, favoriteEnabled: true },
+  { key: 'work-todos', to: '/work/todos', label: '업무 세부 작업', adminOnly: false, favoriteEnabled: true },
   { key: 'work-git-accounts', to: '/work/git-accounts', label: '깃 계정관리', adminOnly: false, favoriteEnabled: true },
   { key: 'my-weekly-reports', to: '/work/weekly-reports', label: '내주간보고', adminOnly: false, favoriteEnabled: true },
   { key: 'daily-reports', to: '/work/daily-reports', label: '일일보고관리', adminOnly: false, favoriteEnabled: true },
