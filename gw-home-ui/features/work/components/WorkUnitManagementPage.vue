@@ -46,6 +46,9 @@ const {
 
         <div class="work-page__hero-side">
           <div class="work-page__hero-actions">
+            <CommonBaseButton variant="secondary" to="/work/todos">
+              업무 세부 작업
+            </CommonBaseButton>
             <CommonBaseButton variant="secondary" to="/work/git-accounts">
               Git 계정관리
             </CommonBaseButton>
@@ -196,6 +199,9 @@ const {
             </div>
 
             <div class="work-page__item-actions">
+              <CommonBaseButton variant="secondary" size="small" :to="`/work/todos/${workUnit.workUnitUuid}`">
+                세부 작업
+              </CommonBaseButton>
               <CommonBaseButton variant="secondary" size="small" @click="startEdit(workUnit)">
                 수정
               </CommonBaseButton>

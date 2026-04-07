@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.work.WorkTodoMapper">
+
+    <sql id="workTodoColumns">
+        wrk_todo_idx AS idx,
+        wrk_todo_uuid AS uuid,
+        work_unit_idx,
+        mbr_acct_idx,
+        prnt_wrk_todo_idx,
+        ttl,
+        dscr,
+        sts,
+        prgs_rt,
+        strt_dt,
+        due_dt,
+        sort_ord,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at,
+        del_at
+    </sql>
+
+    <select id="selectWorkTodoList" resultType="WorkTodoVo">
+        SELECT
+            <include refid="workTodoColumns" />
+        FROM tb_wrk_todo
+        WHERE work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+        ORDER BY
+            COALESCE(prnt_wrk_todo_idx, 0) ASC,
+            sort_ord ASC,
+            created_at ASC,
+            wrk_todo_idx ASC
+    </select>
+
+    <select id="selectWorkTodo" resultType="WorkTodoVo">
+        SELECT
+            <include refid="workTodoColumns" />
+        FROM tb_wrk_todo
+        WHERE wrk_todo_uuid = CAST(#{uuid} AS UUID)
+          AND work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </select>
+
+    <select id="selectMaxSortOrder" resultType="int">
+        SELECT COALESCE(MAX(sort_ord), 0)
+        FROM tb_wrk_todo
+        WHERE work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+        <choose>
+            <when test="prntWrkTodoIdx != null">
+                AND prnt_wrk_todo_idx = #{prntWrkTodoIdx}
+            </when>
+            <otherwise>
+                AND prnt_wrk_todo_idx IS NULL
+            </otherwise>
+        </choose>
+    </select>
+
+    <insert id="insertWorkTodo" parameterType="WorkTodoVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_wrk_todo (
+            work_unit_idx,
+            mbr_acct_idx,
+            prnt_wrk_todo_idx,
+            ttl,
+            dscr,
+            sts,
+            prgs_rt,
+            strt_dt,
+            due_dt,
+            sort_ord,
+            created_by
+        ) VALUES (
+            #{workUnitIdx},
+            #{mbrAcctIdx},
+            #{prntWrkTodoIdx},
+            #{ttl},
+            #{dscr},
+            #{sts},
+            #{prgsRt},
+            #{strtDt},
+            #{dueDt},
+            #{sortOrd},
+            #{createdBy}
+        )
+    </insert>
+
+    <update id="updateWorkTodo" parameterType="WorkTodoVo">
+        UPDATE tb_wrk_todo
+        SET
+            prnt_wrk_todo_idx = #{prntWrkTodoIdx},
+            ttl = #{ttl},
+            dscr = #{dscr},
+            strt_dt = #{strtDt},
+            due_dt = #{dueDt},
+            sort_ord = #{sortOrd},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_todo_uuid = CAST(#{uuid} AS UUID)
+          AND work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateWorkTodoDerivedFields">
+        UPDATE tb_wrk_todo
+        SET
+            sts = #{sts},
+            prgs_rt = #{prgsRt},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_todo_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateWorkTodoSortOrder">
+        UPDATE tb_wrk_todo
+        SET
+            sort_ord = #{sortOrd},
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE wrk_todo_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <update id="deleteWorkTodoSubtree">
+        WITH RECURSIVE todo_subtree AS (
+            SELECT wrk_todo_idx
+            FROM tb_wrk_todo
+            WHERE wrk_todo_uuid = CAST(#{uuid} AS UUID)
+              AND work_unit_idx = #{workUnitIdx}
+              AND mbr_acct_idx = #{mbrAcctIdx}
+              AND del_at IS NULL
+            UNION ALL
+            SELECT child.wrk_todo_idx
+            FROM tb_wrk_todo child
+            INNER JOIN todo_subtree subtree ON child.prnt_wrk_todo_idx = subtree.wrk_todo_idx
+            WHERE child.mbr_acct_idx = #{mbrAcctIdx}
+              AND child.del_at IS NULL
+        )
+        UPDATE tb_wrk_todo
+        SET
+            updated_by = #{updatedBy},
+            updated_at = now(),
+            del_at = now()
+        WHERE wrk_todo_idx IN (SELECT wrk_todo_idx FROM todo_subtree)
+          AND del_at IS NULL
+    </update>
+</mapper>

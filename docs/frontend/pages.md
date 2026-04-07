@@ -17,6 +17,8 @@
 | `/board/[boardUuid]` | `pages/board/[boardUuid].vue` | 게시글 상세 | O |
 | `/board/create` | `pages/board/create.vue` | 게시글 작성 | O |
 | `/work` | `pages/work/index.vue` | 업무 등록과 조회 | O |
+| `/work/todos` | `pages/work/todos/index.vue` | 업무 세부 작업 대상 업무 선택 | O |
+| `/work/todos/[workUnitUuid]` | `pages/work/todos/[workUnitUuid].vue` | 업무별 TODO 트리 상세 관리 | O |
 | `/work/daily-reports` | `pages/work/daily-reports/index.vue` | 일일보고 작성과 조회 | O |
 | `/work/daily-reports/create` | `pages/work/daily-reports/create.vue` | 일일보고 작성 | O |
 | `/work/daily-reports/[dailyReportUuid]/edit` | `pages/work/daily-reports/[dailyReportUuid]/edit.vue` | 일일보고 수정 | O |

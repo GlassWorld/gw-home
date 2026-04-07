@@ -4,6 +4,7 @@ export type WorkUnitStatus = 'IN_PROGRESS' | 'DONE' | 'ON_HOLD'
 export type WorkUnitSort = 'updated' | 'recent' | 'frequent'
 export type WeeklyReportGenerationType = 'MANUAL' | 'OPENAI' | 'RULE_BASED'
 export type WorkGitProvider = 'GITLAB'
+export type WorkTodoStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'DELAYED'
 
 export interface WorkGitAccount {
   gitAccountUuid: string
@@ -81,6 +82,49 @@ export interface SaveWorkUnitPayload {
   description?: string
   status: WorkUnitStatus
   gitProjectUuids: string[]
+}
+
+export interface WorkTodoSummary {
+  status: WorkTodoStatus
+  progressRate: number
+  itemCount: number
+  leafCount: number
+  completedLeafCount: number
+  delayedCount: number
+}
+
+export interface WorkTodo {
+  todoUuid: string
+  parentTodoUuid: string | null
+  title: string
+  description: string | null
+  status: WorkTodoStatus
+  progressRate: number
+  startDate: string | null
+  dueDate: string | null
+  sortOrder: number
+  depth: number
+  leaf: boolean
+  completed: boolean
+  delayed: boolean
+  createdAt: string
+  updatedAt: string
+  children: WorkTodo[]
+}
+
+export interface WorkTodoTree {
+  workUnitUuid: string
+  summary: WorkTodoSummary
+  todos: WorkTodo[]
+}
+
+export interface SaveWorkTodoPayload {
+  parentTodoUuid?: string | null
+  title: string
+  description?: string
+  startDate?: string | null
+  dueDate?: string | null
+  sortOrder?: number | null
 }
 
 export interface WorkUnitListParams {
