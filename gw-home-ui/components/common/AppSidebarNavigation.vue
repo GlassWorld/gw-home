@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { adminNavigationItems, personalNavigationItems, primaryNavigationItems } from '~/constants/navigation-menu'
+import { adminNavigationItems, maxFavoriteMenuCount, personalNavigationItems, primaryNavigationItems } from '~/constants/navigation-menu'
 
 const props = defineProps<{
   visible: boolean
@@ -25,6 +25,11 @@ function isFavorite(path: string): boolean {
 
 async function toggleFavorite(path: string) {
   if (navigationFavoriteStore.isSaving) {
+    return
+  }
+
+  if (!isFavorite(path) && navigationFavoriteStore.favoriteMenus.length >= maxFavoriteMenuCount) {
+    showToast(`즐겨찾기 메뉴는 ${maxFavoriteMenuCount}개까지 설정할 수 있습니다.`, { variant: 'error' })
     return
   }
 
