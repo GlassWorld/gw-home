@@ -4,13 +4,14 @@ const navigationFavoriteStore = useNavigationFavoriteStore()
 const route = useRoute()
 const { fetchNavigationFavorites } = useNavigationFavoriteApi()
 const isNavigationVisible = ref(false)
+const isPublicShareRoute = computed(() => route.path.startsWith('/share/'))
 
 const shouldShowHeader = computed(() => {
-  return authStore.isAuthenticated && route.path !== '/login'
+  return authStore.isAuthenticated && route.path !== '/login' && !isPublicShareRoute.value
 })
 
 const shouldShowFooter = computed(() => {
-  return route.path !== '/login'
+  return route.path !== '/login' && !isPublicShareRoute.value
 })
 
 watch(

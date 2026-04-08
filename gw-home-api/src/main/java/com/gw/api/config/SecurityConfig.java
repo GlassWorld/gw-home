@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/profiles/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/board-shares/*/status").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/board-shares/*/access").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/favorite/count").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tags").permitAll()

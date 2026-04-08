@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BoardComment, BoardDetail, BoardFavoriteState } from '~/types/api/board'
+import type { BoardShareSettings } from '~/types/api/board-share'
 import { formatDateTime } from '~/utils/date'
 import { renderMarkdown } from '~/utils/markdown'
 
@@ -22,8 +23,11 @@ const {
   uploadBoardFile,
   updateComment
 } = useBoard()
+const { fetchBoardShare } = useBoardShare()
+const { showToast } = useToast()
 
 const board = ref<BoardDetail | null>(null)
+const boardShareSettings = ref<BoardShareSettings | null>(null)
 const commentList = ref<BoardComment[]>([])
 const errorMessage = ref('')
 const isDeleting = ref(false)
@@ -38,6 +42,7 @@ const deletingCommentUuid = ref<string | null>(null)
 const isClientReady = ref(false)
 const favoriteState = ref<BoardFavoriteState>({ favorited: false, favoriteCount: 0 })
 const isFavoriteLoading = ref(false)
+const isShareModalVisible = ref(false)
 
 function resolveBoardPostUuid(value: unknown): string | null {
   if (typeof value !== 'string') {
@@ -86,6 +91,23 @@ if (boardPostUuid.value) {
   await loadComments()
   await loadFavorite()
 }
+
+watch(
+  () => canManagePost.value,
+  async (value) => {
+    if (!value || !boardPostUuid.value) {
+      return
+    }
+
+    try {
+      boardShareSettings.value = await fetchBoardShare(boardPostUuid.value)
+    } catch (error) {
+      const fetchError = error as { data?: { message?: string } }
+      showToast(fetchError.data?.message ?? '공유 설정을 불러오지 못했습니다.', { variant: 'error' })
+    }
+  },
+  { immediate: true }
+)
 
 async function loadComments() {
   if (!boardPostUuid.value) {
@@ -175,6 +197,33 @@ async function handleToggleFavorite() {
     errorMessage.value = fetchError.data?.message ?? '좋아요 처리에 실패했습니다.'
   } finally {
     isFavoriteLoading.value = false
+  }
+}
+
+function openShareModal() {
+  isShareModalVisible.value = true
+}
+
+function closeShareModal() {
+  isShareModalVisible.value = false
+}
+
+function handleBoardShareSaved(settings: BoardShareSettings) {
+  boardShareSettings.value = settings
+}
+
+function getBoardShareStatusLabel(status: BoardShareSettings['status'] | undefined): string {
+  switch (status) {
+    case 'SHARING':
+      return '공유중'
+    case 'EXPIRING_SOON':
+      return '만료 예정'
+    case 'EXPIRED':
+      return '만료됨'
+    case 'REVOKED':
+      return '공유 해제'
+    default:
+      return '공유 해제'
   }
 }
 
@@ -385,12 +434,16 @@ function handleCommentDrop(event: DragEvent) {
         </div>
 
           <div v-if="canManagePost && boardPostUuid" class="board-detail-page__actions">
+            <span class="board-detail-page__share-status">{{ getBoardShareStatusLabel(boardShareSettings?.status) }}</span>
             <CommonBaseButton
               variant="secondary"
               :disabled="isFavoriteLoading"
               @click="handleToggleFavorite"
             >
               {{ isFavoriteLoading ? '처리 중...' : favoriteState.favorited ? '좋아요 취소' : '좋아요' }}
+            </CommonBaseButton>
+            <CommonBaseButton variant="secondary" @click="openShareModal">
+              공유
             </CommonBaseButton>
             <CommonBaseButton variant="secondary" @click="handleMoveToEdit">
               수정
@@ -494,6 +547,15 @@ function handleCommentDrop(event: DragEvent) {
         게시글을 찾는 중입니다.
       </p>
     </section>
+
+    <BoardShareModal
+      v-if="boardPostUuid"
+      :visible="isShareModalVisible"
+      :board-post-uuid="boardPostUuid"
+      :share-settings="boardShareSettings"
+      @close="closeShareModal"
+      @saved="handleBoardShareSaved"
+    />
   </main>
 </template>
 
@@ -514,6 +576,17 @@ function handleCommentDrop(event: DragEvent) {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.board-detail-page__share-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.14);
+  color: #7dd3fc;
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .board-detail-page__meta-list {

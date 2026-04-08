@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.board.BoardShareMapper">
+
+    <!-- 게시글 PK 기준으로 가장 최근 공유 설정을 조회한다 -->
+    <select id="selectLatestBoardShareByBoardPostIdx" resultType="BrdPstShrVo">
+        SELECT
+            brd_pst_shr_idx AS idx,
+            brd_pst_shr_uuid AS uuid,
+            brd_pst_idx,
+            shr_tkn,
+            pwd_hash,
+            pwd_use_yn,
+            actv_yn,
+            expr_at,
+            rvkd_at,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_brd_pst_shr
+        WHERE brd_pst_idx = #{brdPstIdx}
+          AND del_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- 게시글 PK 기준으로 현재 활성 공유 설정을 조회한다 -->
+    <select id="selectActiveBoardShareByBoardPostIdx" resultType="BrdPstShrVo">
+        SELECT
+            brd_pst_shr_idx AS idx,
+            brd_pst_shr_uuid AS uuid,
+            brd_pst_idx,
+            shr_tkn,
+            pwd_hash,
+            pwd_use_yn,
+            actv_yn,
+            expr_at,
+            rvkd_at,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_brd_pst_shr
+        WHERE brd_pst_idx = #{brdPstIdx}
+          AND actv_yn = 'Y'
+          AND del_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- 공유 토큰 기준으로 외부 공유와 원본 게시글 정보를 조회한다 -->
+    <select id="selectBoardShareByToken" resultType="BrdPstShrJvo">
+        SELECT
+            bs.brd_pst_shr_idx AS idx,
+            bs.brd_pst_shr_uuid AS uuid,
+            bs.brd_pst_idx,
+            bs.shr_tkn,
+            bs.pwd_hash,
+            bs.pwd_use_yn,
+            bs.actv_yn,
+            bs.expr_at,
+            bs.rvkd_at,
+            bs.created_by,
+            bs.updated_by,
+            bs.created_at,
+            bs.updated_at,
+            bs.del_at,
+            bp.brd_pst_uuid,
+            bc.nm AS ctgr_nm,
+            bp.ttl,
+            bp.cntnt,
+            mp.nick_nm AS athr_nick_nm,
+            bp.created_at AS brd_pst_created_at,
+            bp.updated_at AS brd_pst_updated_at,
+            bp.del_at AS brd_pst_del_at
+        FROM tb_brd_pst_shr bs
+        LEFT JOIN tb_brd_pst bp ON bp.brd_pst_idx = bs.brd_pst_idx
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
+        WHERE bs.shr_tkn = #{shareToken}
+          AND bs.del_at IS NULL
+        LIMIT 1
+    </select>
+
+    <!-- 게시글 외부 공유 설정을 저장한다 -->
+    <insert id="insertBoardShare" parameterType="BrdPstShrVo" useGeneratedKeys="true" keyProperty="idx">
+        INSERT INTO tb_brd_pst_shr (
+            brd_pst_idx,
+            shr_tkn,
+            pwd_hash,
+            pwd_use_yn,
+            actv_yn,
+            expr_at,
+            rvkd_at,
+            created_by,
+            updated_by
+        ) VALUES (
+            #{brdPstIdx},
+            #{shrTkn},
+            #{pwdHash},
+            #{pwdUseYn},
+            #{actvYn},
+            #{exprAt},
+            #{rvkdAt},
+            #{createdBy},
+            #{updatedBy}
+        )
+    </insert>
+
+    <!-- 게시글의 활성 공유를 모두 해제한다 -->
+    <update id="deactivateBoardSharesByBoardPostIdx">
+        UPDATE tb_brd_pst_shr
+        SET
+            actv_yn = 'N',
+            rvkd_at = now(),
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE brd_pst_idx = #{brdPstIdx}
+          AND actv_yn = 'Y'
+          AND del_at IS NULL
+    </update>
+
+</mapper>
