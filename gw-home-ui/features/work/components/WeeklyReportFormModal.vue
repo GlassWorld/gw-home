@@ -32,7 +32,7 @@ function formatDateInput(date: Date): string {
 function getWeekStartDate(): string {
   const currentDate = new Date()
   const day = currentDate.getDay()
-  const diff = day === 0 ? -6 : 1 - day
+  const diff = day === 6 ? 0 : -(day + 1)
   const weekStartDate = new Date(currentDate)
   weekStartDate.setDate(currentDate.getDate() + diff)
   return formatDateInput(weekStartDate)
@@ -86,7 +86,7 @@ function buildWeekdayDates(weekStartDate: string): string[] {
 
   return Array.from({ length: 5 }, (_, index) => {
     const date = toLocalDate(weekStartDate)
-    date.setDate(date.getDate() + index)
+    date.setDate(date.getDate() + index + 2)
     return formatDateInput(date)
   })
 }

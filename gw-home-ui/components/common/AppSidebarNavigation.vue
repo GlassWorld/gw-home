@@ -76,39 +76,10 @@ async function toggleFavorite(path: string) {
             </button>
           </div>
 
-          <nav class="app-sidebar__section">
-            <div
-              v-for="item in primaryNavigationItems"
-              :key="item.to"
-              class="app-sidebar__item"
-            >
-              <NuxtLink
-                :to="item.to"
-                class="app-sidebar__link"
-                :class="{ 'app-sidebar__link--active': isActive(item.to) }"
-                @click="emit('close')"
-              >
-                {{ item.label }}
-              </NuxtLink>
-              <button
-                type="button"
-                class="app-sidebar__favorite-button"
-                :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-                :disabled="navigationFavoriteStore.isSaving"
-                :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-                :aria-pressed="isFavorite(item.to)"
-                @click.stop="toggleFavorite(item.to)"
-              >
-                {{ isFavorite(item.to) ? '★' : '☆' }}
-              </button>
-            </div>
-          </nav>
-
-          <section class="app-sidebar__admin">
-            <p class="app-sidebar__section-title">개인</p>
+          <div class="app-sidebar__body">
             <nav class="app-sidebar__section">
               <div
-                v-for="item in personalNavigationItems"
+                v-for="item in primaryNavigationItems"
                 :key="item.to"
                 class="app-sidebar__item"
               >
@@ -133,38 +104,69 @@ async function toggleFavorite(path: string) {
                 </button>
               </div>
             </nav>
-          </section>
 
-          <section v-if="authStore.currentUser?.role === 'ADMIN'" class="app-sidebar__admin">
-            <p class="app-sidebar__section-title">관리자</p>
-            <nav class="app-sidebar__section">
-              <div
-                v-for="item in adminNavigationItems"
-                :key="item.to"
-                class="app-sidebar__item"
-              >
-                <NuxtLink
-                  :to="item.to"
-                  class="app-sidebar__link"
-                  :class="{ 'app-sidebar__link--active': isActive(item.to) }"
-                  @click="emit('close')"
+            <section class="app-sidebar__admin">
+              <p class="app-sidebar__section-title">개인</p>
+              <nav class="app-sidebar__section">
+                <div
+                  v-for="item in personalNavigationItems"
+                  :key="item.to"
+                  class="app-sidebar__item"
                 >
-                  {{ item.label }}
-                </NuxtLink>
-                <button
-                  type="button"
-                  class="app-sidebar__favorite-button"
-                  :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
-                  :disabled="navigationFavoriteStore.isSaving"
-                  :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
-                  :aria-pressed="isFavorite(item.to)"
-                  @click.stop="toggleFavorite(item.to)"
+                  <NuxtLink
+                    :to="item.to"
+                    class="app-sidebar__link"
+                    :class="{ 'app-sidebar__link--active': isActive(item.to) }"
+                    @click="emit('close')"
+                  >
+                    {{ item.label }}
+                  </NuxtLink>
+                  <button
+                    type="button"
+                    class="app-sidebar__favorite-button"
+                    :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                    :disabled="navigationFavoriteStore.isSaving"
+                    :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                    :aria-pressed="isFavorite(item.to)"
+                    @click.stop="toggleFavorite(item.to)"
+                  >
+                    {{ isFavorite(item.to) ? '★' : '☆' }}
+                  </button>
+                </div>
+              </nav>
+            </section>
+
+            <section v-if="authStore.currentUser?.role === 'ADMIN'" class="app-sidebar__admin">
+              <p class="app-sidebar__section-title">관리자</p>
+              <nav class="app-sidebar__section">
+                <div
+                  v-for="item in adminNavigationItems"
+                  :key="item.to"
+                  class="app-sidebar__item"
                 >
-                  {{ isFavorite(item.to) ? '★' : '☆' }}
-                </button>
-              </div>
-            </nav>
-          </section>
+                  <NuxtLink
+                    :to="item.to"
+                    class="app-sidebar__link"
+                    :class="{ 'app-sidebar__link--active': isActive(item.to) }"
+                    @click="emit('close')"
+                  >
+                    {{ item.label }}
+                  </NuxtLink>
+                  <button
+                    type="button"
+                    class="app-sidebar__favorite-button"
+                    :class="{ 'app-sidebar__favorite-button--active': isFavorite(item.to) }"
+                    :disabled="navigationFavoriteStore.isSaving"
+                    :aria-label="isFavorite(item.to) ? `${item.label} 즐겨찾기 해제` : `${item.label} 즐겨찾기 설정`"
+                    :aria-pressed="isFavorite(item.to)"
+                    @click.stop="toggleFavorite(item.to)"
+                  >
+                    {{ isFavorite(item.to) ? '★' : '☆' }}
+                  </button>
+                </div>
+              </nav>
+            </section>
+          </div>
         </aside>
       </Transition>
     </div>
@@ -216,8 +218,9 @@ async function toggleFavorite(path: string) {
   height: 100%;
   padding: 22px 18px;
   display: grid;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 18px;
+  overflow: hidden;
   background: linear-gradient(180deg, rgba(8, 18, 32, 0.42) 0%, rgba(11, 28, 48, 0.34) 100%);
   backdrop-filter: blur(26px) saturate(135%);
   -webkit-backdrop-filter: blur(26px) saturate(135%);
@@ -248,6 +251,16 @@ async function toggleFavorite(path: string) {
 .app-sidebar__title {
   margin: 6px 0 0;
   font-size: 1.24rem;
+}
+
+.app-sidebar__body {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .app-sidebar__section {

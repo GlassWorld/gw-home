@@ -128,13 +128,29 @@ export function useOpenWeeklyReportBrowse() {
   }
 
   function resolveWeekOfMonth(value: string): number {
-    const date = new Date(value)
+    if (!value) {
+      return 0
+    }
+
+    const [rawYear, rawMonth, rawDay] = value.split('-').map(item => Number(item))
+    const year = rawYear || 1970
+    const month = rawMonth || 1
+    const day = rawDay || 1
+    const date = new Date(year, month - 1, day)
 
     if (Number.isNaN(date.getTime())) {
       return 0
     }
 
-    return Math.ceil(date.getDate() / 7)
+    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+    const firstSaturdayOffset = (6 - firstDayOfMonth.getDay() + 7) % 7
+    const firstSaturdayDate = 1 + firstSaturdayOffset
+
+    if (date.getDate() < firstSaturdayDate) {
+      return 1
+    }
+
+    return Math.floor((date.getDate() - firstSaturdayDate) / 7) + 1
   }
 
   async function openOpenWeeklyReportDetail(reportUuid: string) {
