@@ -251,8 +251,11 @@ async function openImportModal() {
   workUnitSearchKeyword.value = ''
 
   try {
-    modalWorkUnitOptions.value = await fetchWorkUnitOptions(true)
-    modalSelectedWorkUnitUuids.value = selectedWorkUnits.value.map((workUnit) => workUnit.workUnitUuid)
+    modalWorkUnitOptions.value = await fetchWorkUnitOptions()
+    const availableWorkUnitUuids = new Set(modalWorkUnitOptions.value.map((workUnit) => workUnit.workUnitUuid))
+    modalSelectedWorkUnitUuids.value = selectedWorkUnits.value
+      .map((workUnit) => workUnit.workUnitUuid)
+      .filter((workUnitUuid) => availableWorkUnitUuids.has(workUnitUuid))
 
     const selectedWorkUnitUuid = modalSelectedWorkUnitUuids.value[0] ?? modalWorkUnitOptions.value[0]?.workUnitUuid ?? ''
     if (selectedWorkUnitUuid) {

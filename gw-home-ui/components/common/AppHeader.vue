@@ -267,6 +267,18 @@ function closeMemo() {
   height: 20px;
 }
 
+@media (min-width: 1100px) {
+  .app-header__menu-button {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-header__favorite-navigation {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .app-header__inner {
     gap: 12px;
@@ -285,6 +297,12 @@ function closeMemo() {
   }
 
   .app-header__favorite-navigation {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header__profile-link {
     display: none;
   }
 }

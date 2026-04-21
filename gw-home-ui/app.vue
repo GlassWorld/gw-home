@@ -42,13 +42,15 @@ watch(
 <template>
   <div class="app-shell">
     <CommonAppHeader v-if="shouldShowHeader" @open-navigation="isNavigationVisible = true" />
-    <CommonAppSidebarNavigation
-      v-if="shouldShowHeader"
-      :visible="isNavigationVisible"
-      @close="isNavigationVisible = false"
-    />
-    <div class="app-shell__content">
-      <NuxtPage />
+    <div class="app-shell__workspace">
+      <CommonAppSidebarNavigation
+        v-if="shouldShowHeader"
+        :visible="isNavigationVisible"
+        @close="isNavigationVisible = false"
+      />
+      <div class="app-shell__content">
+        <NuxtPage />
+      </div>
     </div>
     <CommonToastViewport />
     <CommonDialogProvider />
@@ -67,11 +69,19 @@ watch(
   flex-direction: column;
 }
 
+.app-shell__workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
 .app-shell__content {
   display: flex;
   flex: 1;
   min-height: 0;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .app-footer__inner {
