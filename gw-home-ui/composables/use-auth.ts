@@ -55,6 +55,19 @@ export function useAuth() {
     sameSite: 'lax',
     path: '/'
   })
+  const otpSetupPendingCookie = useCookie<string | null>('gw-home-otp-setup-pending', {
+    default: () => null,
+    sameSite: 'lax',
+    path: '/'
+  })
+
+  function setOtpSetupPending(isPending: boolean) {
+    otpSetupPendingCookie.value = isPending ? 'true' : null
+  }
+
+  function isOtpSetupPending(): boolean {
+    return otpSetupPendingCookie.value === 'true'
+  }
 
   async function fetchCurrentUser(accessTokenOverride?: string): Promise<UserProfile> {
     const authorizationHeader = buildAuthorizationHeader(accessTokenOverride ?? authStore.accessToken)
@@ -121,6 +134,7 @@ export function useAuth() {
         throw new Error('OTP 설정용 로그인 토큰 응답이 없습니다.')
       }
 
+      setOtpSetupPending(true)
       applyTokenResponse(response.data.token_response)
       const currentUser = await fetchCurrentUser(response.data.token_response.access_token)
       authStore.setUser(currentUser)
@@ -134,6 +148,7 @@ export function useAuth() {
       throw new Error('로그인 토큰 응답이 없습니다.')
     }
 
+    setOtpSetupPending(false)
     applyTokenResponse(response.data.token_response)
     const currentUser = await fetchCurrentUser(response.data.token_response.access_token)
     authStore.setUser(currentUser)
@@ -154,6 +169,7 @@ export function useAuth() {
         })
       }
     } finally {
+      setOtpSetupPending(false)
       accessTokenCookie.value = null
       refreshTokenCookie.value = null
       authStore.clearAuth()
@@ -198,7 +214,7 @@ export function useAuth() {
 
   async function ensureAuthenticated(): Promise<boolean> {
     if (authStore.isAuthenticated) {
-      return true
+      return !isOtpSetupPending()
     }
 
     if (accessTokenCookie.value) {
@@ -206,8 +222,9 @@ export function useAuth() {
         authStore.setToken(accessTokenCookie.value)
         const currentUser = await fetchCurrentUser(accessTokenCookie.value)
         authStore.setUser(currentUser)
-        return true
+        return !isOtpSetupPending()
       } catch {
+        setOtpSetupPending(false)
         accessTokenCookie.value = null
         authStore.clearAuth()
         navigationFavoriteStore.clearFavoriteMenus()
@@ -223,8 +240,9 @@ export function useAuth() {
 
     try {
       await refreshToken()
-      return true
+      return !isOtpSetupPending()
     } catch {
+      setOtpSetupPending(false)
       accessTokenCookie.value = null
       refreshTokenCookie.value = null
       authStore.clearAuth()
@@ -274,6 +292,8 @@ export function useAuth() {
     ensureAuthenticated,
     fetchCurrentUser,
     applyTokenResponse,
-    authorizedFetch
+    authorizedFetch,
+    setOtpSetupPending,
+    isOtpSetupPending
   }
 }

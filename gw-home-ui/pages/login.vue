@@ -9,7 +9,7 @@ definePageMeta({
 
 type LoginStep = 'credentials' | 'otp'
 
-const { login } = useAuth()
+const { login, ensureAuthenticated, isOtpSetupPending } = useAuth()
 const { verifyOtp } = useOtpApi()
 const errorMessage = ref('')
 const isSubmitting = ref(false)
@@ -101,6 +101,23 @@ async function handleActivateOtp() {
     }
   })
 }
+
+onMounted(async () => {
+  if (!isOtpSetupPending()) {
+    return
+  }
+
+  const isAuthenticated = await ensureAuthenticated()
+
+  if (isAuthenticated || !isOtpSetupPending()) {
+    return
+  }
+
+  isOtpSetupRequired.value = true
+  activationOtpCode.value = ''
+  otpSetupErrorMessage.value = ''
+  await handleSetupOtp()
+})
 </script>
 
 <template>
