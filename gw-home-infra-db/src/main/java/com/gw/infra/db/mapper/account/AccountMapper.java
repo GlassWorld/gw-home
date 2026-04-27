@@ -91,4 +91,10 @@ public interface AccountMapper {
             @Param("acctStat") String acctStat,
             @Param("updatedBy") String updatedBy
     );
+
+    int updateOtpRequired(
+            @Param("uuid") String uuid,
+            @Param("otpRequired") boolean otpRequired,
+            @Param("updatedBy") String updatedBy
+    );
 }

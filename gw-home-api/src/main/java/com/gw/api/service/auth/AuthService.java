@@ -96,12 +96,12 @@ public class AuthService {
 
         accountMapper.resetLoginFailCount(account.getIdx());
 
-        if (account.isOtpEnabled() && account.getOtpSecret() != null && !account.getOtpSecret().isBlank()) {
+        if (account.isOtpRequired() && account.isOtpEnabled() && account.getOtpSecret() != null && !account.getOtpSecret().isBlank()) {
             log.info("login 완료 - OTP 추가 인증 필요");
             return AuthConvert.toOtpRequiredLoginResponse(jwtProvider.generateOtpTempToken(account.getLgnId()));
         }
 
-        if (!account.isOtpEnabled()) {
+        if (account.isOtpRequired() && !account.isOtpEnabled()) {
             log.info("login 완료 - OTP 설정 필요");
             return AuthConvert.toOtpSetupRequiredLoginResponse(issueTokenResponse(account));
         }

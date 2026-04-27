@@ -9,6 +9,8 @@ public record AdminAccountDetailResponse(
         String role,
         String acctStat,
         boolean lckYn,
+        boolean otpRequired,
+        boolean otpEnabled,
         OffsetDateTime lckAt,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt

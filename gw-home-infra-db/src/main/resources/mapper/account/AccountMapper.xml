@@ -33,6 +33,7 @@
             lck_yn,
             lck_at,
             otp_enabled,
+            otp_required,
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
@@ -59,6 +60,7 @@
             lck_yn,
             lck_at,
             otp_enabled,
+            otp_required,
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
@@ -85,6 +87,7 @@
             lck_yn,
             lck_at,
             otp_enabled,
+            otp_required,
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
@@ -111,6 +114,7 @@
             lck_yn,
             lck_at,
             otp_enabled,
+            otp_required,
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
@@ -235,6 +239,7 @@
         SET
             otp_secret = #{otpSecret},
             otp_enabled = FALSE,
+            otp_required = TRUE,
             otp_fail_cnt = 0,
             otp_last_failed_at = NULL,
             updated_at = now()
@@ -247,6 +252,7 @@
         UPDATE tb_mbr_acct
         SET
             otp_enabled = TRUE,
+            otp_required = TRUE,
             otp_fail_cnt = 0,
             otp_last_failed_at = NULL,
             updated_at = now()
@@ -307,9 +313,20 @@
         UPDATE tb_mbr_acct
         SET
             otp_enabled = FALSE,
+            otp_required = TRUE,
             otp_secret = NULL,
             otp_fail_cnt = 0,
             otp_last_failed_at = NULL,
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <update id="updateOtpRequired">
+        UPDATE tb_mbr_acct
+        SET
+            otp_required = #{otpRequired},
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)

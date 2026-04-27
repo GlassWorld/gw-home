@@ -42,6 +42,9 @@ public class AcctVo extends BaseVo {
     // OTP 활성화 여부
     private boolean otpEnabled;
 
+    // OTP 로그인 요구 여부
+    private boolean otpRequired;
+
     // 암호화된 OTP 시크릿
     private String otpSecret;
 

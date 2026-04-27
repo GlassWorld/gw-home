@@ -21,6 +21,7 @@ const {
   isCreating,
   updatingRoleUuid,
   updatingStatusUuid,
+  updatingOtpRequiredUuid,
   deletingUuid,
   openDropdownKey,
   actionLoadingKey,
@@ -46,6 +47,7 @@ const {
   handleResetOtpFailure,
   handleResetOtp,
   handleResetPassword,
+  handleToggleOtpRequired,
   copyTemporaryPassword,
   closeTemporaryPasswordModal,
   handleSearch,
@@ -110,6 +112,7 @@ await loadAccounts()
       :open-dropdown-key="openDropdownKey"
       :updating-role-uuid="updatingRoleUuid"
       :updating-status-uuid="updatingStatusUuid"
+      :updating-otp-required-uuid="updatingOtpRequiredUuid"
       :deleting-uuid="deletingUuid"
       :action-loading-key="actionLoadingKey"
       :format-date-time="formatDateTime"
@@ -118,6 +121,7 @@ await loadAccounts()
       @toggle-dropdown="toggleDropdown"
       @select-manage-role="selectManageRole"
       @select-manage-status="selectManageStatus"
+      @toggle-otp-required="handleToggleOtpRequired"
       @unlock="handleUnlockAccount"
       @reset-otp-failure="handleResetOtpFailure"
       @reset-otp="handleResetOtp"

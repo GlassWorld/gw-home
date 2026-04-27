@@ -5,6 +5,7 @@ import type {
   AdminAccountListParams,
   AdminCreateAccountForm,
   AdminPasswordResetResponse,
+  UpdateOtpRequiredForm,
   UpdateRoleForm,
   UpdateStatusForm
 } from '~/types/admin'
@@ -16,6 +17,8 @@ interface AdminAccountApi {
   role?: AdminAccount['role']
   acct_stat?: AdminAccount['acctStat']
   lck_yn?: boolean
+  otp_required?: boolean
+  otp_enabled?: boolean
   created_at?: string
   lck_at?: string | null
   updated_at?: string | null
@@ -41,6 +44,8 @@ function toAdminAccount(account: AdminAccountApi): AdminAccount {
     role: account.role ?? 'USER',
     acctStat: account.acct_stat ?? 'ACTIVE',
     lckYn: account.lck_yn ?? false,
+    otpRequired: account.otp_required ?? true,
+    otpEnabled: account.otp_enabled ?? false,
     createdAt: account.created_at ?? ''
   }
 }
@@ -115,6 +120,16 @@ export function useAdminAccountApi() {
     return toAdminAccountDetail(response.data)
   }
 
+  async function updateOtpRequired(uuid: string, form: UpdateOtpRequiredForm): Promise<AdminAccountDetail> {
+    const response = await authorizedFetch<ApiResponse<AdminAccountApi>>(`/api/v1/admin/accounts/${uuid}/otp-required`, {
+      method: 'PUT',
+      body: {
+        otp_required: form.otpRequired
+      }
+    })
+    return toAdminAccountDetail(response.data)
+  }
+
   async function deleteAccount(uuid: string): Promise<void> {
     await authorizedFetch<ApiResponse<null>>(`/api/v1/admin/accounts/${uuid}`, {
       method: 'DELETE'
@@ -157,6 +172,7 @@ export function useAdminAccountApi() {
     createAccount,
     updateRole,
     updateStatus,
+    updateOtpRequired,
     deleteAccount,
     unlockAccount,
     resetOtpFailure,

@@ -19,6 +19,8 @@ public final class AdminAccountConvert {
                 account.getRole(),
                 account.getAcctStat(),
                 account.isLckYn(),
+                account.isOtpRequired(),
+                account.isOtpEnabled(),
                 account.getCreatedAt()
         );
     }
@@ -32,6 +34,8 @@ public final class AdminAccountConvert {
                 account.getRole(),
                 account.getAcctStat(),
                 account.isLckYn(),
+                account.isOtpRequired(),
+                account.isOtpEnabled(),
                 account.getLckAt(),
                 account.getCreatedAt(),
                 account.getUpdatedAt()

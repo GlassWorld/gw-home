@@ -10,6 +10,7 @@ const props = defineProps<{
   openDropdownKey: string
   updatingRoleUuid: string
   updatingStatusUuid: string
+  updatingOtpRequiredUuid: string
   deletingUuid: string
   actionLoadingKey: string
   formatDateTime: (value: string) => string
@@ -21,6 +22,7 @@ const emit = defineEmits<{
   toggleDropdown: [key: string]
   selectManageRole: [role: AccountRole]
   selectManageStatus: [status: AccountStatus]
+  toggleOtpRequired: [account: AdminAccountDetail, otpRequired: boolean]
   unlock: [account: AdminAccountDetail]
   resetOtpFailure: [account: AdminAccountDetail]
   resetOtp: [account: AdminAccountDetail]
@@ -67,6 +69,14 @@ const handleStatusSelect = (value: string) => {
           <span>가입일</span>
           <strong>{{ props.formatDateTime(props.selectedAccount.createdAt) }}</strong>
         </div>
+        <div class="admin-account-manage-modal__card">
+          <span>OTP 로그인 정책</span>
+          <strong>{{ props.selectedAccount.otpRequired ? '필수' : '선택' }}</strong>
+        </div>
+        <div class="admin-account-manage-modal__card">
+          <span>OTP 등록 상태</span>
+          <strong>{{ props.selectedAccount.otpEnabled ? '등록됨' : '미등록' }}</strong>
+        </div>
       </div>
 
       <div class="admin-account-manage-modal__controls">
@@ -92,6 +102,26 @@ const handleStatusSelect = (value: string) => {
           @toggle="emit('toggleDropdown', 'manage-status')"
           @select="handleStatusSelect"
         />
+      </div>
+
+      <div class="admin-account-manage-modal__otp-policy">
+        <span class="admin-account-manage-modal__otp-policy-label">OTP 사용 여부</span>
+        <div class="admin-account-manage-modal__otp-policy-actions">
+          <CommonBaseButton
+            :variant="props.selectedAccount.otpRequired ? 'primary' : 'secondary'"
+            :disabled="props.updatingOtpRequiredUuid === props.selectedAccount.uuid || props.selectedAccount.otpRequired"
+            @click="emit('toggleOtpRequired', props.selectedAccount, true)"
+          >
+            필수
+          </CommonBaseButton>
+          <CommonBaseButton
+            :variant="!props.selectedAccount.otpRequired ? 'primary' : 'secondary'"
+            :disabled="props.updatingOtpRequiredUuid === props.selectedAccount.uuid || !props.selectedAccount.otpRequired"
+            @click="emit('toggleOtpRequired', props.selectedAccount, false)"
+          >
+            선택
+          </CommonBaseButton>
+        </div>
       </div>
 
       <div class="admin-account-manage-modal__actions">
@@ -155,7 +185,7 @@ const handleStatusSelect = (value: string) => {
 
 .admin-account-manage-modal__summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -185,6 +215,28 @@ const handleStatusSelect = (value: string) => {
   gap: 16px;
 }
 
+.admin-account-manage-modal__otp-policy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(8, 21, 38, 0.62);
+}
+
+.admin-account-manage-modal__otp-policy-label {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.admin-account-manage-modal__otp-policy-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .admin-account-manage-modal__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -200,6 +252,16 @@ const handleStatusSelect = (value: string) => {
   .admin-account-manage-modal__controls,
   .admin-account-manage-modal__actions {
     grid-template-columns: 1fr;
+  }
+
+  .admin-account-manage-modal__otp-policy {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-account-manage-modal__otp-policy-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

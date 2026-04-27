@@ -9,7 +9,7 @@ import {
 } from '~/features/admin/types/admin-account-management'
 
 export function useAdminAccountManagement() {
-  const { fetchAccounts, fetchAccount, createAccount, updateRole, updateStatus, deleteAccount, unlockAccount, resetOtpFailure, resetOtp, resetPassword } = useAdminAccountApi()
+  const { fetchAccounts, fetchAccount, createAccount, updateRole, updateStatus, updateOtpRequired, deleteAccount, unlockAccount, resetOtpFailure, resetOtp, resetPassword } = useAdminAccountApi()
   const { showToast } = useToast()
   const { confirm } = useDialog()
 
@@ -28,6 +28,7 @@ export function useAdminAccountManagement() {
   const isCreating = ref(false)
   const updatingRoleUuid = ref('')
   const updatingStatusUuid = ref('')
+  const updatingOtpRequiredUuid = ref('')
   const deletingUuid = ref('')
   const openDropdownKey = ref('')
   const actionLoadingKey = ref('')
@@ -211,6 +212,25 @@ export function useAdminAccountManagement() {
     }
   }
 
+  async function handleChangeOtpRequired(account: AdminAccount, otpRequired: boolean) {
+    if (updatingOtpRequiredUuid.value) {
+      return
+    }
+
+    updatingOtpRequiredUuid.value = account.uuid
+
+    try {
+      await updateOtpRequired(account.uuid, { otpRequired })
+      showToast(otpRequired ? 'OTP 사용 필수로 변경했습니다.' : 'OTP 사용 선택으로 변경했습니다.', { variant: 'success' })
+      await reloadSelectedAccount(account)
+    } catch (error) {
+      const fetchError = error as { data?: { message?: string } }
+      showToast(fetchError.data?.message ?? 'OTP 사용 여부 변경에 실패했습니다.', { variant: 'error' })
+    } finally {
+      updatingOtpRequiredUuid.value = ''
+    }
+  }
+
   async function handleDeleteAccount(account: AdminAccount) {
     if (deletingUuid.value) {
       return
@@ -388,6 +408,10 @@ export function useAdminAccountManagement() {
     void handleChangeStatus(selectedAccount.value, status)
   }
 
+  function handleToggleOtpRequired(account: AdminAccount, otpRequired: boolean) {
+    void handleChangeOtpRequired(account, otpRequired)
+  }
+
   onMounted(() => {
     document.addEventListener('mousedown', handleDocumentMouseDown)
   })
@@ -407,6 +431,7 @@ export function useAdminAccountManagement() {
     isCreating,
     updatingRoleUuid,
     updatingStatusUuid,
+    updatingOtpRequiredUuid,
     deletingUuid,
     openDropdownKey,
     actionLoadingKey,
@@ -433,6 +458,7 @@ export function useAdminAccountManagement() {
     handleResetOtpFailure,
     handleResetOtp,
     handleResetPassword,
+    handleToggleOtpRequired,
     copyTemporaryPassword,
     closeTemporaryPasswordModal,
     handleSearch,
