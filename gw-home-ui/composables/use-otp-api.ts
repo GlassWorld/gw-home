@@ -4,7 +4,7 @@ import type { OtpStatusApiResponse, OtpSetupApiResponse, TokenApiResponse } from
 export function useOtpApi() {
   const runtimeConfig = useRuntimeConfig()
   const authStore = useAuthStore()
-  const { authorizedFetch, fetchCurrentUser } = useAuth()
+  const { authorizedFetch, fetchCurrentUser, setOtpSetupPending } = useAuth()
   const accessTokenCookie = useCookie<string | null>('gw-home-access-token', {
     default: () => null,
     sameSite: 'lax',
@@ -51,6 +51,8 @@ export function useOtpApi() {
     if (!response.success) {
       throw new Error(response.message ?? 'OTP 활성화에 실패했습니다.')
     }
+
+    setOtpSetupPending(false)
   }
 
   async function verifyOtp(otpTempToken: string, otpCode: string): Promise<void> {
@@ -70,6 +72,7 @@ export function useOtpApi() {
     authStore.setToken(response.data.access_token)
     accessTokenCookie.value = response.data.access_token
     refreshTokenCookie.value = response.data.refresh_token
+    setOtpSetupPending(false)
 
     const currentUser = await fetchCurrentUser(response.data.access_token)
     authStore.setUser(currentUser)

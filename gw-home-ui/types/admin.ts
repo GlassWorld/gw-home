@@ -10,6 +10,8 @@ export interface AdminAccount {
   role: AccountRole
   acctStat: AccountStatus
   lckYn: boolean
+  otpRequired: boolean
+  otpEnabled: boolean
   createdAt: string
 }
 
@@ -31,6 +33,10 @@ export interface UpdateRoleForm {
 
 export interface UpdateStatusForm {
   status: AccountStatus
+}
+
+export interface UpdateOtpRequiredForm {
+  otpRequired: boolean
 }
 
 export interface AdminPasswordResetResponse {

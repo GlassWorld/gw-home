@@ -75,7 +75,7 @@ class AuthServiceTest {
 
     @Test
     void loginReturnsTokensAndStoresRefreshToken() {
-        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(createAccountVo());
+        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(createAccountVo(true, false));
 
         LoginResponse response = authService.login(new LoginRequest("tester_01", "password1234"));
         TokenResponse tokenResponse = response.tokenResponse();
@@ -100,6 +100,7 @@ class AuthServiceTest {
                         .pwd(passwordEncoder.encode("admin!@34"))
                         .email("admin@gw-home.local")
                         .role("ADMIN")
+                        .otpRequired(false)
                         .createdAt(OffsetDateTime.parse("2026-03-22T01:00:00+09:00"))
                         .build()
         );
@@ -167,10 +168,42 @@ class AuthServiceTest {
     }
 
     private AcctVo createAccountVo() {
-        return createAccountVo(0, false);
+        return createAccountVo(0, false, true, false);
     }
 
     private AcctVo createAccountVo(int loginFailCount, boolean isLocked) {
+        return createAccountVo(loginFailCount, isLocked, true, false);
+    }
+
+    private AcctVo createAccountVo(boolean otpRequired, boolean otpEnabled) {
+        return createAccountVo(0, false, otpRequired, otpEnabled);
+    }
+
+    @Test
+    void loginReturnsSuccessWhenOtpIsOptional() {
+        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(createAccountVo(false, false));
+
+        LoginResponse response = authService.login(new LoginRequest("tester_01", "password1234"));
+
+        assertEquals("SUCCESS", response.loginStatus());
+        assertNotNull(response.tokenResponse());
+        verify(accountMapper).resetLoginFailCount(1L);
+        verify(authMapper).insertRefreshToken(any());
+    }
+
+    @Test
+    void loginReturnsOtpRequiredWhenOtpPolicyAndSecretAreReady() {
+        when(accountMapper.selectAccountByLoginId("tester_01")).thenReturn(createAccountVo(0, false, true, true));
+
+        LoginResponse response = authService.login(new LoginRequest("tester_01", "password1234"));
+
+        assertEquals("OTP_REQUIRED", response.loginStatus());
+        assertNotNull(response.otpTempToken());
+        verify(accountMapper).resetLoginFailCount(1L);
+        verify(authMapper, never()).insertRefreshToken(any());
+    }
+
+    private AcctVo createAccountVo(int loginFailCount, boolean isLocked, boolean otpRequired, boolean otpEnabled) {
         return AcctVo.builder()
                 .idx(1L)
                 .uuid("account-uuid")
@@ -180,6 +213,9 @@ class AuthServiceTest {
                 .role("USER")
                 .lgnFailCnt(loginFailCount)
                 .lckYn(isLocked)
+                .otpRequired(otpRequired)
+                .otpEnabled(otpEnabled)
+                .otpSecret(otpEnabled ? "encrypted-secret" : null)
                 .lckAt(null)
                 .createdAt(OffsetDateTime.parse("2026-03-17T21:00:00+09:00"))
                 .build();

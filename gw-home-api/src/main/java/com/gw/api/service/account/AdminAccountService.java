@@ -5,6 +5,7 @@ import com.gw.api.dto.account.AdminAccountDetailResponse;
 import com.gw.api.dto.account.AdminAccountListResponse;
 import com.gw.api.dto.account.AdminPasswordResetResponse;
 import com.gw.api.dto.account.AdminCreateAccountRequest;
+import com.gw.api.dto.account.UpdateOtpRequiredRequest;
 import com.gw.api.dto.account.UpdateRoleRequest;
 import com.gw.api.dto.account.UpdateStatusRequest;
 import com.gw.api.service.profile.ProfileService;
@@ -141,6 +142,22 @@ public class AdminAccountService {
         }
 
         log.info("updateStatus 완료 - uuid: {}, status: {}", uuid, request.status());
+        return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
+    }
+
+    // 관리자 권한으로 계정의 OTP 요구 여부를 변경한다.
+    public AdminAccountDetailResponse updateOtpRequired(String uuid, UpdateOtpRequiredRequest request, String adminLoginId) {
+        log.info("updateOtpRequired 시작 - uuid: {}, otpRequired: {}, adminLoginId: {}", uuid, request.otpRequired(), adminLoginId);
+        AcctVo account = getAccountByUuid(uuid);
+        validateSelfAction(adminLoginId, account, "자기 자신의 OTP 요구 여부는 변경할 수 없습니다.");
+
+        int updatedCount = accountMapper.updateOtpRequired(uuid, request.otpRequired(), adminLoginId);
+        if (updatedCount == 0) {
+            log.error("updateOtpRequired 실패 - 원인: 계정을 찾을 수 없습니다. uuid={}", uuid);
+            throw new BusinessException(ErrorCode.NOT_FOUND, "계정을 찾을 수 없습니다.");
+        }
+
+        log.info("updateOtpRequired 완료 - uuid: {}, otpRequired: {}", uuid, request.otpRequired());
         return AdminAccountConvert.toDetailResponse(getAccountByUuid(uuid));
     }
 

@@ -4,6 +4,7 @@ import com.gw.api.dto.account.AdminAccountDetailResponse;
 import com.gw.api.dto.account.AdminAccountListResponse;
 import com.gw.api.dto.account.AdminPasswordResetResponse;
 import com.gw.api.dto.account.AdminCreateAccountRequest;
+import com.gw.api.dto.account.UpdateOtpRequiredRequest;
 import com.gw.api.dto.account.UpdateRoleRequest;
 import com.gw.api.dto.account.UpdateStatusRequest;
 import com.gw.api.service.account.AdminAccountService;
@@ -80,6 +81,16 @@ public class AdminAccountController {
             @Valid @RequestBody UpdateStatusRequest request
     ) {
         return ApiResponse.ok(adminAccountService.updateStatus(uuid, request, getLoginId(principal)));
+    }
+
+    // 관리자가 회원의 OTP 요구 여부를 변경한다.
+    @PutMapping("/{uuid}/otp-required")
+    public ApiResponse<AdminAccountDetailResponse> updateOtpRequired(
+            Principal principal,
+            @PathVariable String uuid,
+            @Valid @RequestBody UpdateOtpRequiredRequest request
+    ) {
+        return ApiResponse.ok(adminAccountService.updateOtpRequired(uuid, request, getLoginId(principal)));
     }
 
     // 관리자가 회원 계정을 삭제한다.

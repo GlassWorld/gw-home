@@ -18,12 +18,15 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.unit.DataSize;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Slf4j
 @Service
@@ -185,7 +188,62 @@ public class FileService {
     }
 
     private String buildFileUrl(String uploaderType, String yearMonth, String savedName) {
-        return fileUploadProperties.getBaseUrl() + "/" + uploaderType + "/" + yearMonth + "/" + savedName;
+        String baseUrl = resolveFileBaseUrl();
+        return baseUrl + "/" + uploaderType + "/" + yearMonth + "/" + savedName;
+    }
+
+    private String resolveFileBaseUrl() {
+        ServletRequestAttributes requestAttributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        if (requestAttributes != null) {
+            HttpServletRequest request = requestAttributes.getRequest();
+            String scheme = getFirstForwardedValue(request.getHeader("X-Forwarded-Proto"));
+            String host = getFirstForwardedValue(request.getHeader("X-Forwarded-Host"));
+
+            if (scheme == null || scheme.isBlank()) {
+                scheme = request.getScheme();
+            }
+
+            if (host == null || host.isBlank()) {
+                host = request.getHeader("Host");
+            }
+
+            if (host == null || host.isBlank()) {
+                host = request.getServerName();
+                int port = request.getServerPort();
+
+                if (port > 0 && !isDefaultPort(scheme, port)) {
+                    host = host + ":" + port;
+                }
+            }
+
+            if (host != null && !host.isBlank()) {
+                String contextPath = request.getContextPath() == null ? "" : request.getContextPath();
+                return scheme + "://" + host + contextPath + "/files";
+            }
+        }
+
+        String configuredBaseUrl = fileUploadProperties.getBaseUrl();
+
+        if (configuredBaseUrl == null || configuredBaseUrl.isBlank()) {
+            return "/files";
+        }
+
+        return configuredBaseUrl.endsWith("/") ? configuredBaseUrl.substring(0, configuredBaseUrl.length() - 1) : configuredBaseUrl;
+    }
+
+    private String getFirstForwardedValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.split(",")[0].trim();
+    }
+
+    private boolean isDefaultPort(String scheme, int port) {
+        return ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
     }
 
     private FileVo getFileByUuid(String fileUuid) {
