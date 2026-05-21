@@ -75,6 +75,7 @@ jobs:
             mkdir -p "${APP_PATH}"
             mkdir -p "${APP_PATH}/certbot/www"
             mkdir -p "${APP_PATH}/certbot/conf"
+            mkdir -p "${APP_PATH}/conf.d"
 
       - name: 프론트엔드 배포 파일 전송
         uses: appleboy/scp-action@v0.1.7
@@ -83,7 +84,7 @@ jobs:
           username: ${{ secrets.FRONT_USER }}
           key: ${{ secrets.FRONT_SSH_KEY }}
           port: ${{ secrets.FRONT_PORT }}
-          source: "deploy/frontend/docker-compose.yml,deploy/frontend/nginx.conf"
+          source: "deploy/frontend/docker-compose.yml,deploy/frontend/nginx.conf,deploy/frontend/conf.d"
           target: ${{ secrets.FRONT_APP_PATH }}
           strip_components: 2
 
@@ -104,6 +105,7 @@ jobs:
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             docker compose -f "${COMPOSE_FILE}" pull frontend nginx
             docker compose -f "${COMPOSE_FILE}" up -d
+            docker compose -f "${COMPOSE_FILE}" up -d --force-recreate nginx
 
       - name: 백엔드 서버 배포 경로 준비
         uses: appleboy/ssh-action@v1.2.0
