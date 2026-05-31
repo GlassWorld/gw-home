@@ -3,6 +3,7 @@ const savedLoginIdStorageKey = 'saved-login-id'
 
 const emit = defineEmits<{
   submit: [payload: { loginId: string; password: string }]
+  googleLogin: []
 }>()
 
 const props = defineProps<{
@@ -104,6 +105,21 @@ function handleSubmit() {
     <CommonBaseButton class="login-form__submit" block type="submit" :disabled="props.isSubmitting">
       {{ props.isSubmitting ? '로그인 중...' : '로그인' }}
     </CommonBaseButton>
+
+    <div class="login-form__divider">
+      <span>또는</span>
+    </div>
+
+    <CommonBaseButton
+      class="login-form__google"
+      block
+      type="button"
+      variant="secondary"
+      :disabled="props.isSubmitting"
+      @click="emit('googleLogin')"
+    >
+      Google로 로그인
+    </CommonBaseButton>
   </form>
 </template>
 
@@ -184,5 +200,26 @@ function handleSubmit() {
   cursor: wait;
   opacity: 0.72;
   transform: none;
+}
+
+.login-form__divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  color: rgba(219, 241, 255, 0.52);
+  font-size: 0.82rem;
+}
+
+.login-form__divider::before,
+.login-form__divider::after {
+  content: '';
+  height: 1px;
+  background: rgba(176, 195, 255, 0.18);
+}
+
+.login-form__google {
+  text-transform: none;
+  letter-spacing: 0;
 }
 </style>

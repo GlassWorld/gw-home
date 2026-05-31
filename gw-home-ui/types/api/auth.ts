@@ -20,6 +20,22 @@ export interface LoginApiResponse {
   otp_temp_token: string | null
 }
 
+export interface GoogleAuthorizationUrlApiResponse {
+  authorization_url: string
+  state: string
+}
+
+export interface GoogleCodeRequestBody {
+  code: string
+  redirect_uri: string
+}
+
+export interface GoogleLinkStatusApiResponse {
+  linked: boolean
+  google_email: string | null
+  linked_at: string | null
+}
+
 export interface OtpSetupApiResponse {
   otp_auth_url: string
 }

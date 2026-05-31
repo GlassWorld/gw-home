@@ -9,7 +9,7 @@ definePageMeta({
 
 type LoginStep = 'credentials' | 'otp'
 
-const { login, ensureAuthenticated, isOtpSetupPending } = useAuth()
+const { login, ensureAuthenticated, isOtpSetupPending, getGoogleLoginAuthorizationUrl } = useAuth()
 const { verifyOtp } = useOtpApi()
 const errorMessage = ref('')
 const isSubmitting = ref(false)
@@ -55,6 +55,27 @@ async function handleLogin(payload: { loginId: string; password: string }) {
     const fetchError = error as { data?: { message?: string }; message?: string }
     errorMessage.value = fetchError.data?.message ?? fetchError.message ?? '로그인에 실패했습니다.'
   } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function handleGoogleLogin() {
+  if (!import.meta.client || isSubmitting.value) {
+    return
+  }
+
+  errorMessage.value = ''
+  isSubmitting.value = true
+
+  try {
+    const redirectUri = `${window.location.origin}/auth/google/callback`
+    const response = await getGoogleLoginAuthorizationUrl(redirectUri)
+    sessionStorage.setItem('gw-home-google-oauth-state', response.state)
+    sessionStorage.setItem('gw-home-google-oauth-mode', 'login')
+    window.location.href = response.authorization_url
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    errorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'Google 로그인을 시작하지 못했습니다.'
     isSubmitting.value = false
   }
 }
@@ -137,6 +158,7 @@ onMounted(async () => {
           :error-message="errorMessage"
           :is-submitting="isSubmitting"
           @submit="handleLogin"
+          @google-login="handleGoogleLogin"
         />
 
         <LoginOtpVerificationPanel

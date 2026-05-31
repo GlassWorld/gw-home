@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsGoogleSection from '~/features/settings/components/SettingsGoogleSection.vue'
 import SettingsOtpSection from '~/features/settings/components/SettingsOtpSection.vue'
 import SettingsPasswordSection from '~/features/settings/components/SettingsPasswordSection.vue'
 import SettingsProfileSection from '~/features/settings/components/SettingsProfileSection.vue'
@@ -12,7 +13,13 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const { showToast } = useToast()
-const { changeNickname, changePassword } = useSettingsApi()
+const {
+  changeNickname,
+  changePassword,
+  fetchGoogleLinkStatus,
+  getGoogleLinkAuthorizationUrl,
+  unlinkGoogleAccount
+} = useSettingsApi()
 const { fetchOtpStatus } = useOtpApi()
 
 const nickname = ref(authStore.currentUser?.nickname ?? '')
@@ -27,6 +34,12 @@ const passwordErrorMessage = ref('')
 const isSecurityLoading = ref(true)
 const otpEnabled = ref(false)
 const securityErrorMessage = ref('')
+const isGoogleLoading = ref(true)
+const isGoogleSubmitting = ref(false)
+const googleLinked = ref(false)
+const googleEmail = ref<string | null>(null)
+const googleLinkedAt = ref<string | null>(null)
+const googleErrorMessage = ref('')
 const {
   isSetupSubmitting,
   isActivateSubmitting,
@@ -122,6 +135,66 @@ async function loadOtpStatus() {
   }
 }
 
+async function loadGoogleLinkStatus() {
+  isGoogleLoading.value = true
+  googleErrorMessage.value = ''
+
+  try {
+    const response = await fetchGoogleLinkStatus()
+    googleLinked.value = response.linked
+    googleEmail.value = response.google_email
+    googleLinkedAt.value = response.linked_at
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    googleErrorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'Google 계정 연동 상태를 불러오지 못했습니다.'
+  } finally {
+    isGoogleLoading.value = false
+  }
+}
+
+async function startGoogleLink() {
+  if (!import.meta.client || isGoogleSubmitting.value) {
+    return
+  }
+
+  googleErrorMessage.value = ''
+  isGoogleSubmitting.value = true
+
+  try {
+    const redirectUri = `${window.location.origin}/auth/google/callback`
+    const response = await getGoogleLinkAuthorizationUrl(redirectUri)
+    sessionStorage.setItem('gw-home-google-oauth-state', response.state)
+    sessionStorage.setItem('gw-home-google-oauth-mode', 'link')
+    window.location.href = response.authorization_url
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    googleErrorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'Google 계정 연동을 시작하지 못했습니다.'
+    isGoogleSubmitting.value = false
+  }
+}
+
+async function submitGoogleUnlink() {
+  if (isGoogleSubmitting.value) {
+    return
+  }
+
+  googleErrorMessage.value = ''
+  isGoogleSubmitting.value = true
+
+  try {
+    await unlinkGoogleAccount()
+    googleLinked.value = false
+    googleEmail.value = null
+    googleLinkedAt.value = null
+    showToast('Google 계정 연동이 해제되었습니다.', { variant: 'success' })
+  } catch (error) {
+    const fetchError = error as { data?: { message?: string }; message?: string }
+    googleErrorMessage.value = fetchError.data?.message ?? fetchError.message ?? 'Google 계정 연동 해제에 실패했습니다.'
+  } finally {
+    isGoogleSubmitting.value = false
+  }
+}
+
 async function startOtpSetup() {
   await handleSetupOtp({
     setupSuccessMessage: 'OTP 설정을 시작했습니다. 인증 앱에 등록해 주세요.'
@@ -154,7 +227,10 @@ async function submitOtpDisable() {
   }
 }
 
-await loadOtpStatus()
+await Promise.all([
+  loadOtpStatus(),
+  loadGoogleLinkStatus()
+])
 </script>
 
 <template>
@@ -195,6 +271,17 @@ await loadOtpStatus()
       @update-new-password="newPassword = $event"
       @update-new-password-confirm="newPasswordConfirm = $event"
       @submit="handleChangePassword"
+    />
+
+    <SettingsGoogleSection
+      :error-message="googleErrorMessage"
+      :is-loading="isGoogleLoading"
+      :is-submitting="isGoogleSubmitting"
+      :linked="googleLinked"
+      :google-email="googleEmail"
+      :linked-at="googleLinkedAt"
+      @link="startGoogleLink"
+      @unlink="submitGoogleUnlink"
     />
 
     <SettingsOtpSection

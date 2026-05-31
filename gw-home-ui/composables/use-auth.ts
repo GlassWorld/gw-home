@@ -1,5 +1,12 @@
 import type { ApiResponse } from '~/types/api/common'
-import type { LoginApiResponse, LoginRequestBody, RefreshRequestBody, TokenApiResponse } from '~/types/api/auth'
+import type {
+  GoogleAuthorizationUrlApiResponse,
+  GoogleCodeRequestBody,
+  LoginApiResponse,
+  LoginRequestBody,
+  RefreshRequestBody,
+  TokenApiResponse
+} from '~/types/api/auth'
 import type { AccountMeApiResponse, ProfileApiResponse, UserProfile } from '~/types/api/user'
 
 interface AuthorizedFetchOptions {
@@ -102,6 +109,44 @@ export function useAuth() {
     refreshTokenCookie.value = tokenResponse.refresh_token
   }
 
+  async function applyLoginResponse(loginResponse: LoginApiResponse): Promise<LoginResult> {
+    if (loginResponse.login_status === 'OTP_REQUIRED') {
+      if (!loginResponse.otp_temp_token) {
+        throw new Error('OTP 임시 토큰이 없습니다.')
+      }
+
+      return {
+        status: 'OTP_REQUIRED',
+        otpTempToken: loginResponse.otp_temp_token
+      }
+    }
+
+    if (loginResponse.login_status === 'OTP_SETUP_REQUIRED') {
+      if (!loginResponse.token_response) {
+        throw new Error('OTP 설정용 로그인 토큰 응답이 없습니다.')
+      }
+
+      setOtpSetupPending(true)
+      applyTokenResponse(loginResponse.token_response)
+      const currentUser = await fetchCurrentUser(loginResponse.token_response.access_token)
+      authStore.setUser(currentUser)
+
+      return {
+        status: 'OTP_SETUP_REQUIRED'
+      }
+    }
+
+    if (!loginResponse.token_response) {
+      throw new Error('로그인 토큰 응답이 없습니다.')
+    }
+
+    setOtpSetupPending(false)
+    applyTokenResponse(loginResponse.token_response)
+    const currentUser = await fetchCurrentUser(loginResponse.token_response.access_token)
+    authStore.setUser(currentUser)
+    return { status: 'SUCCESS' }
+  }
+
   async function login(loginId: string, password: string): Promise<LoginResult> {
     const requestBody: LoginRequestBody = {
       login_id: loginId,
@@ -118,41 +163,42 @@ export function useAuth() {
       throw new Error(response.message ?? '로그인에 실패했습니다.')
     }
 
-    if (response.data.login_status === 'OTP_REQUIRED') {
-      if (!response.data.otp_temp_token) {
-        throw new Error('OTP 임시 토큰이 없습니다.')
-      }
+    return await applyLoginResponse(response.data)
+  }
 
-      return {
-        status: 'OTP_REQUIRED',
-        otpTempToken: response.data.otp_temp_token
+  async function getGoogleLoginAuthorizationUrl(redirectUri: string): Promise<GoogleAuthorizationUrlApiResponse> {
+    const response = await $fetch<ApiResponse<GoogleAuthorizationUrlApiResponse>>('/api/v1/auth/google/login-url', {
+      method: 'GET',
+      baseURL: apiBaseUrl,
+      query: {
+        redirect_uri: redirectUri
       }
+    })
+
+    if (!response.success || response.data === null) {
+      throw new Error(response.message ?? 'Google 로그인 URL을 만들지 못했습니다.')
     }
 
-    if (response.data.login_status === 'OTP_SETUP_REQUIRED') {
-      if (!response.data.token_response) {
-        throw new Error('OTP 설정용 로그인 토큰 응답이 없습니다.')
-      }
+    return response.data
+  }
 
-      setOtpSetupPending(true)
-      applyTokenResponse(response.data.token_response)
-      const currentUser = await fetchCurrentUser(response.data.token_response.access_token)
-      authStore.setUser(currentUser)
-
-      return {
-        status: 'OTP_SETUP_REQUIRED'
-      }
+  async function loginWithGoogle(code: string, redirectUri: string): Promise<LoginResult> {
+    const requestBody: GoogleCodeRequestBody = {
+      code,
+      redirect_uri: redirectUri
     }
 
-    if (!response.data.token_response) {
-      throw new Error('로그인 토큰 응답이 없습니다.')
+    const response = await $fetch<ApiResponse<LoginApiResponse>>('/api/v1/auth/google/login', {
+      method: 'POST',
+      baseURL: apiBaseUrl,
+      body: requestBody
+    })
+
+    if (!response.success || response.data === null) {
+      throw new Error(response.message ?? 'Google 로그인에 실패했습니다.')
     }
 
-    setOtpSetupPending(false)
-    applyTokenResponse(response.data.token_response)
-    const currentUser = await fetchCurrentUser(response.data.token_response.access_token)
-    authStore.setUser(currentUser)
-    return { status: 'SUCCESS' }
+    return await applyLoginResponse(response.data)
   }
 
   async function logout(): Promise<void> {
@@ -287,6 +333,8 @@ export function useAuth() {
 
   return {
     login,
+    getGoogleLoginAuthorizationUrl,
+    loginWithGoogle,
     logout,
     refreshToken,
     ensureAuthenticated,
