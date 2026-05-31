@@ -1,4 +1,8 @@
 spring:
+  config:
+    import:
+      - optional:file:.env.local[.properties]
+      - optional:file:../.env.local[.properties]
   profiles:
     active: local
   security:
@@ -14,6 +18,11 @@ jwt:
 
 otp:
   encryption-key: Z3ctaG9tZS1vdHAta2V5IQ==
+
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+    client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
 
 work:
   git:
