@@ -1,5 +1,8 @@
 package com.gw.api.controller.auth;
 
+import com.gw.api.dto.auth.GoogleAuthorizationUrlResponse;
+import com.gw.api.dto.auth.GoogleCodeRequest;
+import com.gw.api.dto.auth.GoogleLinkStatusResponse;
 import com.gw.api.dto.auth.LoginRequest;
 import com.gw.api.dto.auth.LoginResponse;
 import com.gw.api.dto.auth.OtpActivateRequest;
@@ -16,9 +19,11 @@ import com.gw.share.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -35,6 +40,50 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok(authService.login(request));
+    }
+
+    // Google 로그인 인증 URL을 발급한다.
+    @GetMapping("/google/login-url")
+    public ApiResponse<GoogleAuthorizationUrlResponse> getGoogleLoginUrl(@RequestParam("redirect_uri") String redirectUri) {
+        return ApiResponse.ok(authService.getGoogleLoginAuthorizationUrl(redirectUri));
+    }
+
+    // Google 로그인 콜백 코드를 검증하고 로그인 요청을 처리한다.
+    @PostMapping("/google/login")
+    public ApiResponse<LoginResponse> loginWithGoogle(@Valid @RequestBody GoogleCodeRequest request) {
+        return ApiResponse.ok(authService.loginWithGoogle(request.code(), request.redirectUri()));
+    }
+
+    // 로그인 사용자의 Google 계정 연동 인증 URL을 발급한다.
+    @GetMapping("/google/link-url")
+    public ApiResponse<GoogleAuthorizationUrlResponse> getGoogleLinkUrl(
+            Principal principal,
+            @RequestParam("redirect_uri") String redirectUri
+    ) {
+        getLoginId(principal);
+        return ApiResponse.ok(authService.getGoogleLinkAuthorizationUrl(redirectUri));
+    }
+
+    // 로그인 사용자의 Google 계정 연동 콜백 코드를 처리한다.
+    @PostMapping("/google/link")
+    public ApiResponse<GoogleLinkStatusResponse> linkGoogleAccount(
+            Principal principal,
+            @Valid @RequestBody GoogleCodeRequest request
+    ) {
+        return ApiResponse.ok(authService.linkGoogleAccount(getLoginId(principal), request.code(), request.redirectUri()));
+    }
+
+    // 로그인 사용자의 Google 계정 연동 상태를 조회한다.
+    @GetMapping("/google/link/status")
+    public ApiResponse<GoogleLinkStatusResponse> getGoogleLinkStatus(Principal principal) {
+        return ApiResponse.ok(authService.getGoogleLinkStatus(getLoginId(principal)));
+    }
+
+    // 로그인 사용자의 Google 계정 연동을 해제한다.
+    @DeleteMapping("/google/link")
+    public ApiResponse<Void> unlinkGoogleAccount(Principal principal) {
+        authService.unlinkGoogleAccount(getLoginId(principal));
+        return ApiResponse.ok();
     }
 
     // 로그인 사용자의 로그아웃 요청을 처리한다.

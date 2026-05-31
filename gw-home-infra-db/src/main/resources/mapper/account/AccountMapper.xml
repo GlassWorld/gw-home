@@ -37,6 +37,9 @@
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
+            google_sub,
+            google_email,
+            google_linked_at,
             created_by,
             updated_by,
             created_at,
@@ -64,6 +67,9 @@
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
+            google_sub,
+            google_email,
+            google_linked_at,
             created_by,
             updated_by,
             created_at,
@@ -91,6 +97,9 @@
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
+            google_sub,
+            google_email,
+            google_linked_at,
             created_by,
             updated_by,
             created_at,
@@ -118,6 +127,9 @@
             otp_secret,
             otp_fail_cnt,
             otp_last_failed_at,
+            google_sub,
+            google_email,
+            google_linked_at,
             created_by,
             updated_by,
             created_at,
@@ -151,6 +163,36 @@
         <if test="acctStat != null and acctStat != ''">
             AND acct_stat = #{acctStat}
         </if>
+    </select>
+
+    <select id="selectAccountByGoogleSub" resultType="AcctVo">
+        SELECT
+            mbr_acct_idx AS idx,
+            mbr_acct_uuid AS uuid,
+            lgn_id,
+            pwd,
+            email,
+            role,
+            acct_stat,
+            lgn_fail_cnt,
+            lck_yn,
+            lck_at,
+            otp_enabled,
+            otp_required,
+            otp_secret,
+            otp_fail_cnt,
+            otp_last_failed_at,
+            google_sub,
+            google_email,
+            google_linked_at,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_mbr_acct
+        WHERE google_sub = #{googleSub}
+          AND del_at IS NULL
     </select>
 
     <update id="updateAccount" parameterType="AcctVo">
@@ -330,6 +372,32 @@
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE mbr_acct_uuid = CAST(#{uuid} AS UUID)
+          AND del_at IS NULL
+    </update>
+
+    <!-- Google 계정 연동 정보를 저장한다 -->
+    <update id="updateGoogleLink">
+        UPDATE tb_mbr_acct
+        SET
+            google_sub = #{googleSub},
+            google_email = #{googleEmail},
+            google_linked_at = now(),
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
+          AND del_at IS NULL
+    </update>
+
+    <!-- Google 계정 연동 정보를 제거한다 -->
+    <update id="clearGoogleLink">
+        UPDATE tb_mbr_acct
+        SET
+            google_sub = NULL,
+            google_email = NULL,
+            google_linked_at = NULL,
+            updated_by = #{updatedBy},
+            updated_at = now()
+        WHERE mbr_acct_idx = #{idx}
           AND del_at IS NULL
     </update>
 

@@ -53,4 +53,13 @@ public class AcctVo extends BaseVo {
 
     // 마지막 OTP 실패 일시
     private OffsetDateTime otpLastFailedAt;
+
+    // Google 계정 고유 식별자
+    private String googleSub;
+
+    // 연동된 Google 이메일
+    private String googleEmail;
+
+    // Google 계정 연동 일시
+    private OffsetDateTime googleLinkedAt;
 }

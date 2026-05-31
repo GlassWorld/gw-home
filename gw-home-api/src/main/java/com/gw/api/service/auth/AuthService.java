@@ -1,6 +1,9 @@
 package com.gw.api.service.auth;
 
 import com.gw.api.convert.auth.AuthConvert;
+import com.gw.api.dto.auth.GoogleAuthorizationUrlResponse;
+import com.gw.api.dto.auth.GoogleLinkStatusResponse;
+import com.gw.api.dto.auth.GoogleTokenInfoResponse;
 import com.gw.api.dto.auth.LoginRequest;
 import com.gw.api.dto.auth.LoginResponse;
 import com.gw.api.dto.auth.OtpSetupResponse;
@@ -39,6 +42,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final OtpSecretEncryptor otpSecretEncryptor;
     private final OtpTotpUtil otpTotpUtil;
+    private final GoogleOAuthClient googleOAuthClient;
 
     public AuthService(
             AuthMapper authMapper,
@@ -47,7 +51,8 @@ public class AuthService {
             JwtProvider jwtProvider,
             PasswordEncoder passwordEncoder,
             OtpSecretEncryptor otpSecretEncryptor,
-            OtpTotpUtil otpTotpUtil
+            OtpTotpUtil otpTotpUtil,
+            GoogleOAuthClient googleOAuthClient
     ) {
         this.authMapper = authMapper;
         this.accountLookupService = accountLookupService;
@@ -56,6 +61,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.otpSecretEncryptor = otpSecretEncryptor;
         this.otpTotpUtil = otpTotpUtil;
+        this.googleOAuthClient = googleOAuthClient;
     }
 
     // 로그인 요청을 검증하고 토큰 또는 OTP 진행 상태를 반환한다.
@@ -68,15 +74,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "로그인 정보가 올바르지 않습니다.");
         }
 
-        if ("INACTIVE".equals(account.getAcctStat())) {
-            log.error("login 실패 - 원인: 비활성화된 계정입니다. loginId={}", request.loginId());
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "비활성화된 계정입니다. 관리자에게 문의하세요.");
-        }
-
-        if (account.isLckYn()) {
-            log.error("login 실패 - 원인: 잠긴 계정입니다. loginId={}", request.loginId());
-            throw new BusinessException(ErrorCode.ACCOUNT_LOCKED, "계정이 잠금되었습니다. 관리자에게 문의하세요.");
-        }
+        validateLoginAvailable(account, "login");
 
         if (!passwordEncoder.matches(request.password(), account.getPwd())) {
             accountMapper.incrementLoginFailCount(account.getIdx());
@@ -96,18 +94,80 @@ public class AuthService {
 
         accountMapper.resetLoginFailCount(account.getIdx());
 
-        if (account.isOtpRequired() && account.isOtpEnabled() && account.getOtpSecret() != null && !account.getOtpSecret().isBlank()) {
-            log.info("login 완료 - OTP 추가 인증 필요");
-            return AuthConvert.toOtpRequiredLoginResponse(jwtProvider.generateOtpTempToken(account.getLgnId()));
-        }
-
-        if (account.isOtpRequired() && !account.isOtpEnabled()) {
-            log.info("login 완료 - OTP 설정 필요");
-            return AuthConvert.toOtpSetupRequiredLoginResponse(issueTokenResponse(account));
-        }
-
         log.info("login 완료");
-        return AuthConvert.toSuccessLoginResponse(issueTokenResponse(account));
+        return buildLoginResponse(account, "login", false);
+    }
+
+    @Transactional(readOnly = true)
+    // Google 로그인용 인증 URL을 생성한다.
+    public GoogleAuthorizationUrlResponse getGoogleLoginAuthorizationUrl(String redirectUri) {
+        log.info("getGoogleLoginAuthorizationUrl 시작");
+        String state = googleOAuthClient.generateState();
+        String authorizationUrl = googleOAuthClient.buildAuthorizationUrl(redirectUri, state);
+        log.info("getGoogleLoginAuthorizationUrl 완료");
+        return AuthConvert.toGoogleAuthorizationUrlResponse(authorizationUrl, state);
+    }
+
+    @Transactional(readOnly = true)
+    // Google 계정 연동용 인증 URL을 생성한다.
+    public GoogleAuthorizationUrlResponse getGoogleLinkAuthorizationUrl(String redirectUri) {
+        log.info("getGoogleLinkAuthorizationUrl 시작");
+        String state = googleOAuthClient.generateState();
+        String authorizationUrl = googleOAuthClient.buildAuthorizationUrl(redirectUri, state);
+        log.info("getGoogleLinkAuthorizationUrl 완료");
+        return AuthConvert.toGoogleAuthorizationUrlResponse(authorizationUrl, state);
+    }
+
+    // Google 인증 코드로 로그인하고 토큰 또는 OTP 진행 상태를 반환한다.
+    public LoginResponse loginWithGoogle(String code, String redirectUri) {
+        log.info("loginWithGoogle 시작");
+        GoogleTokenInfoResponse googleAccount = googleOAuthClient.fetchVerifiedGoogleAccount(code, redirectUri);
+        AcctVo account = accountMapper.selectAccountByGoogleSub(googleAccount.sub());
+
+        if (account == null) {
+            log.error("loginWithGoogle 실패 - 원인: 연동된 계정이 없습니다. googleEmail={}", googleAccount.email());
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "연동된 Google 계정이 없습니다.");
+        }
+
+        validateLoginAvailable(account, "loginWithGoogle");
+        accountMapper.resetLoginFailCount(account.getIdx());
+
+        log.info("loginWithGoogle 완료 - loginId: {}", account.getLgnId());
+        return buildLoginResponse(account, "loginWithGoogle", true);
+    }
+
+    // 로그인 사용자의 Google 계정을 연동한다.
+    public GoogleLinkStatusResponse linkGoogleAccount(String loginId, String code, String redirectUri) {
+        log.info("linkGoogleAccount 시작 - loginId: {}", loginId);
+        AcctVo account = getAccountByLoginId(loginId);
+        GoogleTokenInfoResponse googleAccount = googleOAuthClient.fetchVerifiedGoogleAccount(code, redirectUri);
+        AcctVo linkedAccount = accountMapper.selectAccountByGoogleSub(googleAccount.sub());
+
+        if (linkedAccount != null && !linkedAccount.getIdx().equals(account.getIdx())) {
+            log.error("linkGoogleAccount 실패 - 원인: 다른 계정에 이미 연동된 Google 계정입니다. loginId={}", loginId);
+            throw new BusinessException(ErrorCode.DUPLICATE, "다른 계정에 이미 연동된 Google 계정입니다.");
+        }
+
+        accountMapper.updateGoogleLink(account.getIdx(), googleAccount.sub(), googleAccount.email(), loginId);
+        log.info("linkGoogleAccount 완료 - loginId: {}", loginId);
+        return AuthConvert.toGoogleLinkStatusResponse(getAccountByLoginId(loginId));
+    }
+
+    @Transactional(readOnly = true)
+    // 로그인 사용자의 Google 계정 연동 상태를 조회한다.
+    public GoogleLinkStatusResponse getGoogleLinkStatus(String loginId) {
+        log.info("getGoogleLinkStatus 시작 - loginId: {}", loginId);
+        GoogleLinkStatusResponse response = AuthConvert.toGoogleLinkStatusResponse(getAccountByLoginId(loginId));
+        log.info("getGoogleLinkStatus 완료 - loginId: {}", loginId);
+        return response;
+    }
+
+    // 로그인 사용자의 Google 계정 연동을 해제한다.
+    public void unlinkGoogleAccount(String loginId) {
+        log.info("unlinkGoogleAccount 시작 - loginId: {}", loginId);
+        AcctVo account = getAccountByLoginId(loginId);
+        accountMapper.clearGoogleLink(account.getIdx(), loginId);
+        log.info("unlinkGoogleAccount 완료 - loginId: {}", loginId);
     }
 
     // 로그인 사용자의 리프레시 토큰을 만료 처리한다.
@@ -276,6 +336,37 @@ public class AuthService {
         return account.getOtpLastFailedAt() != null
                 && account.getOtpFailCnt() >= AuthPolicy.MAX_OTP_FAIL_COUNT
                 && !account.getOtpLastFailedAt().plusMinutes(AuthPolicy.OTP_LOCK_MINUTES).isAfter(OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    private void validateLoginAvailable(AcctVo account, String flowName) {
+        if ("INACTIVE".equals(account.getAcctStat())) {
+            log.error("{} 실패 - 원인: 비활성화된 계정입니다. loginId={}", flowName, account.getLgnId());
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "비활성화된 계정입니다. 관리자에게 문의하세요.");
+        }
+
+        if (account.isLckYn()) {
+            log.error("{} 실패 - 원인: 잠긴 계정입니다. loginId={}", flowName, account.getLgnId());
+            throw new BusinessException(ErrorCode.ACCOUNT_LOCKED, "계정이 잠금되었습니다. 관리자에게 문의하세요.");
+        }
+    }
+
+    private LoginResponse buildLoginResponse(AcctVo account, String flowName, boolean skipOtp) {
+        if (skipOtp) {
+            log.info("{} 완료 - OTP 생략", flowName);
+            return AuthConvert.toSuccessLoginResponse(issueTokenResponse(account));
+        }
+
+        if (account.isOtpRequired() && account.isOtpEnabled() && account.getOtpSecret() != null && !account.getOtpSecret().isBlank()) {
+            log.info("{} 완료 - OTP 추가 인증 필요", flowName);
+            return AuthConvert.toOtpRequiredLoginResponse(jwtProvider.generateOtpTempToken(account.getLgnId()));
+        }
+
+        if (account.isOtpRequired() && !account.isOtpEnabled()) {
+            log.info("{} 완료 - OTP 설정 필요", flowName);
+            return AuthConvert.toOtpSetupRequiredLoginResponse(issueTokenResponse(account));
+        }
+
+        return AuthConvert.toSuccessLoginResponse(issueTokenResponse(account));
     }
 
     private TokenResponse issueTokenResponse(AcctVo account) {
