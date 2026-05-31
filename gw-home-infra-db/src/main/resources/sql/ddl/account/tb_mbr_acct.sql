@@ -9,12 +9,19 @@ CREATE TABLE tb_mbr_acct (
     lgn_fail_cnt   INT          NOT NULL DEFAULT 0,
     lck_yn         BOOLEAN      NOT NULL DEFAULT FALSE,
     lck_at         TIMESTAMPTZ,
+    google_sub     VARCHAR(255),
+    google_email   VARCHAR(255),
+    google_linked_at TIMESTAMPTZ,
     created_by     VARCHAR(100) NOT NULL,
     updated_by     VARCHAR(100),
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     del_at         TIMESTAMPTZ
 );
+
+CREATE UNIQUE INDEX ux_tb_mbr_acct_google_sub
+  ON tb_mbr_acct (google_sub)
+  WHERE google_sub IS NOT NULL AND del_at IS NULL;
 
 -- 계정 잠금 기능 운영 반영용 ALTER SQL
 -- ALTER TABLE tb_mbr_acct

@@ -5,16 +5,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.gw.api.dto.auth.GoogleLinkStatusResponse;
+import com.gw.api.dto.auth.GoogleTokenInfoResponse;
 import com.gw.api.dto.auth.LoginRequest;
 import com.gw.api.dto.auth.LoginResponse;
 import com.gw.api.dto.auth.TokenResponse;
 import com.gw.api.jwt.JwtProvider;
 import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.auth.AuthService;
+import com.gw.api.service.auth.GoogleOAuthClient;
 import com.gw.infra.db.mapper.account.AccountMapper;
 import com.gw.infra.db.mapper.auth.AuthMapper;
 import com.gw.share.common.exception.BusinessException;
@@ -49,6 +53,9 @@ class AuthServiceTest {
     @Mock
     private OtpTotpUtil otpTotpUtil;
 
+    @Mock
+    private GoogleOAuthClient googleOAuthClient;
+
     private final JwtProvider jwtProvider = new JwtProvider(
             "Z3ctaG9tZS1kZWZhdWx0LXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LWFuZC10ZXN0aW5nLTEyMw==",
             1800,
@@ -69,7 +76,8 @@ class AuthServiceTest {
                 jwtProvider,
                 passwordEncoder,
                 otpSecretEncryptor,
-                otpTotpUtil
+                otpTotpUtil,
+                googleOAuthClient
         );
     }
 
@@ -201,6 +209,75 @@ class AuthServiceTest {
         assertNotNull(response.otpTempToken());
         verify(accountMapper).resetLoginFailCount(1L);
         verify(authMapper, never()).insertRefreshToken(any());
+    }
+
+    @Test
+    void googleLoginReturnsSuccessWhenLinkedAccountExists() {
+        GoogleTokenInfoResponse googleAccount = new GoogleTokenInfoResponse(
+                "client-id",
+                "google-sub-1",
+                "tester@gmail.com",
+                true
+        );
+        when(googleOAuthClient.fetchVerifiedGoogleAccount("code-1", "http://localhost:3000/auth/google/callback"))
+                .thenReturn(googleAccount);
+        when(accountMapper.selectAccountByGoogleSub("google-sub-1")).thenReturn(createAccountVo(false, false));
+
+        LoginResponse response = authService.loginWithGoogle("code-1", "http://localhost:3000/auth/google/callback");
+
+        assertEquals("SUCCESS", response.loginStatus());
+        assertNotNull(response.tokenResponse());
+        verify(accountMapper).resetLoginFailCount(1L);
+        verify(authMapper).insertRefreshToken(any());
+    }
+
+    @Test
+    void googleLoginSkipsOtpWhenAccountRequiresOtp() {
+        GoogleTokenInfoResponse googleAccount = new GoogleTokenInfoResponse(
+                "client-id",
+                "google-sub-1",
+                "tester@gmail.com",
+                true
+        );
+        when(googleOAuthClient.fetchVerifiedGoogleAccount("code-1", "http://localhost:3000/auth/google/callback"))
+                .thenReturn(googleAccount);
+        when(accountMapper.selectAccountByGoogleSub("google-sub-1")).thenReturn(createAccountVo(0, false, true, true));
+
+        LoginResponse response = authService.loginWithGoogle("code-1", "http://localhost:3000/auth/google/callback");
+
+        assertEquals("SUCCESS", response.loginStatus());
+        assertNotNull(response.tokenResponse());
+        verify(accountMapper).resetLoginFailCount(1L);
+        verify(authMapper).insertRefreshToken(any());
+    }
+
+    @Test
+    void linkGoogleAccountStoresGoogleAccountWhenNotLinkedElsewhere() {
+        GoogleTokenInfoResponse googleAccount = new GoogleTokenInfoResponse(
+                "client-id",
+                "google-sub-1",
+                "tester@gmail.com",
+                true
+        );
+        AcctVo account = createAccountVo(false, false);
+        AcctVo linkedAccount = createAccountVo(false, false);
+        linkedAccount.setGoogleSub("google-sub-1");
+        linkedAccount.setGoogleEmail("tester@gmail.com");
+        linkedAccount.setGoogleLinkedAt(OffsetDateTime.parse("2026-03-17T22:00:00+09:00"));
+
+        when(accountLookupService.getAccountByLoginId("tester_01")).thenReturn(account, linkedAccount);
+        when(googleOAuthClient.fetchVerifiedGoogleAccount("code-1", "http://localhost:3000/auth/google/callback"))
+                .thenReturn(googleAccount);
+
+        GoogleLinkStatusResponse response = authService.linkGoogleAccount(
+                "tester_01",
+                "code-1",
+                "http://localhost:3000/auth/google/callback"
+        );
+
+        assertTrue(response.linked());
+        assertEquals("tester@gmail.com", response.googleEmail());
+        verify(accountMapper).updateGoogleLink(eq(1L), eq("google-sub-1"), eq("tester@gmail.com"), eq("tester_01"));
     }
 
     private AcctVo createAccountVo(int loginFailCount, boolean isLocked, boolean otpRequired, boolean otpEnabled) {

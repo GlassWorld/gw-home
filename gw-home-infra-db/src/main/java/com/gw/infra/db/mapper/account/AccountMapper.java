@@ -15,6 +15,8 @@ public interface AccountMapper {
 
     AcctVo selectAccountByIdx(@Param("idx") Long idx);
 
+    AcctVo selectAccountByGoogleSub(@Param("googleSub") String googleSub);
+
     java.util.List<AcctVo> selectAllAccounts(
             @Param("loginId") String loginId,
             @Param("role") String role,
@@ -95,6 +97,18 @@ public interface AccountMapper {
     int updateOtpRequired(
             @Param("uuid") String uuid,
             @Param("otpRequired") boolean otpRequired,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int updateGoogleLink(
+            @Param("idx") Long idx,
+            @Param("googleSub") String googleSub,
+            @Param("googleEmail") String googleEmail,
+            @Param("updatedBy") String updatedBy
+    );
+
+    int clearGoogleLink(
+            @Param("idx") Long idx,
             @Param("updatedBy") String updatedBy
     );
 }
