@@ -51,6 +51,8 @@ jobs:
           file: ./deploy/backend/Dockerfile
           push: true
           tags: ghcr.io/glassworld/gw-home-backend:latest
+          cache-from: type=gha,scope=gw-home-backend
+          cache-to: type=gha,mode=max,scope=gw-home-backend
 
       - name: 프론트엔드 이미지 빌드 및 푸시
         uses: docker/build-push-action@v6
@@ -61,6 +63,8 @@ jobs:
           build-args: |
             NUXT_PUBLIC_API_BASE=/api
           tags: ghcr.io/glassworld/gw-home-frontend:latest
+          cache-from: type=gha,scope=gw-home-frontend
+          cache-to: type=gha,mode=max,scope=gw-home-frontend
 
       - name: 프론트엔드 서버 배포 경로 준비
         uses: appleboy/ssh-action@v1.2.0
