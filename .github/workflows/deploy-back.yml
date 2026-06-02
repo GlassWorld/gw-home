@@ -91,6 +91,8 @@ jobs:
             cat <<'EOF' > .env
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+            GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
             EOF
             mv .env "${ENV_FILE}"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
