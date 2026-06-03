@@ -385,9 +385,13 @@ await loadCategoryList()
 }
 
 @media (max-width: 768px) {
+  .vault-page {
+    gap: 16px;
+  }
+
   .vault-page__hero,
   .vault-page__empty-state {
-    padding: 22px;
+    padding: 16px;
   }
 
   .vault-page__hero-header {
@@ -426,6 +430,13 @@ await loadCategoryList()
 
   .vault-page__search-form :deep(.base-button:last-child) {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  .vault-page__hero,
+  .vault-page__empty-state {
+    padding: 14px;
   }
 }
 </style>

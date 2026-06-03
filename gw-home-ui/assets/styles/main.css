@@ -361,29 +361,69 @@ textarea.input-field {
 
 @media (max-width: 768px) {
   .page-container {
-    width: min(100% - 20px, 100%);
-    padding-top: 18px;
+    width: min(100% - 16px, 100%);
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 
   .page-panel-padding-md,
   .page-panel-padding-lg {
-    padding: 22px;
+    padding: 16px;
   }
 
   .page-section-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
   }
 
   .page-actions {
     justify-content: stretch;
+    flex-wrap: wrap;
   }
 
   .page-actions > * {
     width: 100%;
   }
 
+  .page-stack {
+    gap: 16px;
+  }
+
+  .page-info-card,
+  .otp-setup-panel {
+    padding: 16px;
+    border-radius: var(--radius-medium);
+  }
+
+  .input-field {
+    min-height: 48px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .button-primary,
+  .button-secondary,
+  .button-danger {
+    min-height: 42px;
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
   .otp-setup-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .page-container {
+    width: min(100% - 12px, 100%);
+  }
+
+  .page-panel-padding-md,
+  .page-panel-padding-lg {
+    padding: 14px;
   }
 }

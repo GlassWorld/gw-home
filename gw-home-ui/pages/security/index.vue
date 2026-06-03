@@ -156,6 +156,10 @@ await loadOtpStatus()
 }
 
 @media (max-width: 768px) {
+  .security-page {
+    gap: 16px;
+  }
+
   .security-page__section-header {
     margin-bottom: 0;
   }

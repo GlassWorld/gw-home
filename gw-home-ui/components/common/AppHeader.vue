@@ -281,15 +281,21 @@ function closeMemo() {
 
 @media (max-width: 768px) {
   .app-header__inner {
-    gap: 12px;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    gap: 10px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     grid-template-columns: auto auto;
+    justify-content: space-between;
   }
 
   .app-header__start,
   .app-header__actions {
     min-width: 0;
+    gap: 10px;
+  }
+
+  .app-header__brand {
+    font-size: 0.98rem;
   }
 
   .app-header__profile {
@@ -304,6 +310,21 @@ function closeMemo() {
 @media (max-width: 640px) {
   .app-header__profile-link {
     display: none;
+  }
+
+  .app-header__menu-button,
+  .app-header__icon-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-header__brand {
+    max-width: 132px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 </style>

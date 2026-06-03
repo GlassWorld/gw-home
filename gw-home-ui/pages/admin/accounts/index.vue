@@ -194,6 +194,28 @@ await loadAccounts()
   }
 }
 
+@media (max-width: 768px) {
+  .admin-accounts-page {
+    gap: 16px;
+  }
+
+  .admin-accounts-page__panel {
+    padding: 16px;
+  }
+
+  .admin-accounts-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-accounts-page__panel {
+    padding: 14px;
+  }
+}
+
 :deep(.base-modal__panel) {
   overflow: visible;
 }

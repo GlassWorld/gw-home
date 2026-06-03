@@ -309,7 +309,7 @@ async function toggleFavorite(path: string) {
   position: absolute;
   top: 0;
   left: 0;
-  width: min(360px, calc(100vw - 24px));
+  width: min(340px, calc(100vw - 16px));
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left: 0;
@@ -456,6 +456,36 @@ async function toggleFavorite(path: string) {
 @media (max-width: 1099px) {
   .app-sidebar--desktop {
     display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-sidebar__panel {
+    padding: 16px 12px;
+    gap: 14px;
+  }
+
+  .app-sidebar__body {
+    gap: 14px;
+    padding-right: 2px;
+  }
+
+  .app-sidebar__section {
+    gap: 6px;
+  }
+
+  .app-sidebar__item {
+    gap: 8px;
+  }
+
+  .app-sidebar__link {
+    padding: 11px 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-sidebar__panel--mobile {
+    width: calc(100vw - 10px);
   }
 }
 </style>

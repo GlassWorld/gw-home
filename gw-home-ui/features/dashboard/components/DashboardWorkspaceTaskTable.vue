@@ -241,11 +241,40 @@ defineProps<{
 
 @media (max-width: 768px) {
   .dashboard-task-table {
-    padding: 18px;
+    padding: 16px;
+    gap: 14px;
   }
 
   .dashboard-task-table__header {
     flex-direction: column;
+    gap: 12px;
+  }
+
+  .dashboard-task-table__header :deep(.base-button) {
+    width: 100%;
+  }
+
+  .dashboard-task-table__table-wrap {
+    margin-right: -16px;
+    margin-left: -16px;
+    padding: 0 16px 2px;
+  }
+
+  .dashboard-task-table__empty {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-task-table {
+    padding: 14px;
+  }
+
+  .dashboard-task-table__table-wrap {
+    margin-right: -14px;
+    margin-left: -14px;
+    padding-right: 14px;
+    padding-left: 14px;
   }
 }
 </style>

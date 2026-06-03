@@ -285,12 +285,42 @@ function openUpdate(update: DashboardUpdateItem) {
 }
 
 @media (max-width: 768px) {
+  .dashboard-side-panel {
+    gap: 14px;
+  }
+
   .dashboard-side-panel__section {
-    padding: 18px;
+    padding: 16px;
+    gap: 14px;
   }
 
   .dashboard-side-panel__section-header {
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .dashboard-side-panel__section-header :deep(.base-button) {
+    width: 100%;
+  }
+
+  .dashboard-side-panel__item,
+  .dashboard-side-panel__issue,
+  .dashboard-side-panel__schedule,
+  .dashboard-side-panel__update {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-side-panel__section {
+    padding: 14px;
+  }
+
+  .dashboard-side-panel__item-head,
+  .dashboard-side-panel__issue-head,
+  .dashboard-side-panel__schedule-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>
