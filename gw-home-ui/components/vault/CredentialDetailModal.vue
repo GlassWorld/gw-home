@@ -132,15 +132,17 @@ async function handleDelete() {
     </dl>
 
     <template #actions>
-      <CommonBaseButton variant="secondary" @click="copyPassword">
-        복사
-      </CommonBaseButton>
-      <CommonBaseButton variant="secondary" @click="emit('edit', credential)">
-        수정
-      </CommonBaseButton>
-      <CommonBaseButton variant="danger" :disabled="isDeleting" @click="handleDelete">
-        {{ isDeleting ? '삭제 중...' : '삭제' }}
-      </CommonBaseButton>
+      <div class="credential-detail__actions">
+        <CommonBaseButton variant="secondary" @click="copyPassword">
+          복사
+        </CommonBaseButton>
+        <CommonBaseButton variant="secondary" @click="emit('edit', credential)">
+          수정
+        </CommonBaseButton>
+        <CommonBaseButton variant="danger" :disabled="isDeleting" @click="handleDelete">
+          {{ isDeleting ? '삭제 중...' : '삭제' }}
+        </CommonBaseButton>
+      </div>
     </template>
   </CommonBaseModal>
 </template>
@@ -151,6 +153,7 @@ async function handleDelete() {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin: 0;
+  min-width: 0;
 }
 
 .credential-detail__category-list {
@@ -176,7 +179,16 @@ async function handleDelete() {
   text-overflow: ellipsis;
 }
 
+.credential-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
 .credential-detail__item {
+  min-width: 0;
   padding: 16px;
   border-radius: var(--radius-medium);
   background: rgba(7, 21, 39, 0.82);
@@ -198,11 +210,13 @@ async function handleDelete() {
   margin: 0;
   color: var(--color-text);
   line-height: 1.6;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 .credential-detail__password {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-all;
 }
 
 .credential-detail__memo:deep(p:first-child) {
@@ -223,6 +237,7 @@ async function handleDelete() {
 }
 
 .credential-detail__memo:deep(pre) {
+  max-width: 100%;
   margin: 12px 0 0;
   padding: 14px;
   overflow-x: auto;
@@ -234,6 +249,7 @@ async function handleDelete() {
 .credential-detail__memo:deep(pre code) {
   padding: 0;
   background: transparent;
+  white-space: pre;
 }
 
 .credential-detail__memo:deep(a) {
@@ -250,6 +266,60 @@ async function handleDelete() {
   .credential-detail {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .credential-detail__category-list {
+    gap: 6px;
+  }
+
+  .credential-detail__category-badge {
+    max-width: min(100%, 180px);
+    font-size: 0.72rem;
+  }
+
+  .credential-detail__item {
+    padding: 14px;
+  }
+
+  .credential-detail__item dt {
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+  }
+
+  .credential-detail__item dd {
+    font-size: 0.9rem;
+  }
+
+  .credential-detail__actions {
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .credential-detail__actions :deep(.base-button) {
+    width: auto;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.74rem;
+    letter-spacing: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .credential-detail__item {
+    padding: 12px;
+  }
+
+  .credential-detail__category-badge {
+    max-width: min(100%, 140px);
+  }
+
+  .credential-detail__actions {
+    gap: 5px;
+  }
+
+  .credential-detail__actions :deep(.base-button) {
+    padding: 0 8px;
+    font-size: 0.7rem;
   }
 }
 </style>

@@ -359,12 +359,33 @@ function handleEditDrop(event: DragEvent) {
 }
 
 @media (max-width: 768px) {
+  .board-comment {
+    padding: 14px;
+  }
+
   .board-comment--reply {
     padding: 10px;
   }
 
   .board-comment__header {
     flex-direction: column;
+    gap: 12px;
+  }
+
+  .board-comment__actions,
+  .board-comment__editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .board-comment__actions :deep(.base-button),
+  .board-comment__editor-actions :deep(.base-button) {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.74rem;
+    letter-spacing: 0;
   }
 
   .board-comment__replies {
@@ -381,6 +402,27 @@ function handleEditDrop(event: DragEvent) {
 
   .board-comment__replies::before {
     display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .board-comment {
+    padding: 12px;
+  }
+
+  .board-comment__actions,
+  .board-comment__editor-actions {
+    gap: 5px;
+  }
+
+  .board-comment__actions :deep(.base-button),
+  .board-comment__editor-actions :deep(.base-button) {
+    padding: 0 8px;
+    font-size: 0.7rem;
+  }
+
+  .board-comment__replies {
+    padding-left: 8px;
   }
 }
 </style>

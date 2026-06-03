@@ -135,8 +135,8 @@ function getCategoryStyle(categoryColor: string | null) {
 
 @media (max-width: 768px) {
   .credential-card {
-    gap: 16px;
-    padding: 18px;
+    gap: 14px;
+    padding: 16px;
   }
 
   .credential-card__footer {
@@ -145,6 +145,12 @@ function getCategoryStyle(categoryColor: string | null) {
 
   .credential-card__footer :deep(button) {
     flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .credential-card {
+    padding: 14px;
   }
 }
 </style>

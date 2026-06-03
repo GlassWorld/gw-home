@@ -190,22 +190,63 @@ await reloadAll()
   color: var(--color-text-muted);
 }
 
+.admin-daily-report-page__table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: var(--radius-medium);
+  background: rgba(7, 16, 38, 0.32);
+}
+
 .admin-daily-report-page__table {
   width: 100%;
   border-collapse: collapse;
 }
 
+.admin-daily-report-page__table thead {
+  background: rgba(110, 193, 255, 0.08);
+}
+
 .admin-daily-report-page__table th,
 .admin-daily-report-page__table td {
-  padding: 12px 10px;
+  padding: 13px 14px;
   border-bottom: 1px solid rgba(143, 208, 255, 0.12);
   text-align: left;
   vertical-align: top;
 }
 
+.admin-daily-report-page__table th {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.admin-daily-report-page__table td {
+  line-height: 1.55;
+}
+
 .admin-daily-report-page__table td p {
   margin: 4px 0 0;
   color: var(--color-text-muted);
+}
+
+.admin-daily-report-page__table td:nth-child(1) {
+  width: 18%;
+}
+
+.admin-daily-report-page__table td:nth-child(2) {
+  width: 14%;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.admin-daily-report-page__table td:nth-child(3),
+.admin-daily-report-page__table td:nth-child(4) {
+  color: rgba(232, 244, 255, 0.9);
+  font-size: 0.9rem;
+  overflow-wrap: break-word;
+  word-break: keep-all;
 }
 
 .admin-daily-report-page__missing-list {
@@ -220,6 +261,137 @@ await reloadAll()
 
 @media (max-width: 1024px) {
   .admin-daily-report-page__filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-daily-report-page {
+    gap: 16px;
+  }
+
+  .admin-daily-report-page__panel {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .admin-daily-report-page__filter-actions,
+  .admin-daily-report-page__section-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .admin-daily-report-page__filter-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-daily-report-page__missing-card {
+    padding: 14px;
+  }
+
+  .admin-daily-report-page__table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .admin-daily-report-page__table,
+  .admin-daily-report-page__table tbody,
+  .admin-daily-report-page__table tr,
+  .admin-daily-report-page__table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-daily-report-page__table thead {
+    display: none;
+  }
+
+  .admin-daily-report-page__table tbody {
+    display: grid;
+    gap: 8px;
+  }
+
+  .admin-daily-report-page__table tr {
+    padding: 11px 12px;
+    border: 1px solid rgba(147, 210, 255, 0.16);
+    border-radius: var(--radius-medium);
+    background:
+      linear-gradient(180deg, rgba(20, 29, 62, 0.86) 0%, rgba(12, 18, 43, 0.78) 100%),
+      rgba(255, 255, 255, 0.03);
+  }
+
+  .admin-daily-report-page__table td {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .admin-daily-report-page__table td + td {
+    margin-top: 4px;
+  }
+
+  .admin-daily-report-page__table td:nth-child(1) strong {
+    display: block;
+    overflow-wrap: anywhere;
+    font-size: 0.96rem;
+    line-height: 1.3;
+  }
+
+  .admin-daily-report-page__table td:nth-child(1) p,
+  .admin-daily-report-page__table td:nth-child(2) {
+    color: var(--color-text-muted);
+    font-size: 0.68rem;
+    line-height: 1.35;
+  }
+
+  .admin-daily-report-page__table td:nth-child(2) {
+    display: inline-flex;
+    width: auto;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .admin-daily-report-page__table td:nth-child(3),
+  .admin-daily-report-page__table td:nth-child(4) {
+    display: block;
+    width: 100%;
+    color: rgba(232, 244, 255, 0.82);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+  }
+
+  .admin-daily-report-page__table td:nth-child(3)::before,
+  .admin-daily-report-page__table td:nth-child(4)::before {
+    display: inline;
+    flex: none;
+    color: var(--color-text-muted);
+    font-size: 0.66rem;
+    font-weight: 600;
+  }
+
+  .admin-daily-report-page__table td:nth-child(3)::before {
+    content: '업무 ';
+  }
+
+  .admin-daily-report-page__table td:nth-child(4)::before {
+    content: '특이사항 ';
+  }
+
+  .admin-daily-report-page__empty {
+    padding: 18px 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-daily-report-page__panel {
+    padding: 14px;
+  }
+
+  .admin-daily-report-page__filter-actions {
     grid-template-columns: 1fr;
   }
 }

@@ -325,4 +325,9 @@ await Promise.all([
   font-weight: 700;
 }
 
+@media (max-width: 768px) {
+  .settings-page {
+    gap: 16px;
+  }
+}
 </style>

@@ -700,18 +700,127 @@ function handleCommentDrop(event: DragEvent) {
 }
 
 @media (max-width: 768px) {
+  .board-detail-page__panel {
+    padding: 18px;
+  }
+
   .board-detail-page__header {
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .board-detail-page__header > div,
+  .board-detail-page__actions {
+    width: 100%;
+  }
+
+  .board-detail-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .board-detail-page__share-status {
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+  }
+
+  .board-detail-page__actions :deep(.base-button) {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.74rem;
+    letter-spacing: 0;
   }
 
   .board-detail-page__meta-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 10px;
+    margin-top: 10px;
+  }
+
+  .board-detail-page__meta-item {
+    gap: 4px;
+    min-height: 18px;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 0.7rem;
+  }
+
+  .board-detail-page__meta-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .board-detail-page__meta-value {
+    min-width: 0;
+    max-width: 16ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+
+  .board-detail-page__tags {
     gap: 8px;
+    margin-top: 16px;
+  }
+
+  .board-detail-page__tags span {
+    padding: 7px 10px;
+    font-size: 0.86rem;
+  }
+
+  .board-detail-page__content {
+    margin-top: 18px;
+    min-height: 220px;
+    overflow-wrap: anywhere;
+  }
+
+  .board-detail-page__attachment-panel,
+  .board-detail-page__comment-panel {
+    margin-top: 22px;
+    padding-top: 20px;
   }
 
   .board-detail-page__attachment-item,
   .board-detail-page__section-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .board-detail-page__attachment-item {
+    padding: 14px;
+  }
+
+  .board-detail-page__comment-actions > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .board-detail-page__panel {
+    padding: 14px;
+  }
+
+  .board-detail-page__actions {
+    gap: 5px;
+  }
+
+  .board-detail-page__actions :deep(.base-button) {
+    padding: 0 8px;
+    font-size: 0.7rem;
+  }
+
+  .board-detail-page__meta-value {
+    max-width: 12ch;
   }
 }
 </style>

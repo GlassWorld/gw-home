@@ -93,4 +93,56 @@ defineProps<{
   color: var(--color-text);
   font-weight: 500;
 }
+
+@media (max-width: 768px) {
+  .board-list-item {
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(20, 29, 62, 0.9) 0%, rgba(12, 18, 43, 0.86) 100%);
+  }
+
+  .board-list-item__title {
+    font-size: 1rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .board-list-item__meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 8px;
+  }
+
+  .board-list-item__meta-item {
+    min-height: 18px;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 0.68rem;
+  }
+
+  .board-list-item__meta-label {
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .board-list-item__meta-value {
+    min-width: 0;
+    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .board-list-item {
+    padding: 11px 12px;
+  }
+
+  .board-list-item__meta-value {
+    max-width: 12ch;
+  }
+}
 </style>

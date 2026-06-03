@@ -519,7 +519,7 @@ watch(
 <style scoped>
 .dashboard-page {
   width: 100%;
-  padding: 24px;
+  padding: 18px 24px 24px;
   display: grid;
   gap: 20px;
 }
@@ -667,22 +667,72 @@ watch(
 
 @media (max-width: 768px) {
   .dashboard-page {
-    padding: 16px;
+    padding: 12px 8px;
+    gap: 14px;
   }
 
   .dashboard-page__hero,
   .dashboard-page__toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 14px;
+  }
+
+  .dashboard-page__hero {
+    padding: 16px;
+  }
+
+  .dashboard-page__hero-copy {
+    gap: 10px;
+  }
+
+  .dashboard-page__hero h1 {
+    font-size: 1.55rem;
+  }
+
+  .dashboard-page__hero-description {
+    line-height: 1.55;
+  }
+
+  .dashboard-page__hero-actions {
+    gap: 10px;
+  }
+
+  .dashboard-page__hero-actions :deep(.base-button) {
+    width: 100%;
   }
 
   .dashboard-page__metrics {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-page__metric-card {
+    padding: 16px;
   }
 
   .dashboard-page__filter {
     min-width: 0;
     width: 100%;
+  }
+
+  .dashboard-page__filters {
+    gap: 10px;
+  }
+
+  .dashboard-page__workspace {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-page {
+    padding: 8px 6px 12px;
+  }
+
+  .dashboard-page__hero,
+  .dashboard-page__metric-card {
+    padding: 14px;
   }
 }
 </style>

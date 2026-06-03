@@ -53,6 +53,8 @@ jobs:
           file: ./deploy/backend/Dockerfile
           push: true
           tags: ghcr.io/glassworld/gw-home-backend:latest
+          cache-from: type=gha,scope=gw-home-backend
+          cache-to: type=gha,mode=max,scope=gw-home-backend
 
       - name: 백엔드 서버 배포 경로 준비
         uses: appleboy/ssh-action@v1.2.0
