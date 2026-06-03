@@ -349,4 +349,63 @@ function handleSubmit() {
   display: none;
 }
 
+@media (max-width: 768px) {
+  .board-editor {
+    gap: 16px;
+  }
+
+  .board-editor__textarea {
+    min-height: 280px;
+  }
+
+  .board-editor__guide {
+    overflow-wrap: anywhere;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .board-editor__attachment-header,
+  .board-editor__attachment-item,
+  .board-editor__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .board-editor__attachment-panel {
+    padding: 16px;
+  }
+
+  .board-editor__attachment-header {
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .board-editor__attachment-item {
+    padding: 14px;
+  }
+
+  .board-editor__attachment-item strong,
+  .board-editor__attachment-item p {
+    overflow-wrap: anywhere;
+  }
+
+  .board-editor__upload-label {
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid rgba(176, 195, 255, 0.26);
+    border-radius: var(--radius-small);
+    background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
+  }
+}
+
+@media (max-width: 420px) {
+  .board-editor__textarea {
+    min-height: 240px;
+  }
+
+  .board-editor__attachment-panel {
+    padding: 14px;
+  }
+}
 </style>

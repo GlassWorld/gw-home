@@ -70,4 +70,16 @@ async function handleSubmit(payload: SaveBoardPostPayload) {
 .board-write-page {
   display: grid;
 }
+
+@media (max-width: 768px) {
+  .create-board-page {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .create-board-page {
+    padding: 14px;
+  }
+}
 </style>

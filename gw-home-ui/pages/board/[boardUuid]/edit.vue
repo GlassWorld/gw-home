@@ -100,4 +100,16 @@ async function handleSubmit(payload: SaveBoardPostPayload) {
 .board-edit-page__panel {
   padding: 28px;
 }
+
+@media (max-width: 768px) {
+  .board-edit-page__panel {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .board-edit-page__panel {
+    padding: 14px;
+  }
+}
 </style>
