@@ -22,7 +22,11 @@ const emit = defineEmits<{
   <Teleport to="body">
     <div v-if="visible" class="base-modal" :class="{ 'base-modal--immersive': immersive }" :style="{ zIndex: String(zIndex) }">
       <div class="base-modal__backdrop" @click="emit('close')" />
-      <section class="base-modal__panel content-panel" :class="{ 'base-modal__panel--immersive': immersive }" :style="{ width, maxWidth: width }">
+      <section
+        class="base-modal__panel content-panel"
+        :class="{ 'base-modal__panel--immersive': immersive }"
+        :style="{ '--base-modal-width': width }"
+      >
         <header class="base-modal__header">
           <div class="base-modal__title-box">
             <p v-if="eyebrow" class="base-modal__eyebrow">{{ eyebrow }}</p>
@@ -74,7 +78,8 @@ const emit = defineEmits<{
 
 .base-modal__panel {
   position: relative;
-  width: min(100%, 760px);
+  width: min(100%, var(--base-modal-width, 760px));
+  max-width: var(--base-modal-width, 760px);
   max-height: calc(100vh - 40px);
   overflow: auto;
   padding: 20px;
@@ -102,11 +107,13 @@ const emit = defineEmits<{
 .base-modal__title-box {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .base-modal__title-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
@@ -125,6 +132,7 @@ const emit = defineEmits<{
   min-width: 0;
   font-size: clamp(1.12rem, 2vw, 1.4rem);
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .base-modal__body {
@@ -141,6 +149,7 @@ const emit = defineEmits<{
 }
 
 .base-modal__close {
+  flex: none;
   min-width: auto;
   min-height: auto;
   padding: 0;
@@ -160,6 +169,8 @@ const emit = defineEmits<{
   }
 
   .base-modal__panel {
+    width: 100%;
+    max-width: 100%;
     padding: 16px;
     gap: 14px;
   }
@@ -178,6 +189,20 @@ const emit = defineEmits<{
 
   .base-modal__actions :deep(button) {
     width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .base-modal {
+    padding: 8px;
+  }
+
+  .base-modal__panel {
+    padding: 14px;
+  }
+
+  .base-modal__actions {
+    grid-template-columns: 1fr;
   }
 }
 </style>
