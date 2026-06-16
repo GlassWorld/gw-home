@@ -19,6 +19,7 @@ import com.gw.share.vo.file.FileVo;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -52,7 +53,11 @@ class FileServiceTest {
         FileUploadProperties properties = new FileUploadProperties();
         properties.setPath(tempDir.toString());
         properties.setBaseUrl("http://localhost:8080/files");
-        properties.setAllowedTypes(java.util.List.of("image/png"));
+        properties.setAllowedTypes(List.of(
+                "image/png",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        ));
         fileService = new FileService(fileMapper, accountLookupService, properties);
         RequestContextHolder.resetRequestAttributes();
     }
@@ -102,6 +107,48 @@ class FileServiceTest {
         assertEquals("file-uuid", response.fileUuid());
         assertEquals("sample.png", response.originalName());
         assertTrue(Files.exists(tempDir.resolve("PROFILE/" + yearMonth)));
+    }
+
+    @Test
+    void uploadFileAllowsPowerPoint() throws Exception {
+        String yearMonth = YM_FORMATTER.format(LocalDate.now());
+
+        when(accountLookupService.getAccountByLoginId("tester_01")).thenReturn(
+                AcctVo.builder().idx(1L).lgnId("tester_01").build()
+        );
+        doAnswer(invocation -> {
+            FileVo fileVo = invocation.getArgument(0);
+            fileVo.setIdx(3L);
+            return null;
+        }).when(fileMapper).insertFile(any(FileVo.class));
+        when(fileMapper.selectFileByIdx(3L)).thenReturn(
+                FileVo.builder()
+                        .idx(3L)
+                        .uuid("file-uuid-ppt")
+                        .orgnlNm("sample.ppt")
+                        .strgNm("saved.ppt")
+                        .filePath(tempDir.resolve("BOARD_ATTACHMENT/" + yearMonth + "/saved.ppt").toString())
+                        .fileUrl("http://localhost:8080/files/BOARD_ATTACHMENT/" + yearMonth + "/saved.ppt")
+                        .mimeType("application/vnd.ms-powerpoint")
+                        .fileSize(4L)
+                        .upldrType("BOARD_ATTACHMENT")
+                        .createdBy("tester_01")
+                        .build()
+        );
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sample.ppt",
+                "application/vnd.ms-powerpoint",
+                "test".getBytes()
+        );
+
+        FileUploadResponse response = fileService.uploadFile("tester_01", "board_attachment", file);
+
+        assertEquals("file-uuid-ppt", response.fileUuid());
+        assertEquals("sample.ppt", response.originalName());
+        assertEquals("application/vnd.ms-powerpoint", response.mimeType());
+        assertTrue(Files.exists(tempDir.resolve("BOARD_ATTACHMENT/" + yearMonth)));
     }
 
     @Test
