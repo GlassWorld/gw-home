@@ -1,5 +1,16 @@
 # Google 계정 연동 로그인 계획
 
+- 정리일: 2026-10-25
+- 상태: 구현 커밋 반영 완료. 아래 본문은 구현 전 검토·계획으로 보존하며 신규 구현 지시로 사용하지 않는다.
+- 구현 근거: `ff3a77d (API), 6c7c488 (UI), f97e496 (배포 환경변수)`.
+- 관련 문서: [검토](../../review/auth/review-google-account-login-link.md)
+
+## 현재 구현과 검증 범위
+
+- AuthService의 Google 시작/로그인/연동/해제, AcctVo.googleSub와 계정 DDL, SettingsGoogleSection·로그인 버튼·콜백 화면이 구현되어 있다.
+- 실제 Google 제공자 로그인·연동/해제와 대상 DB 마이그레이션 여부는 이번 문서 정리에서 검증하지 않았다.
+- 이번 변경은 작업 이력 정리이며 해당 기능의 새 코드·정책 변경은 포함하지 않는다.
+
 ## Goal
 
 - 목적:
@@ -21,7 +32,7 @@
   - 다른 OAuth 제공자 확장
   - Google Admin SDK 또는 조직 도메인 제한
 
-## Current State
+## Current State — 구현 전 기록
 
 - 현재 상태:
   - 로그인은 `POST /api/v1/auth/login`에서 ID/비밀번호를 검증한 뒤 OTP 상태로 분기한다.
@@ -33,7 +44,7 @@
   - Google OAuth Client ID/Secret과 Redirect URI는 환경변수 기반으로 관리해야 한다.
   - Google 이메일만으로 기존 계정을 자동 매칭하지 않고, 로그인된 사용자가 설정에서 명시적으로 연동한 provider subject를 기준으로 로그인해야 한다.
 
-## Action Items
+## Action Items — 구현 당시 계획
 
 1. 백엔드 설정과 의존성을 확인하고 Google OAuth 검증 방식을 결정한다.
 2. 계정 Google 연동 필드 또는 연동 테이블 DDL, VO/JVO, Mapper를 추가한다.

@@ -1,5 +1,16 @@
 # Google 계정 연동 로그인 검토
 
+- 정리일: 2026-10-25
+- 상태: 구현 커밋 반영 완료. 아래 본문은 구현 전 검토·계획으로 보존하며 신규 구현 지시로 사용하지 않는다.
+- 구현 근거: `ff3a77d (API), 6c7c488 (UI), f97e496 (배포 환경변수)`.
+- 관련 문서: [실행 계획](../../todo/auth/todo-google-account-login-link.md)
+
+## 현재 구현과 검증 범위
+
+- AuthService의 Google 시작/로그인/연동/해제, AcctVo.googleSub와 계정 DDL, SettingsGoogleSection·로그인 버튼·콜백 화면이 구현되어 있다.
+- 실제 Google 제공자 로그인·연동/해제와 대상 DB 마이그레이션 여부는 이번 문서 정리에서 검증하지 않았다.
+- 이번 변경은 작업 이력 정리이며 해당 기능의 새 코드·정책 변경은 포함하지 않는다.
+
 ## Scope
 
 - 대상:
@@ -19,7 +30,7 @@
 - 전체 판단:
   - HEAVY 작업이다. 프론트 설정/로그인 화면, 백엔드 인증 API, 계정 저장 모델, 보안 설정, 테스트가 함께 변경된다.
 
-## Findings or Scores
+## Findings or Scores — 구현 전 검토
 
 - 항목:
   - 현재 인증 흐름은 로그인 ID/비밀번호 이후 OTP 상태에 따라 `SUCCESS`, `OTP_SETUP_REQUIRED`, `OTP_REQUIRED`로 분기한다.
@@ -48,7 +59,7 @@
 - 영향:
   - 계정 테이블 또는 별도 외부 계정 연동 테이블 추가가 필요하며, DB 마이그레이션과 Mapper 변경이 수반된다.
 
-## Recommended Next Actions
+## Recommended Next Actions — 구현 전 권고
 
 1. Google 연동 저장 모델을 정한다. 최소 변경은 계정 테이블에 `google_sub`, `google_email`, `google_linked_at` 계열 필드를 추가하는 방식이다.
 2. 백엔드에 Google OAuth 시작/콜백/연동 상태/연동 해제 API를 추가하고, 콜백 성공 시 기존 JWT 발급 응답으로 변환한다.
