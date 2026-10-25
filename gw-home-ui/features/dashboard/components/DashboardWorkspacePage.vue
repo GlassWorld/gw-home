@@ -353,14 +353,15 @@ watch(
         <p class="dashboard-page__eyebrow">Workspace Dashboard</p>
         <h1>대시보드</h1>
         <p class="dashboard-page__hero-description">
-          {{ authStore.currentUser?.nickname || authStore.currentUser?.loginId }} 님의 업무와 소식을 한눈에 확인할 수 있습니다.
+          {{ authStore.currentUser?.nickname || authStore.currentUser?.loginId }} 님의 업무, 일상 할 일, 소식을 한눈에 확인할 수 있습니다.
         </p>
       </div>
 
       <div class="dashboard-page__hero-actions">
         <CommonBaseButton to="/work/todos">
-          내 할 일 열기
+          업무 할 일 열기
         </CommonBaseButton>
+        <CommonBaseButton to="/life/todos" variant="secondary">일상 할 일 열기</CommonBaseButton>
         <CommonBaseButton variant="secondary" to="/work">
           업무 관리
         </CommonBaseButton>
@@ -368,7 +369,8 @@ watch(
     </section>
 
     <div class="dashboard-page__todo-summaries">
-      <DashboardMyTodoSummary />
+      <DashboardMyTodoSummary kind="work" />
+      <DashboardMyTodoSummary kind="life" />
     </div>
 
     <section class="dashboard-page__toolbar">

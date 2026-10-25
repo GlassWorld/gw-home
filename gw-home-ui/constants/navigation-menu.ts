@@ -14,9 +14,10 @@ export const primaryNavigationItems: NavigationMenuItem[] = [
 
 export const personalNavigationItems: NavigationMenuItem[] = [
   { key: 'work', to: '/work', label: '업무관리', adminOnly: false, favoriteEnabled: true },
-  { key: 'work-todos', to: '/work/todos', label: '내 할 일', adminOnly: false, favoriteEnabled: true },
-  { key: 'work-gantt', to: '/work/gantt', label: '간트차트', adminOnly: false, favoriteEnabled: true },
-  { key: 'work-statistics', to: '/work/statistics', label: '완료 통계', adminOnly: false, favoriteEnabled: true },
+  { key: 'work-todos', to: '/work/todos', label: '업무 할 일', adminOnly: false, favoriteEnabled: true },
+  { key: 'life-todos', to: '/life/todos', label: '일상 할 일', adminOnly: false, favoriteEnabled: true },
+  { key: 'work-gantt', to: '/work/gantt', label: '업무 간트차트', adminOnly: false, favoriteEnabled: true },
+  { key: 'work-statistics', to: '/work/statistics', label: '업무 완료 통계', adminOnly: false, favoriteEnabled: true },
   { key: 'work-git-accounts', to: '/work/git-accounts', label: '깃 계정관리', adminOnly: false, favoriteEnabled: true },
   { key: 'vault', to: '/vault', label: '자격증명관리', adminOnly: false, favoriteEnabled: true },
   { key: 'settings', to: '/settings', label: '계정설정', adminOnly: false, favoriteEnabled: true },

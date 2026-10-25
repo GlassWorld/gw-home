@@ -11,6 +11,7 @@ public final class ProfilePolicy {
             "/board",
             "/work",
             "/work/todos",
+            "/life/todos",
             "/work/gantt",
             "/work/statistics",
             "/work/git-accounts",

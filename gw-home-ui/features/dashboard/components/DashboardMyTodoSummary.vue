@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { useWorkTodoApi } from '~/composables/use-work-todo-api'
-import type { WorkTodoInboxSummary } from '~/features/work/types/work.types'
+import { useLifeTodoApi } from '~/composables/use-life-todo-api'
+import type { LifeTodoSummary } from '~/features/life/types/life-todo.types'
 
+const props = withDefaults(defineProps<{ kind?: 'work' | 'life' }>(), { kind: 'work' })
 const { fetchMyWorkTodoSummary } = useWorkTodoApi()
-const summary = ref<WorkTodoInboxSummary | null>(null)
-const title = '내 할 일'
-const path = '/work/todos'
+const { fetchSummary } = useLifeTodoApi()
+const summary = ref<Pick<LifeTodoSummary, 'todayCount' | 'upcomingCount' | 'overdueCount' | 'progressRate'> | null>(null)
+const title = computed(() => props.kind === 'life' ? '일상 할 일' : '업무 할 일')
+const path = computed(() => props.kind === 'life' ? '/life/todos' : '/work/todos')
 const isLoading = ref(true)
 const hasError = ref(false)
 async function load() {
   isLoading.value = true
   hasError.value = false
-  try { summary.value = await fetchMyWorkTodoSummary() }
+  try { summary.value = props.kind === 'life' ? await fetchSummary() : await fetchMyWorkTodoSummary() }
   catch { hasError.value = true }
   finally { isLoading.value = false }
 }
@@ -29,7 +32,7 @@ onMounted(load)
       <div class="dashboard-todos__overdue"><span>지연</span><strong>{{ summary.overdueCount }}</strong></div>
       <div><span>현재 완료율</span><strong>{{ summary.progressRate }}%</strong></div>
     </div>
-    <p class="section-description">활성 업무의 최하위 할 일 기준</p>
+    <p class="section-description">{{ kind === 'life' ? '생활 카테고리의 일상 할 일 기준' : '활성 업무의 최하위 할 일 기준' }}</p>
   </section>
 </template>
 

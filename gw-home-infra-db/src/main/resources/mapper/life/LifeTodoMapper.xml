@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.life.LifeTodoMapper">
+    <!-- 일상 변경을 계정 단위로 직렬화하여 카테고리 삭제·연결 경합을 방지한다. -->
+    <select id="lockOwner" resultType="long">
+        SELECT mbr_acct_idx FROM tb_mbr_acct WHERE mbr_acct_idx = #{owner} AND del_at IS NULL FOR UPDATE
+    </select>
+    <!-- 일상 목록과 상세에 동일한 필드와 날짜 분류를 사용한다. -->
+    <sql id="columns">
+        t.lf_todo_idx AS idx, t.lf_todo_uuid AS uuid, t.mbr_acct_idx, t.lf_todo_cat_idx,
+        t.ttl, t.memo, t.due_dt, t.cmpl_at, t.created_at, t.updated_at,
+        c.lf_todo_cat_uuid AS category_uuid, c.nm AS category_nm,
+        CASE WHEN t.cmpl_at IS NOT NULL THEN 'COMPLETED'
+             WHEN t.due_dt IS NULL THEN 'UNSCHEDULED'
+             WHEN t.due_dt &lt; #{today} THEN 'OVERDUE'
+             WHEN t.due_dt = #{today} THEN 'TODAY' ELSE 'UPCOMING' END AS todo_group
+    </sql>
+    <!-- 소유자·삭제·카테고리·문자열 검색을 목록과 집계에서 공유한다. -->
+    <sql id="source">
+        SELECT <include refid="columns" />
+        FROM tb_lf_todo t LEFT JOIN tb_lf_todo_cat c
+            ON c.lf_todo_cat_idx = t.lf_todo_cat_idx AND c.mbr_acct_idx = t.mbr_acct_idx AND c.del_at IS NULL
+        WHERE t.mbr_acct_idx = #{req.mbrAcctIdx} AND t.del_at IS NULL
+        <if test="req.categoryUuid != null">AND c.lf_todo_cat_uuid = CAST(#{req.categoryUuid} AS uuid)</if>
+        <if test="req.uncategorized">AND c.lf_todo_cat_idx IS NULL</if>
+        <if test="req.keyword != null">AND position(lower(#{req.keyword}) in lower(t.ttl || ' ' || coalesce(t.memo, ''))) &gt; 0</if>
+    </sql>
+    <!-- 완료는 뒤에 배치하고 일정·생성 순서로 안정적인 서버 페이징을 제공한다. -->
+    <select id="selectTodos" resultType="LifeTodoJvo">
+        <bind name="today" value="req.today" />
+        WITH source AS (<include refid="source" />)
+        SELECT * FROM source
+        <if test="req.group != 'ALL'">WHERE todo_group = #{req.group}</if>
+        ORDER BY (cmpl_at IS NOT NULL), due_dt ASC NULLS LAST, created_at DESC, idx DESC
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+    <!-- 선택 날짜 분류의 전체 건수를 계산한다. -->
+    <select id="selectCount" resultType="long">
+        <bind name="today" value="req.today" />
+        WITH source AS (<include refid="source" />)
+        SELECT count(*) FROM source <if test="req.group != 'ALL'">WHERE todo_group = #{req.group}</if>
+    </select>
+    <!-- 날짜 분류 선택과 무관하게 같은 검색·카테고리 조건의 요약을 계산한다. -->
+    <select id="selectSummary" resultType="LifeTodoSummaryJvo">
+        <bind name="today" value="req.today" />
+        WITH source AS (<include refid="source" />)
+        SELECT count(*) AS total_count,
+            count(*) FILTER (WHERE todo_group = 'TODAY') AS today_count,
+            count(*) FILTER (WHERE todo_group = 'UPCOMING') AS upcoming_count,
+            count(*) FILTER (WHERE todo_group = 'OVERDUE') AS overdue_count,
+            count(*) FILTER (WHERE todo_group = 'COMPLETED') AS completed_count,
+            count(*) FILTER (WHERE todo_group = 'UNSCHEDULED') AS unscheduled_count FROM source
+    </select>
+    <!-- 인증 사용자에게 속한 일상 항목만 조회한다. -->
+    <select id="selectTodo" resultType="LifeTodoJvo">
+        SELECT <include refid="columns" /> FROM tb_lf_todo t
+        LEFT JOIN tb_lf_todo_cat c ON c.lf_todo_cat_idx = t.lf_todo_cat_idx AND c.mbr_acct_idx = t.mbr_acct_idx AND c.del_at IS NULL
+        WHERE t.mbr_acct_idx = #{owner} AND t.lf_todo_uuid = CAST(#{uuid} AS uuid) AND t.del_at IS NULL
+    </select>
+    <!-- 업무 연결 없이 일상 할 일을 저장한다. -->
+    <insert id="insertTodo">
+        INSERT INTO tb_lf_todo (lf_todo_uuid, mbr_acct_idx, lf_todo_cat_idx, ttl, memo, due_dt, created_by, updated_by)
+        VALUES (CAST(#{uuid} AS uuid), #{mbrAcctIdx}, #{lfTodoCatIdx}, #{ttl}, #{memo}, #{dueDt}, #{createdBy}, #{updatedBy})
+    </insert>
+    <!-- 수정 시 완료 상태를 보존한다. -->
+    <update id="updateTodo">
+        UPDATE tb_lf_todo SET lf_todo_cat_idx = #{lfTodoCatIdx}, ttl = #{ttl}, memo = #{memo}, due_dt = #{dueDt},
+            updated_at = now(), updated_by = #{updatedBy}
+        WHERE lf_todo_uuid = CAST(#{uuid} AS uuid) AND mbr_acct_idx = #{mbrAcctIdx} AND del_at IS NULL
+    </update>
+    <!-- 반복 완료 요청은 기존 완료 시각을 보존하고 취소 시 비운다. -->
+    <update id="updateCompletion">
+        UPDATE tb_lf_todo SET cmpl_at = CASE WHEN #{completed} THEN coalesce(cmpl_at, now()) ELSE NULL END,
+            updated_at = now(), updated_by = #{loginId}
+        WHERE lf_todo_uuid = CAST(#{uuid} AS uuid) AND mbr_acct_idx = #{owner} AND del_at IS NULL
+    </update>
+    <!-- 본인의 일상 할 일만 소프트 삭제한다. -->
+    <update id="deleteTodo">
+        UPDATE tb_lf_todo SET del_at = now(), updated_at = now(), updated_by = #{loginId}
+        WHERE lf_todo_uuid = CAST(#{uuid} AS uuid) AND mbr_acct_idx = #{owner} AND del_at IS NULL
+    </update>
+    <!-- 본인의 생활 카테고리를 이름순으로 조회한다. -->
+    <select id="selectCategories" resultType="LifeTodoCategoryVo">
+        SELECT lf_todo_cat_idx AS idx, lf_todo_cat_uuid AS uuid, mbr_acct_idx, nm
+        FROM tb_lf_todo_cat WHERE mbr_acct_idx = #{owner} AND del_at IS NULL ORDER BY nm, lf_todo_cat_idx
+    </select>
+    <!-- 카테고리 선택·수정 시 소유권과 삭제 여부를 확인한다. -->
+    <select id="selectCategory" resultType="LifeTodoCategoryVo">
+        SELECT lf_todo_cat_idx AS idx, lf_todo_cat_uuid AS uuid, mbr_acct_idx, nm
+        FROM tb_lf_todo_cat WHERE mbr_acct_idx = #{owner} AND lf_todo_cat_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL
+    </select>
+    <!-- 동일 사용자의 활성 카테고리 이름 중복을 검사한다. -->
+    <select id="categoryNameExists" resultType="boolean">
+        SELECT EXISTS (SELECT 1 FROM tb_lf_todo_cat WHERE mbr_acct_idx = #{owner} AND del_at IS NULL AND lower(nm) = lower(#{name})
+            <if test="exceptUuid != null">AND lf_todo_cat_uuid != CAST(#{exceptUuid} AS uuid)</if>)
+    </select>
+    <!-- 새 생활 카테고리를 저장한다. -->
+    <insert id="insertCategory">
+        INSERT INTO tb_lf_todo_cat (lf_todo_cat_uuid, mbr_acct_idx, nm, created_by, updated_by)
+        VALUES (CAST(#{uuid} AS uuid), #{mbrAcctIdx}, #{nm}, #{createdBy}, #{updatedBy})
+    </insert>
+    <!-- 본인의 생활 카테고리 이름만 수정한다. -->
+    <update id="updateCategory">
+        UPDATE tb_lf_todo_cat SET nm = #{nm}, updated_by = #{updatedBy}, updated_at = now()
+        WHERE lf_todo_cat_uuid = CAST(#{uuid} AS uuid) AND mbr_acct_idx = #{mbrAcctIdx} AND del_at IS NULL
+    </update>
+    <!-- 카테고리를 삭제할 때 기존 할 일은 미분류로 보존한다. -->
+    <update id="clearCategory">
+        UPDATE tb_lf_todo SET lf_todo_cat_idx = NULL, updated_by = #{loginId}, updated_at = now()
+        WHERE mbr_acct_idx = #{owner} AND lf_todo_cat_idx = #{category} AND del_at IS NULL
+    </update>
+    <!-- 본인의 생활 카테고리만 소프트 삭제한다. -->
+    <update id="deleteCategory">
+        UPDATE tb_lf_todo_cat SET del_at = now(), updated_at = now(), updated_by = #{loginId}
+        WHERE mbr_acct_idx = #{owner} AND lf_todo_cat_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL
+    </update>
+</mapper>

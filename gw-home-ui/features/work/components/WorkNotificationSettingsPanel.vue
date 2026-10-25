@@ -11,7 +11,7 @@ const zoneOptions = computed(() => [...new Set([form.timeZone, ...timeZones.valu
 <template>
   <section id="work-notifications" class="content-panel page-panel-padding-lg page-stack">
     <div>
-      <h2>내 할 일 메일 알림</h2>
+      <h2>업무 할 일 메일 알림</h2>
       <p class="message-muted">앱을 닫아도 원하는 시각에 오늘 할 일과 개별 알림을 받아보세요.</p>
     </div>
     <CommonBaseState v-if="loading" state="loading" message="메일 알림 설정을 불러오고 있습니다." />

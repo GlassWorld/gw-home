@@ -18,7 +18,7 @@ defineProps<{ data: WorkStatistics }>()
       <span>일정 미지정 {{ data.summary.unscheduledCount }}개</span><span>완료일 미상 {{ data.summary.unknownCompletionCount }}개</span>
     </div>
     <p v-if="data.summary.unknownCompletionCount" class="insight-warning" role="status">완료일 미상 {{ data.summary.unknownCompletionCount }}개는 현재 완료율에 포함하고 기간별 추이에서는 제외합니다. 수정 시각으로 완료일을 추정하지 않습니다.</p>
-    <CommonBaseState v-if="!data.summary.totalCount" state="empty" title="집계할 할 일이 없습니다." message="업무 필터를 바꾸거나 내 할 일에서 항목을 등록해주세요." />
+    <CommonBaseState v-if="!data.summary.totalCount" state="empty" title="집계할 할 일이 없습니다." message="업무 필터를 바꾸거나 업무 할 일에서 항목을 등록해주세요." />
     <WorkCompletionChart :points="data.trend" :bucket="data.bucket" :total="data.periodCompletedCount" />
     <section v-if="data.units.length" class="content-panel statistics-units">
       <h2>업무별 진행률</h2>

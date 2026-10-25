@@ -9,7 +9,7 @@ const { filters, statistics, workUnits, loading, errorMessage, validationMessage
   <main class="page-container page-stack work-insights">
     <CommonBasePageHeader title="완료 통계" eyebrow="Work Insights" description="완료한 일의 흐름과 지금의 진행 상황을 살펴보세요.">
       <template #actions>
-        <CommonBaseButton variant="secondary" to="/work/todos">내 할 일</CommonBaseButton>
+        <CommonBaseButton variant="secondary" to="/work/todos">업무 할 일</CommonBaseButton>
         <CommonBaseButton variant="secondary" to="/work/gantt">간트차트</CommonBaseButton>
       </template>
     </CommonBasePageHeader>

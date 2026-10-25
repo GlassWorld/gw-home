@@ -26,7 +26,8 @@
 | `/board/[boardUuid]` | `pages/board/[boardUuid].vue` | 게시글 상세 | O |
 | `/board/create` | `pages/board/create.vue` | 게시글 작성 | O |
 | `/work` | `pages/work/index.vue` | 업무 등록과 조회 | O |
-| `/work/todos` | `pages/work/todos/index.vue` | 내 할 일 통합 조회·등록·수정·완료·완료 취소 | O |
+| `/work/todos` | `pages/work/todos/index.vue` | 업무 할 일 통합 조회·등록·수정·완료·완료 취소 | O |
+| `/life/todos` | `pages/life/todos/index.vue` | 일상 할 일 CRUD·완료/취소·생활 카테고리·독립 집계 | O |
 | `/work/todos/[workUnitUuid]` | `pages/work/todos/[workUnitUuid].vue` | 업무별 TODO 트리 상세 관리 | O |
 | `/work/gantt` | `pages/work/gantt/index.vue` | 간트차트·모바일 일정 목록·기간/업무 필터 | O |
 | `/work/statistics` | `pages/work/statistics/index.vue` | 완료 추이·현재 현황·업무별 진행률 | O |
@@ -116,3 +117,13 @@ middleware/
 - 서버 진입은 `nuxt.config.ts`의 302 routeRules, 클라이언트 이동은 global middleware가 처리한다. 경로 목록은 `constants/retired-report-routes.ts`에서 공유한다.
 - 내 할 일에서 종료·데이터 보관 안내를 표시하고 닫을 수 있다. 미인증 사용자는 기존 auth 정책에 따라 로그인 화면으로 이동하고 로그인 성공 후 대시보드로 진입한다.
 - 즐겨찾기 조회는 서버 허용 목록과 프런트 메뉴 목록으로 필터링하며 남은 메뉴 순서는 유지한다. 정리 SQL을 실행하지 않아도 보고서 메뉴는 숨겨진다.
+
+## 업무·일상 할 일 메뉴 분리 (2026-10-25)
+
+- 기존 `/work/todos`는 업무 할 일로 표시하며 링크·즐겨찾기 경로는 유지한다. 간트/통계 메뉴도 업무 용도임을 표시한다.
+- `/life/todos`는 독립 life feature를 사용한다. 제목만으로 등록하며 날짜·메모·생활 카테고리는 선택한다. 소속 업무를 요구하지 않는다.
+- 생활 카테고리는 화면 내 관리 모달에서 추가·이름 변경·삭제한다. 카테고리 삭제 시 할 일을 지우지 않고 미분류로 전환한다.
+- 검색·카테고리·미분류 필터와 전체/오늘/예정/지연/완료/일정 미지정 분류, 서버 페이징을 제공한다. 완료/취소·삭제로 마지막 페이지가 비면 유효한 페이지를 다시 조회한다.
+- 등록/수정·삭제 확인·카테고리 관리 모달은 공통 BaseModal을 사용한다. 저장 중 닫기·중복 제출을 차단하고 오류 시 입력 내용을 유지한다.
+- 대시보드에서 업무와 일상을 별도 카드로 집계한다. 오늘 남은 일 링크는 각 메뉴의 `?group=TODAY`로 연결한다. 일상 조회 실패는 업무 요약 표시를 막지 않는다.
+- 생활 카테고리·API·완료율은 업무와 분리되며 공통 버튼·모달·로딩·오류·빈 상태·페이징·토스트를 재사용한다.

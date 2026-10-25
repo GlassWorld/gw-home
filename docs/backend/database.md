@@ -174,3 +174,13 @@ node gw-home-api/src/test/resources/work/renewal-schema.cjs gw-home-api/build/ve
 - `WorkTodoMapper.ownedWorkTodoSelect`는 소유권·활성·분류 원본, `myWorkTodoSource`는 최하위/일정 겹침 필터다. `WorkInsightsMapper`가 이 원본을 재사용하여 간트 조상, 업무별 현재 현황, 시간대별 완료 추이를 조회한다.
 - 이번 단계가 스키마를 추가하지 않더라도 2단계 완료 시각 SQL과 4단계 알림 SQL은 기존 API의 선행 배포 조건이다. 메일 발송 비활성화는 해당 테이블 의존을 제거하지 않는다.
 - `WorkInsightsMapperContractTest`가 실제 바인딩 SQL을 `build/insights-sql.json`으로 내보낸다. `src/test/resources/work/insights-sql.cjs`에 격리 PGlite 패키지 경로를 전달해 8개 SQL 시나리오를 검증했다. 실제 PostgreSQL JDBC·운영 데이터 규모의 EXPLAIN/인덱스 비용은 후속 회귀·배포 환경에서 확인한다.
+
+## 일상 할 일 스키마 추가 (2026-10-25)
+
+- 기준 DDL: `gw-home-infra-db/src/main/resources/sql/ddl/life/tb_lf_todo.sql`. 사용자별 생활 카테고리 `tb_lf_todo_cat`와 할 일 `tb_lf_todo`를 생성한다. 기존 업무 테이블·데이터는 변경하지 않는다.
+- 기존 DB에는 `gw-home-infra-db/src/main/resources/sql/ddl/life/life-todos-migrate.sql` 전체를 한 번 실행한다. `home.tb_mbr_acct`가 선행 조건이며 home 스키마에 두 테이블과 인덱스를 한 트랜잭션으로 생성한다. 잠금 대기 제한은 5초다.
+- 신규 DB는 계정 테이블 생성 후 일상 기준 DDL을 실행한다. `docs/all-ddl.sql`에도 동기화했으나 이 파일은 빈 스키마 전용이다.
+- 일상 할 일과 카테고리는 같은 계정이어야 하며 복합 FK로 보장한다. 카테고리 삭제는 애플리케이션이 소프트 삭제와 미분류 전환을 같은 트랜잭션에서 수행한다.
+- 정상 적용 후 재실행해도 기존 데이터는 유지된다. IF NOT EXISTS가 기존의 잘못된 정의를 수리하지는 않는다. 앱 롤백 시 새 테이블과 데이터는 남겨둔다.
+- **실제 DB에는 아직 적용하지 않았다.** 서버 재시작만으로 SQL이 실행되지 않는다. SQL 적용 후 API·UI를 배포해야 일상 메뉴를 사용할 수 있다.
+- 로컬 검증: `node gw-home-api/src/test/resources/life/life-todo-sql.cjs <PGlite 패키지 경로>`를 실행한다. 실제 MyBatis 바인딩 SQL은 `LifeTodoMapperContractTest`가 `gw-home-api/build/life-todo-sql.json`으로 내보낸다.

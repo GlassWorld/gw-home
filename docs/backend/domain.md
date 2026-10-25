@@ -26,6 +26,7 @@
 | `favorite` | 좋아요 토글 |
 | `vault` | 자격증명과 카테고리 보관 관리 |
 | `work` | 업무, TODO 트리, 내 할 일 통합 조회, 메일 알림, Git 연동 |
+| `life` | 업무와 독립된 일상 할 일, 사용자별 생활 카테고리, 일상 완료 집계 |
 | `admin` | 회원 관리, 제재, 운영 기능 |
 
 ## 도메인 경계 원칙
@@ -145,3 +146,12 @@
 5. 사용자가 접근하는 앱 HTTPS URL을 정하고 신규 DB SQL 적용 후 환경변수를 주입한다. 서버 발송을 켠 다음 본인 설정에서 주소 확인 → 정기 요약/개별 알림 활성화 → 자기 주소 수신을 점검한다.
 
 회사 관리자 권한 변경·앱 등록·실제 발송은 이번 로컬 작업에서 수행하지 않았다. 조직에서 SMTP를 금지하면 정책을 임의로 완화하지 않고 관리자 승인 발송 경로를 먼저 확인한다. Microsoft 공식 [OAuth 앱 등록·메일함 권한 안내](https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth)와 [SMTP 서버·TLS 설정](https://learn.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-microsoft-365-or-office-365)을 기준으로 운영 적용한다.
+
+## 일상 할 일 분리 (2026-10-25)
+
+- `life`는 사용자별 생활 카테고리와 단일 일상 할 일을 관리한다. WorkUnit·업무 트리·간트·업무 통계·메일에 연결하지 않는다.
+- 제목만 필수이며 카테고리·날짜·메모는 선택이다. 완료 상태는 `cmpl_at` 존재 여부로 결정한다. 반복 완료는 시각을 유지하고 취소는 NULL, 재완료는 새 시각이다.
+- 카테고리는 사용자별 생성·이름 변경·소프트 삭제를 지원한다. 삭제 시 활성 할 일은 미분류로 보존한다. 대소문자를 구분하지 않는 활성 이름 중복을 금지한다.
+- 인증 계정으로 소유자를 고정한다. 조회·쓰기 SQL 모두 소유자와 삭제 여부를 검사하고 카테고리 복합 FK도 동일 소유자를 보장한다. 변경 작업은 계정 행 잠금으로 직렬화한다.
+- 기존 `BaseVo`의 공통 식별자·감사 필드를 재사용한다. 외부 DTO는 UUID만 반환하며 내부 키를 노출하지 않는다.
+- 메뉴는 업무 할 일·일상 할 일로 구별한다. 대시보드의 두 요약은 별도 API를 호출하며 업무 집계에 일상 데이터가 포함되지 않는다.

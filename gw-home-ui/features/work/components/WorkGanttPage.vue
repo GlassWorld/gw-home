@@ -11,7 +11,7 @@ onMounted(() => { view.value = window.matchMedia('(min-width: 768px)').matches ?
   <main class="page-container page-stack work-insights">
     <CommonBasePageHeader title="간트차트" eyebrow="Work Schedule" description="업무의 흐름과 할 일 일정을 함께 확인하세요.">
       <template #actions>
-        <CommonBaseButton variant="secondary" to="/work/todos">내 할 일</CommonBaseButton>
+        <CommonBaseButton variant="secondary" to="/work/todos">업무 할 일</CommonBaseButton>
         <CommonBaseButton variant="secondary" to="/work/statistics">완료 통계</CommonBaseButton>
       </template>
     </CommonBasePageHeader>
@@ -29,7 +29,7 @@ onMounted(() => { view.value = window.matchMedia('(min-width: 768px)').matches ?
     <template v-else-if="gantt">
       <p class="insight-note" role="status">조회 {{ gantt.period.fromDate }} ~ {{ gantt.period.toDate }} · {{ gantt.period.timeZone }} · {{ gantt.period.includeInactive ? '비활성 업무 포함' : '활성 업무만' }} · 오늘 {{ gantt.period.asOfDate }}</p>
       <WorkGanttView v-if="gantt.rows.length" :data="gantt" :view="view" />
-      <CommonBaseState v-else state="empty" title="표시할 일정이 없습니다." message="기간이나 업무 필터를 바꾸거나 내 할 일에서 일정을 등록해주세요." />
+      <CommonBaseState v-else state="empty" title="표시할 일정이 없습니다." message="기간이나 업무 필터를 바꾸거나 업무 할 일에서 일정을 등록해주세요." />
       <p class="insight-note">업무 일정·진행률은 해당 업무 전체 TODO 기준입니다. 상위 항목의 막대는 직접 지정한 일정이며, 기간 밖의 조상은 계층 표시로 남습니다. 항목을 선택하면 기존 상세 화면으로 이동합니다.</p>
     </template>
   </main>

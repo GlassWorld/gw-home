@@ -31,7 +31,7 @@ const groupCounts = computed<Record<WorkTodoGroup, number>>(() => ({
 
 <template>
   <main class="todo-inbox page-container page-stack">
-    <CommonBasePageHeader title="내 할 일" eyebrow="My Workspace" description="여러 업무의 할 일을 한곳에서 확인하고 마무리하세요.">
+    <CommonBasePageHeader title="업무 할 일" eyebrow="My Workspace" description="여러 업무의 할 일을 한곳에서 확인하고 마무리하세요.">
       <template #actions>
         <CommonBaseButton variant="secondary" to="/work/gantt">간트차트</CommonBaseButton>
         <CommonBaseButton variant="secondary" to="/work/statistics">완료 통계</CommonBaseButton>
@@ -40,7 +40,7 @@ const groupCounts = computed<Record<WorkTodoGroup, number>>(() => ({
       </template>
     </CommonBasePageHeader>
     <CommonBaseState v-if="showRetiredReportNotice" state="empty" title="일일보고·주간보고 기능이 종료되었습니다."
-      message="이제 내 할 일에서 업무를 정리해 주세요. 기존 보고서 데이터는 보관되어 있으며 이 화면에서는 조회할 수 없습니다."
+      message="이제 업무 할 일에서 업무를 정리해 주세요. 기존 보고서 데이터는 보관되어 있으며 이 화면에서는 조회할 수 없습니다."
       action-label="안내 닫기" @action="dismissRetiredReportNotice" />
     <section v-if="summary" class="content-panel todo-inbox__overview" aria-label="현재 완료 현황" :aria-busy="isListLoading">
       <div><span>현재 완료율</span><strong>{{ summary.progressRate }}<small>%</small></strong></div>
@@ -78,9 +78,9 @@ const groupCounts = computed<Record<WorkTodoGroup, number>>(() => ({
         {{ item.label }} <span v-if="summary">{{ groupCounts[item.value] }}</span>
       </button>
     </nav>
-    <CommonBaseState v-if="isListLoading && !result" state="loading" message="내 할 일을 불러오는 중입니다." />
+    <CommonBaseState v-if="isListLoading && !result" state="loading" message="업무 할 일을 불러오는 중입니다." />
     <CommonBaseState v-else-if="errorMessage" state="error" :message="errorMessage" action-label="다시 시도" @action="refresh" />
-    <section v-else-if="result?.content.length" class="todo-inbox__list" aria-label="내 할 일 목록" :aria-busy="isBusy">
+    <section v-else-if="result?.content.length" class="todo-inbox__list" aria-label="업무 할 일 목록" :aria-busy="isBusy">
       <WorkTodoInboxCard v-for="todo in result.content" :key="todo.todoUuid" :todo="todo" :disabled="isBusy"
         @open="openTodo(todo)" @edit="openTodo(todo, 'edit')" @complete="openTodo(todo, 'complete')" />
     </section>

@@ -73,6 +73,8 @@ gw-home/
 
 기존 DB에는 API 시작 전에 [리뉴얼 테이블 생성·적용 안내](docs/backend/database.md#리뉴얼-테이블-생성적용-안내)에 따라 [통합 적용 SQL](gw-home-infra-db/src/main/resources/sql/ddl/work/project-renewal-migrate.sql)을 실행하고 [확인 SQL](gw-home-infra-db/src/main/resources/sql/ddl/work/project-renewal-verify.sql)로 점검한다. 서버 시작만으로 DDL이 자동 반영되지 않는다. 메일 발송을 보류해도 현재 TODO 쓰기에 알림 테이블 3개가 필요하다.
 
+일상 할 일은 별도 테이블을 사용하므로 [일상 할 일 적용 안내](docs/backend/database.md#일상-할-일-스키마-추가-2026-10-25)에 따라 [일상 마이그레이션 SQL](gw-home-infra-db/src/main/resources/sql/ddl/life/life-todos-migrate.sql)도 실행한다. 각 SQL의 로컬 검증과 실제 대상 DB 적용 여부는 구분하며, 대상 DB 적용·배포는 아직 수행하지 않았다.
+
 ```bash
 # Backend
 ./gradlew :gw-home-api:bootRun

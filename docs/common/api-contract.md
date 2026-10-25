@@ -204,3 +204,30 @@ export function useBoard() {
   "message": null
 }
 ```
+
+## 일상 할 일 API (2026-10-25)
+
+모든 경로는 인증이 필요하다. 소유자는 Principal의 로그인 계정으로 결정하며 내부 PK를 받거나 반환하지 않는다.
+
+| 요청 | 계약 |
+|------|------|
+| `GET /api/v1/life-todos` | `PageResponse<Todo>` |
+| `GET /api/v1/life-todos/summary` | 검색·카테고리 조건의 독립 일상 집계 |
+| `GET /api/v1/life-todos/{uuid}` | 본인 항목 상세 |
+| `POST /api/v1/life-todos` | 일상 할 일 생성, Todo 반환 |
+| `PUT /api/v1/life-todos/{uuid}` | 제목·메모·날짜·카테고리 전체 수정, 완료 상태 보존, Todo 반환 |
+| `PUT /api/v1/life-todos/{uuid}/completion` | `{ "completed": true/false }`, Todo 반환 |
+| `DELETE /api/v1/life-todos/{uuid}` | 소프트 삭제, data=null |
+| `GET /api/v1/life-todos/categories` | 본인 카테고리 목록 |
+| `POST /api/v1/life-todos/categories` | `{ "name": "집안일" }`, Category 반환 |
+| `PUT /api/v1/life-todos/categories/{uuid}` | 카테고리 이름 변경, Category 반환 |
+| `DELETE /api/v1/life-todos/categories/{uuid}` | 카테고리 삭제·활성 할 일 미분류 전환, data=null |
+
+- 목록/요약 query는 camelCase: `categoryUuid`, `uncategorized=false`, `keyword`, `group=ALL`, `timeZone=Asia/Seoul`, `page=1`, `size=20`. page 1~1,000,000, size 1~100, keyword 최대 200자. 카테고리 지정과 uncategorized=true는 동시에 사용할 수 없다.
+- group: ALL/TODAY/UPCOMING/OVERDUE/COMPLETED/UNSCHEDULED. 완료를 먼저 분류하고 미완료의 날짜가 오늘/이후/이전/NULL인지 판단한다. 오늘은 요청한 IANA 시간대 기준이다. 요약은 group과 페이징을 무시하고 검색·카테고리 조건만 반영한다.
+- 생성/수정 body: `{ "title": "장보기", "memo": null, "category_uuid": null, "due_date": null }`. 제목 1~200자, 메모 최대 4000자, 날짜 YYYY-MM-DD. 제목만 필수. 상세/생성/수정/완료에는 query `timeZone`을 전달할 수 있다.
+- Todo: `todo_uuid`, `title`, `memo`, `category_uuid`, `category_name`, `due_date`, `completed`, `completed_at`, `group`, `created_at`, `updated_at`. 날짜 미지정·미분류·미완료 시 해당 선택 필드는 null이다.
+- Summary: `total_count`, `today_count`, `upcoming_count`, `overdue_count`, `completed_count`, `unscheduled_count`, `progress_rate`, `as_of_date`. 현재 유효 항목의 완료율이며 기간별 완료 이력이 아니다.
+- Category: `category_uuid`, `name`. 이름 1~50자, 양끝 공백 정리, 동일 계정에서 대소문자 무시 중복은 409. 다른 계정은 같은 이름을 사용할 수 있다.
+- 다른 소유자/삭제 항목·카테고리의 상세·변경·연결은 404, 잘못된 UUID·시간대·필터·JSON·날짜는 400. 타인 카테고리로 목록을 필터하면 본인 조건과 일치하는 항목이 없어 빈 결과를 반환한다.
+- 일상 API와 업무 TODO API는 저장·조회·집계가 분리되어 있다. 반복 루틴과 일상 알림 API는 이번 범위에 없다.
