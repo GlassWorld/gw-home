@@ -26,5 +26,8 @@
     "@types/qrcode": "^1.5.5",
     "typescript": "^5.8.2",
     "vue-tsc": "^2.2.12"
+  },
+  "overrides": {
+    "@nuxt/schema": "3.17.5"
   }
 }

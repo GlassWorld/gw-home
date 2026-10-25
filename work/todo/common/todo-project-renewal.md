@@ -504,6 +504,7 @@
 | 실행 제외 | 운영 DB 접속/변경, 외부 메일, OAuth 제공자·실제 Git 원격 호출, 배포 및 이번 정리에서의 브라우저 UI 재검증 |
 
 - 프런트 빌드는 `gw-home-api/build/verification/build-life.mjs`의 분리 출력을 사용했다. 최초 실행의 `vue-tsc` 경로 누락은 실행 세션 PATH에 `gw-home-ui/node_modules/.bin`을 추가해 해결했다. 기존 Browserslist/Node 경고는 남아 있다.
+- CI 빌드 후속 수정 (2026-10-25): `routeRules` TS2353에 대해 잠금 파일의 Nuxt 3.17.5 / `@nuxt/schema` 4.4.2 혼재를 제거하고 `overrides`로 스키마를 3.17.5에 고정했다. 격리 폴더에서 `npm ci --ignore-scripts`, 타입 검사, 프로덕션 빌드와 종료 URL 8개의 HTTP 302 응답을 확인했다. 검증 환경은 Windows Node 24 / npm 11이며 Linux Docker CI 재실행은 미확인이다. 수정 전 Windows 설치에서는 선택적 4.x 스키마가 설치되지 않아 CI의 TS2353 자체는 재현되지 않았다.
 - 위 통합 검증에는 [백엔드 쿼리 개선](todo-backend-query-refactor.md)과 [일상 할 일](../life/todo-life-todos.md)이 포함된다. 기존 단계별 UI 검증 기록은 보존하며 이번 실행 결과로 바꾸지 않는다.
 - 커밋 순서는 공통 쿼리 기반 → 리뉴얼 → 일상 분리다. 공통 파일은 해당 기능의 변경 부분을 나눠 반영한다. 과거 기능 및 AI 문서 정리는 별도 문서 커밋으로 관리한다.
 
