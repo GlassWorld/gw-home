@@ -84,6 +84,6 @@ com.gw.share.jvo.board
 
 ## 함께 보면 좋은 문서
 
-- 백엔드 규칙: [backend-rules.md](/home/glassworld/workspace/gw-home/docs/backend/backend-rules.md)
-- 데이터베이스 규칙: [database.md](/home/glassworld/workspace/gw-home/docs/backend/database.md)
-- 프론트엔드 규칙: [frontend-rules.md](/home/glassworld/workspace/gw-home/docs/frontend/frontend-rules.md)
+- 백엔드 규칙: [backend-rules.md](../backend/backend-rules.md)
+- 데이터베이스 규칙: [database.md](../backend/database.md)
+- 프론트엔드 규칙: [frontend-rules.md](../frontend/frontend-rules.md)
