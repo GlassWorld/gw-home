@@ -3,7 +3,6 @@ import type {
   WorkGitProject,
   WorkUnit,
   WorkUnitOption,
-  WorkUnitSort,
   WorkUnitStatus
 } from '../types/work.types'
 import { useWorkGitApi } from '../api/work-git.api'
@@ -15,7 +14,6 @@ interface WorkUnitFilterState {
   category: string
   status: WorkUnitStatus | ''
   includeInactive: boolean
-  sort: WorkUnitSort
 }
 
 export function useWorkUnitManagement() {
@@ -36,8 +34,7 @@ export function useWorkUnitManagement() {
     keyword: '',
     category: '',
     status: '',
-    includeInactive: false,
-    sort: 'updated'
+    includeInactive: false
   })
 
   const formState = ref<SaveWorkUnitPayload>({
@@ -59,12 +56,6 @@ export function useWorkUnitManagement() {
     { value: 'IN_PROGRESS', label: '진행중' },
     { value: 'DONE', label: '완료' },
     { value: 'ON_HOLD', label: '보류' }
-  ]
-
-  const sortOptions: Array<{ value: WorkUnitSort; label: string }> = [
-    { value: 'updated', label: '최근 수정순' },
-    { value: 'recent', label: '최근 사용순' },
-    { value: 'frequent', label: '자주 사용순' }
   ]
 
   const categoryOptions = computed(() => {
@@ -132,7 +123,7 @@ export function useWorkUnitManagement() {
         category: filters.category || undefined,
         status: filters.status,
         useYn: filters.includeInactive ? '' : 'Y',
-        sort: filters.sort
+        sort: 'updated'
       })
     } catch (error) {
       const fetchError = error as { data?: { message?: string } }
@@ -217,12 +208,6 @@ export function useWorkUnitManagement() {
     })
   }
 
-  function updateSortFilter(sort: string) {
-    applySelectableValueFromOptions(sort, sortOptions, (validSort) => {
-      filters.sort = validSort
-    })
-  }
-
   async function handleUseToggle(workUnit: WorkUnit) {
     const nextUseYn = workUnit.useYn === 'Y' ? 'N' : 'Y'
     const shouldUpdate = await confirm(
@@ -284,7 +269,6 @@ export function useWorkUnitManagement() {
     isFormVisible,
     isLoading,
     isSubmitting,
-    sortOptions,
     startCreate,
     startEdit,
     statusFilterOptions,
@@ -292,7 +276,6 @@ export function useWorkUnitManagement() {
     summary,
     updateCategoryFilter,
     updateStatusFilter,
-    updateSortFilter,
     workUnitList,
     handleSubmit,
     handleUseToggle,

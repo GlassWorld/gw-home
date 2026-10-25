@@ -1,9 +1,18 @@
+import { retiredReportDestination, retiredReportPaths } from './constants/retired-report-routes'
+
 export default defineNuxtConfig({
+  routeRules: Object.fromEntries(retiredReportPaths.flatMap(path => [
+    [path, { redirect: { to: retiredReportDestination, statusCode: 302 } }],
+    [`${path}/**`, { redirect: { to: retiredReportDestination, statusCode: 302 } }]
+  ])),
   modules: ['@pinia/nuxt'],
   css: ['~/assets/styles/main.css'],
   app: {
     head: {
       title: 'Glass World',
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content' }
+      ],
       link: [
         {
           rel: 'icon',

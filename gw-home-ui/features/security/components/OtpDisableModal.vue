@@ -62,6 +62,6 @@ const emit = defineEmits<{
 <style scoped>
 .otp-disable-modal {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 </style>

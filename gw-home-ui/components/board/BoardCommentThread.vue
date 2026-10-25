@@ -254,22 +254,21 @@ function handleEditDrop(event: DragEvent) {
 .board-comment {
   display: grid;
   gap: 12px;
-  padding: 18px;
-  border: 1px solid rgba(147, 210, 255, 0.16);
-  border-radius: 12px;
-  background: rgba(7, 16, 38, 0.48);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
   font-size: 0.93rem;
 }
 
 .board-comment--reply {
   margin-left: 0;
   padding: 12px;
-  border: 1px solid rgba(110, 193, 255, 0.22);
-  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
   background:
-    linear-gradient(90deg, rgba(110, 193, 255, 0.08), rgba(110, 193, 255, 0.02)),
-    rgba(11, 22, 48, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    var(--color-surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .board-comment__header,
@@ -295,7 +294,7 @@ function handleEditDrop(event: DragEvent) {
   width: fit-content;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(110, 193, 255, 0.16);
+  background: var(--color-primary-soft);
   color: var(--color-accent);
   font-size: 0.72rem;
   font-weight: 700;
@@ -335,10 +334,10 @@ function handleEditDrop(event: DragEvent) {
   gap: 8px;
   margin-top: 2px;
   padding: 10px 10px 10px 12px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
-  border-radius: 12px;
-  background: rgba(5, 12, 28, 0.46);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-soft);
   position: relative;
 }
 
@@ -351,7 +350,7 @@ function handleEditDrop(event: DragEvent) {
   bottom: 10px;
   width: 2px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(110, 193, 255, 0.42), rgba(110, 193, 255, 0.06));
+  background: var(--color-primary-soft);
 }
 
 .board-comment__replies::before {
@@ -360,7 +359,7 @@ function handleEditDrop(event: DragEvent) {
 
 @media (max-width: 768px) {
   .board-comment {
-    padding: 14px;
+    padding: 10px;
   }
 
   .board-comment--reply {

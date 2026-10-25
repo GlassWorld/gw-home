@@ -85,10 +85,10 @@ const emit = defineEmits<{
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 16px;
+  gap: var(--section-gap);
   padding: 22px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 .settings-section__security-card h3 {

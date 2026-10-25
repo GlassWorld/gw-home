@@ -69,9 +69,9 @@ try {
 
 <style scoped>
 .notice-detail-page__panel {
-  padding: 32px;
+  padding: var(--panel-padding-large);
   display: grid;
-  gap: 24px;
+  gap: var(--section-gap);
 }
 
 .notice-detail-page__header {
@@ -89,7 +89,7 @@ try {
 
 .notice-detail-page__content {
   padding-top: 24px;
-  border-top: 1px solid rgba(147, 210, 255, 0.14);
+  border-top: 1px solid var(--color-border);
   line-height: 1.7;
   word-break: break-word;
 }
@@ -105,8 +105,8 @@ try {
 .notice-detail-page__content:deep(code) {
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -114,9 +114,9 @@ try {
   margin: 12px 0 0;
   padding: 14px;
   overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
 }
 
 .notice-detail-page__content:deep(pre code) {
@@ -125,7 +125,7 @@ try {
 }
 
 .notice-detail-page__content:deep(a) {
-  color: #8bd0ff;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 

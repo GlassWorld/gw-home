@@ -57,36 +57,22 @@ await loadCategoryList()
 </script>
 
 <template>
-  <main class="page-container vault-page">
+  <main class="page-container page-stack vault-page">
     <section class="content-panel vault-page__hero page-panel-padding-md">
-      <div class="vault-page__hero-header">
-        <div>
-          <p class="vault-page__eyebrow">Vault</p>
-          <h1 class="section-title">개인 자격증명 관리</h1>
-          <p class="section-description">
-            자주 쓰는 로그인 정보와 메모를 모아두고, 필요할 때 빠르게 복사할 수 있습니다.
-          </p>
-        </div>
-
-        <div class="vault-page__hero-actions page-actions">
-          <CommonBaseButton @click="openCreateModal">
-            신규 등록
-          </CommonBaseButton>
-          <CommonBaseButton
-            v-if="authStore.currentUser?.role === 'ADMIN'"
-            to="/admin/vault-categories"
-            variant="secondary"
-          >
-            카테고리 관리
-          </CommonBaseButton>
-        </div>
-      </div>
+      <CommonBasePageHeader title="개인 자격증명 관리" eyebrow="Vault"
+        description="자주 쓰는 로그인 정보와 메모를 모아두고, 필요할 때 빠르게 복사할 수 있습니다.">
+        <template #actions>
+          <CommonBaseButton @click="openCreateModal">신규 등록</CommonBaseButton>
+          <CommonBaseButton v-if="authStore.currentUser?.role === 'ADMIN'" to="/admin/vault-categories" variant="secondary">카테고리 관리</CommonBaseButton>
+        </template>
+      </CommonBasePageHeader>
 
       <form class="vault-page__search-form" @submit.prevent="handleSearch">
         <input
           v-model="keyword"
           class="input-field"
           type="search"
+          aria-label="자격증명 검색"
           placeholder="제목, 아이디, 메모를 여러 단어로 검색"
         >
         <CommonBaseButton variant="secondary" type="submit">
@@ -115,9 +101,7 @@ await loadCategoryList()
     </section>
 
     <section class="vault-page__content">
-      <p v-if="isLoading" class="message-muted">
-        자격증명 정보를 불러오는 중입니다.
-      </p>
+      <CommonBaseState v-if="isLoading" state="loading" message="자격증명 정보를 불러오는 중입니다." />
       <template v-else-if="credentialList.length">
         <div class="vault-page__result-toolbar">
           <p class="vault-page__result-count">총 {{ credentialList.length }}개</p>
@@ -178,13 +162,8 @@ await loadCategoryList()
           </article>
         </div>
       </template>
-      <section v-else class="content-panel vault-page__empty-state">
-        <h2>아직 저장된 자격증명이 없습니다.</h2>
-        <p class="section-description">첫 자격증명을 등록하면 여기서 바로 관리할 수 있습니다.</p>
-        <CommonBaseButton @click="openCreateModal">
-          첫 자격증명 등록
-        </CommonBaseButton>
-      </section>
+      <CommonBaseState v-else state="empty" title="표시할 자격증명이 없습니다."
+        message="검색 조건을 바꾸거나 첫 자격증명을 등록해보세요." action-label="자격증명 등록" @action="openCreateModal" />
     </section>
 
     <VaultCredentialFormModal
@@ -205,43 +184,9 @@ await loadCategoryList()
 </template>
 
 <style scoped>
-.vault-page {
-  display: grid;
-  gap: 24px;
-}
-
-.vault-page__empty-state {
-  padding: 22px;
-}
-
 .vault-page__hero {
   display: grid;
-  gap: 14px;
-}
-
-.vault-page__hero-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.vault-page__eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-accent);
-  font-weight: 700;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.vault-page__hero .section-title {
-  font-size: clamp(1rem, 1.3vw, 1.3rem);
-}
-
-.vault-page__hero .section-description {
-  max-width: 640px;
-  font-size: 0.96rem;
+  gap: var(--section-gap);
 }
 
 .vault-page__search-form {
@@ -252,7 +197,7 @@ await loadCategoryList()
 
 .vault-page__content {
   display: grid;
-  gap: 20px;
+  gap: var(--section-gap);
 }
 
 .vault-page__result-toolbar {
@@ -291,10 +236,10 @@ await loadCategoryList()
   display: grid;
   grid-template-columns: minmax(220px, 1.4fr) minmax(120px, 0.8fr) minmax(180px, 1fr) auto;
   align-items: center;
-  gap: 16px;
+  gap: var(--section-gap);
   min-height: 76px;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(176, 195, 255, 0.12);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .vault-page__list-row:last-child {
@@ -351,23 +296,13 @@ await loadCategoryList()
 
 .vault-page__list-empty-category {
   color: var(--color-text-muted);
-  background: rgba(176, 195, 255, 0.1);
+  background: var(--color-surface-muted);
 }
 
 .vault-page__list-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-
-.vault-page__empty-state {
-  display: grid;
-  gap: 14px;
-  justify-items: start;
-}
-
-.vault-page__empty-state h2 {
-  margin: 0;
 }
 
 @media (max-width: 960px) {
@@ -386,21 +321,7 @@ await loadCategoryList()
 
 @media (max-width: 768px) {
   .vault-page {
-    gap: 16px;
-  }
-
-  .vault-page__hero,
-  .vault-page__empty-state {
-    padding: 16px;
-  }
-
-  .vault-page__hero-header {
-    flex-direction: column;
-  }
-
-  .vault-page__hero-actions {
-    width: 100%;
-    justify-content: flex-start;
+    gap: var(--section-gap);
   }
 
   .vault-page__grid {
@@ -428,15 +349,6 @@ await loadCategoryList()
     align-items: center;
   }
 
-  .vault-page__search-form :deep(.base-button:last-child) {
-    grid-column: 1 / -1;
-  }
 }
 
-@media (max-width: 420px) {
-  .vault-page__hero,
-  .vault-page__empty-state {
-    padding: 14px;
-  }
-}
 </style>

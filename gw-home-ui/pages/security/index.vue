@@ -76,15 +76,9 @@ await loadOtpStatus()
 </script>
 
 <template>
-  <main class="page-container security-page">
+  <main class="page-container page-stack security-page">
     <section class="security-page__hero content-panel page-panel-padding-lg page-hero-split">
-      <div>
-        <p class="security-page__eyebrow">Security</p>
-        <h1 class="section-title">2차 인증 설정</h1>
-        <p class="section-description">
-          로그인 시 Google Authenticator 호환 OTP 코드를 한 번 더 확인하도록 설정할 수 있습니다.
-        </p>
-      </div>
+      <CommonBasePageHeader title="2차 인증 설정" eyebrow="Security" description="로그인 시 Google Authenticator 호환 OTP 코드를 한 번 더 확인하도록 설정할 수 있습니다." />
 
       <div class="security-page__status-card page-info-card">
         <span>현재 상태</span>
@@ -144,24 +138,7 @@ await loadOtpStatus()
 </template>
 
 <style scoped>
-.security-page {
-  display: grid;
-  gap: 24px;
-}
-
-.security-page__eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-accent);
-  font-weight: 700;
-}
-
-@media (max-width: 768px) {
-  .security-page {
-    gap: 16px;
-  }
-
-  .security-page__section-header {
-    margin-bottom: 0;
-  }
+@media (max-width: 767px) {
+  .security-page__section-header { margin-bottom: 0; }
 }
 </style>

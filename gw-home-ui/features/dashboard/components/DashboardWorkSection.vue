@@ -14,7 +14,7 @@ defineProps<{
     <div class="dashboard-section__header">
       <div>
         <h2>활성화된 업무내역</h2>
-        <p class="message-muted">최근 사용 기준 4건</p>
+        <p class="message-muted">최근 수정 기준 4건</p>
       </div>
       <CommonBaseButton variant="secondary" to="/work">
         전체
@@ -35,7 +35,7 @@ defineProps<{
           <span>{{ getWorkStatusLabel(workUnit.status) }}</span>
         </div>
         <p>{{ workUnit.category || '카테고리 없음' }}</p>
-        <small>사용 {{ workUnit.useCount }}회 · 최근 {{ formatDate(workUnit.lastUsedAt) }}</small>
+        <small>최근 수정 {{ formatDate(workUnit.updatedAt) }}</small>
       </article>
     </div>
     <p v-else class="message-muted">
@@ -46,12 +46,11 @@ defineProps<{
 
 <style scoped>
 .dashboard-section {
-  padding: 24px;
-  background: linear-gradient(180deg, rgba(11, 24, 46, 0.54) 0%, rgba(9, 20, 38, 0.42) 100%);
-  border-color: rgba(176, 210, 255, 0.14);
+  padding: var(--panel-padding);
+  background: var(--color-surface);
+  border-color: var(--color-border);
   box-shadow:
-    0 16px 34px rgba(3, 12, 28, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    var(--shadow-soft);
   backdrop-filter: blur(18px) saturate(125%);
   -webkit-backdrop-filter: blur(18px) saturate(125%);
 }
@@ -60,7 +59,7 @@ defineProps<{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--section-gap);
   margin-bottom: 16px;
 }
 
@@ -81,11 +80,11 @@ defineProps<{
 .dashboard-work-list__item {
   display: grid;
   gap: 6px;
-  padding: 14px 16px;
-  border: 1px solid rgba(166, 214, 255, 0.1);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.018) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 10px var(--card-padding);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .dashboard-work-list__header {

@@ -2,9 +2,11 @@
 const props = withDefaults(defineProps<{
   page?: number | null
   totalPages?: number | null
+  disabled?: boolean
 }>(), {
   page: 1,
-  totalPages: 1
+  totalPages: 1,
+  disabled: false
 })
 
 const emit = defineEmits<{
@@ -22,20 +24,20 @@ function normalizePageValue(value: number | null | undefined, fallback: number):
 
 const safeTotalPages = computed(() => normalizePageValue(props.totalPages, 1))
 const safePage = computed(() => Math.min(normalizePageValue(props.page, 1), safeTotalPages.value))
-const isPreviousDisabled = computed(() => safePage.value <= 1)
-const isNextDisabled = computed(() => safePage.value >= safeTotalPages.value)
+const isPreviousDisabled = computed(() => props.disabled || safePage.value <= 1)
+const isNextDisabled = computed(() => props.disabled || safePage.value >= safeTotalPages.value)
 </script>
 
 <template>
-  <div class="base-pagination">
+  <nav class="base-pagination" aria-label="페이지 이동">
     <CommonBaseButton variant="secondary" :disabled="isPreviousDisabled" @click="emit('previous')">
       이전
     </CommonBaseButton>
-    <span>{{ safePage }} / {{ safeTotalPages }}</span>
+    <span role="status" aria-live="polite">{{ safePage }} / {{ safeTotalPages }}</span>
     <CommonBaseButton variant="secondary" :disabled="isNextDisabled" @click="emit('next')">
       다음
     </CommonBaseButton>
-  </div>
+  </nav>
 </template>
 
 <style scoped>
@@ -45,5 +47,6 @@ const isNextDisabled = computed(() => safePage.value >= safeTotalPages.value)
   align-items: center;
   gap: 12px;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
 </style>

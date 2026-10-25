@@ -36,32 +36,26 @@ await loadNoticeList()
 </script>
 
 <template>
-  <main class="page-container notice-admin-page">
+  <main class="page-container page-stack notice-admin-page">
     <section class="content-panel notice-admin-page__panel page-panel-padding-md">
-      <div class="notice-admin-page__header">
-        <div>
-          <p class="notice-admin-page__eyebrow">Admin</p>
-          <h1 class="section-title">공지관리</h1>
-        </div>
-        <CommonBaseButton @click="openCreateModal">
-          공지 등록
-        </CommonBaseButton>
-      </div>
+      <CommonBasePageHeader title="공지관리" eyebrow="Admin">
+        <template #actions>
+          <CommonBaseButton @click="openCreateModal">공지 등록</CommonBaseButton>
+        </template>
+      </CommonBasePageHeader>
     </section>
 
     <section class="content-panel notice-admin-page__panel page-panel-padding-md">
       <div class="notice-admin-page__toolbar">
         <form class="notice-admin-page__search" @submit.prevent="handleSearch">
-          <input v-model="keyword" class="input-field" type="search" placeholder="공지 제목 검색">
+          <input v-model="keyword" class="input-field" type="search" aria-label="공지 제목 검색" placeholder="공지 제목 검색">
           <CommonBaseButton type="submit" variant="secondary">
             검색
           </CommonBaseButton>
         </form>
       </div>
 
-      <p v-if="isLoading" class="message-muted">
-        공지 목록을 불러오는 중입니다.
-      </p>
+      <CommonBaseState v-if="isLoading" state="loading" message="공지 목록을 불러오는 중입니다." />
 
       <div v-else class="notice-admin-page__list">
         <article
@@ -81,33 +75,20 @@ await loadNoticeList()
             <CommonBaseButton variant="secondary" size="small" @click="startEdit(notice.noticeUuid)">
               수정
             </CommonBaseButton>
-            <button
-              type="button"
-              class="notice-admin-page__detail-link"
-              @click="openPreview(notice.noticeUuid)"
-            >
+            <CommonBaseButton variant="secondary" size="small" @click="openPreview(notice.noticeUuid)">
               미리보기
-            </button>
+            </CommonBaseButton>
             <CommonBaseButton variant="danger" size="small" @click="handleDelete(notice.noticeUuid)">
               삭제
             </CommonBaseButton>
           </div>
         </article>
 
-        <p v-if="noticeList.length === 0" class="message-muted">
-          등록된 공지사항이 없습니다.
-        </p>
+        <CommonBaseState v-if="noticeList.length === 0" state="empty" message="등록된 공지사항이 없습니다." />
       </div>
 
-      <div class="notice-admin-page__pagination">
-        <CommonBaseButton variant="secondary" :disabled="page <= 1" @click="movePage(page - 1)">
-          이전
-        </CommonBaseButton>
-        <span>{{ page }} / {{ totalPages || 1 }}</span>
-        <CommonBaseButton variant="secondary" :disabled="page >= totalPages" @click="movePage(page + 1)">
-          다음
-        </CommonBaseButton>
-      </div>
+      <CommonBasePagination :page="page" :total-pages="totalPages" :disabled="isLoading"
+        @previous="movePage(page - 1)" @next="movePage(page + 1)" />
     </section>
 
     <CommonBaseModal
@@ -154,31 +135,10 @@ await loadNoticeList()
 </template>
 
 <style scoped>
-.notice-admin-page {
-  display: grid;
-  gap: 24px;
-}
-
-.notice-admin-page__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.notice-admin-page__eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .notice-admin-page__form,
 .notice-admin-page__list {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .notice-admin-page__field {
@@ -193,7 +153,6 @@ await loadNoticeList()
 
 .notice-admin-page__actions,
 .notice-admin-page__toolbar,
-.notice-admin-page__pagination,
 .notice-admin-page__item-actions {
   display: flex;
   align-items: center;
@@ -219,35 +178,16 @@ await loadNoticeList()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  gap: var(--section-gap);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
 }
 
 .notice-admin-page__item-main {
   display: grid;
   gap: 8px;
-}
-
-.notice-admin-page__detail-link {
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.04);
-  font: inherit;
-  cursor: pointer;
-}
-
-.notice-admin-page__detail-link:hover {
-  border-color: rgba(147, 210, 255, 0.3);
-}
-
-.notice-admin-page__pagination {
-  justify-content: center;
-  margin-top: 18px;
 }
 
 @media (max-width: 768px) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AdminAccountSelectField from './AdminAccountSelectField.vue'
 import type { AccountRole, AccountStatus } from '~/types/admin'
 import type { AdminAccountFilterState } from '~/features/admin/types/admin-account-management'
 
@@ -70,7 +71,7 @@ const handleStatusSelect = (value: string) => {
   display: grid;
   grid-template-columns: minmax(220px, 1.6fr) minmax(140px, 0.8fr) minmax(140px, 0.8fr) auto;
   align-items: end;
-  gap: 16px;
+  gap: var(--section-gap);
   margin-top: 18px;
 }
 

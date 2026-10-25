@@ -145,13 +145,14 @@ onMounted(async () => {
   <main class="login-page">
     <section class="login-page__shell">
       <header class="login-page__hero">
-        <p class="login-page__brand">Glass World</p>
-        <p class="login-page__subtitle">유리 세계에 오신 것을 환영합니다</p>
+        <p class="login-page__eyebrow">YOUR PERSONAL WORKSPACE</p>
+        <h1 class="login-page__brand">Glass World</h1>
+        <p class="login-page__subtitle">일상을 정리하는 나만의 업무 공간</p>
       </header>
 
       <div class="login-card">
         <p class="login-card__description">
-          🌏Wellcome...
+          로그인하고 내 공간을 이어가세요.
         </p>
         <AuthLoginForm
           v-if="loginStep === 'credentials'"
@@ -191,129 +192,18 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.login-page {
-  flex: 1;
-  width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 24px;
-  overflow: hidden;
-  isolation: isolate;
-  background: transparent;
-}
-
-.login-page::before,
-.login-page::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-}
-
-.login-page::before {
-  inset: 0;
-  background: linear-gradient(180deg, rgba(10, 20, 42, 0.02) 0%, rgba(10, 20, 42, 0.14) 100%);
-  opacity: 0.72;
-}
-
-.login-page::after {
-  inset: -12%;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(161, 228, 255, 0.24) 0%, rgba(161, 228, 255, 0) 20%),
-    radial-gradient(circle at 78% 20%, rgba(138, 200, 255, 0.18) 0%, rgba(138, 200, 255, 0) 20%),
-    radial-gradient(circle at 52% 82%, rgba(105, 238, 224, 0.16) 0%, rgba(105, 238, 224, 0) 22%);
-  filter: blur(46px);
-  opacity: 0.82;
-}
-
-.login-page__shell {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 540px);
-  display: grid;
-  gap: 24px;
-}
-
-.login-page__hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
-}
-
-.login-page__brand {
-  margin: 0;
-  color: #ffffff;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3.2rem, 10vw, 5.5rem);
-  font-weight: 700;
-  white-space: nowrap;
-  letter-spacing: 0.08em;
-  text-shadow:
-    0 0 18px rgba(190, 214, 255, 0.36),
-    0 0 44px rgba(100, 116, 255, 0.22),
-    0 12px 36px rgba(7, 30, 52, 0.55);
-}
-
-.login-page__subtitle {
-  margin: 0;
-  color: rgba(203, 220, 255, 0.8);
-  font-size: clamp(1rem, 2.8vw, 1.2rem);
-  letter-spacing: 0.18em;
-}
-
-.login-card {
-  width: min(100%, 420px);
-  justify-self: center;
-  padding: 26px;
-  border: 1px solid rgba(168, 191, 255, 0.26);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(17, 27, 58, 0.86) 0%, rgba(10, 17, 40, 0.82) 100%);
-  box-shadow:
-    0 30px 80px rgba(2, 8, 24, 0.62),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 0 36px rgba(102, 101, 255, 0.14);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-}
-
-.login-card__description {
-  margin: 0 0 20px;
-  color: rgba(219, 241, 255, 0.72);
-  line-height: 1.6;
-  text-align: center;
-}
-
-.login-page__copyright {
-  margin: -8px 0 0;
-  color: rgba(219, 241, 255, 0.46);
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  text-align: center;
-}
-
-@media (max-width: 768px) {
-  .login-page {
-    padding: 20px 16px;
-  }
-
-  .login-page__shell {
-    gap: 20px;
-  }
-
-  .login-card {
-    padding: 22px 18px;
-  }
-
-  .login-card__description {
-    margin-bottom: 18px;
-    font-size: 0.95rem;
-  }
+.login-page { display: grid; flex: 1; place-items: center; width: 100%; min-height: 100vh; min-height: 100dvh; padding: 48px var(--panel-padding); }
+.login-page__shell { display: grid; gap: var(--section-gap); width: min(100%, 420px); }
+.login-page__hero { display: grid; gap: 12px; text-align: center; }
+.login-page__eyebrow { margin: 0; color: var(--color-primary); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.16em; }
+.login-page__brand { margin: 0; color: var(--color-text); font-size: clamp(2rem, 8vw, 2.75rem); font-weight: 750; letter-spacing: -0.055em; line-height: 1.2; }
+.login-page__subtitle { margin: 0; color: var(--color-text-muted); font-size: 0.9375rem; }
+.login-card { min-width: 0; padding: var(--panel-padding-large); border: 1px solid var(--color-border); border-radius: var(--radius-large); background: var(--color-surface); box-shadow: var(--shadow-soft); }
+.login-card__description { margin: 0 0 24px; color: var(--color-text-muted); font-size: 0.875rem; text-align: center; }
+.login-page__copyright { margin: 0; color: var(--color-text-muted); font-size: 0.75rem; text-align: center; }
+@media (max-width: 767px) {
+  .login-page { padding: max(var(--panel-padding), env(safe-area-inset-top)) max(var(--page-gutter), env(safe-area-inset-left)) max(var(--panel-padding), env(safe-area-inset-bottom)) max(var(--page-gutter), env(safe-area-inset-right)); }
+  .login-page__shell { gap: var(--section-gap); }
+  .login-card { padding: var(--panel-padding) var(--card-padding); }
 }
 </style>

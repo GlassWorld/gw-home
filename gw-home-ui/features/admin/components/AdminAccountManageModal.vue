@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountRole, AccountStatus, AdminAccountDetail } from '~/types/admin'
+import AdminAccountSelectField from './AdminAccountSelectField.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -173,7 +174,7 @@ const handleStatusSelect = (value: string) => {
 
 <style scoped>
 .admin-account-manage-modal__loading {
-  padding: 28px 0;
+  padding: var(--panel-padding-large) 0;
   color: var(--color-text-muted);
   text-align: center;
 }
@@ -192,10 +193,10 @@ const handleStatusSelect = (value: string) => {
 .admin-account-manage-modal__card {
   display: grid;
   gap: 8px;
-  padding: 16px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
-  border-radius: 18px;
-  background: rgba(8, 21, 38, 0.62);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 .admin-account-manage-modal__card span {
@@ -205,25 +206,25 @@ const handleStatusSelect = (value: string) => {
 
 .admin-account-manage-modal__card strong {
   overflow-wrap: anywhere;
-  color: rgba(232, 244, 255, 0.96);
+  color: var(--color-text);
   font-size: 0.98rem;
 }
 
 .admin-account-manage-modal__controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .admin-account-manage-modal__otp-policy {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--section-gap);
   padding: 16px 18px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
-  border-radius: 18px;
-  background: rgba(8, 21, 38, 0.62);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 .admin-account-manage-modal__otp-policy-label {

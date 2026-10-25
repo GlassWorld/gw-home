@@ -76,7 +76,7 @@ function handleSubmit() {
           maxlength="200"
           required
           :value="modelValue.title"
-          placeholder="예: 일일보고 기능 설계"
+          placeholder="예: 모바일 할 일 화면 설계"
           @input="updateField('title', ($event.target as HTMLInputElement).value)"
         >
       </label>
@@ -121,7 +121,7 @@ function handleSubmit() {
           <div>
             <span>연결 프로젝트</span>
             <p class="work-unit-form__git-description">
-              프로젝트를 연결하면 일일보고 작성 시 해당 프로젝트들의 커밋을 불러올 수 있습니다.
+              업무에 관련된 Git 프로젝트를 연결해 함께 관리할 수 있습니다.
             </p>
           </div>
           <CommonBaseButton variant="secondary" size="small" type="button" to="/work/git-accounts">
@@ -184,7 +184,7 @@ function handleSubmit() {
 .work-unit-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .work-unit-form__field {
@@ -207,16 +207,16 @@ function handleSubmit() {
   width: 100%;
   min-height: 112px;
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
   color: var(--color-text);
   resize: vertical;
   font: inherit;
 }
 
 .work-unit-form__textarea:focus {
-  outline: 2px solid rgba(110, 193, 255, 0.22);
+  outline: 2px solid var(--color-focus);
   border-color: var(--color-primary);
 }
 
@@ -247,10 +247,10 @@ function handleSubmit() {
 .work-unit-form__git-card {
   display: grid;
   gap: 12px;
-  padding: 16px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-surface-muted);
 }
 
 .work-unit-form__git-card--selectable {

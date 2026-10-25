@@ -88,7 +88,7 @@ const emit = defineEmits<{
 }
 
 .settings-section__field span {
-  color: rgba(147, 210, 255, 0.82);
+  color: var(--color-text-muted);
   font-weight: 700;
 }
 </style>

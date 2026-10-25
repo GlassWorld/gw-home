@@ -66,14 +66,14 @@ const emit = defineEmits<{
 }
 
 .login-otp-panel__header p {
-  color: rgba(219, 241, 255, 0.76);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
 .login-otp-panel :deep(.otp-code-input) {
-  border-color: rgba(147, 210, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .login-otp-panel__actions {

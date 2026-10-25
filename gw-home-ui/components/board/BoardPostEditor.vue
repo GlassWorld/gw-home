@@ -280,12 +280,12 @@ function handleSubmit() {
 <style scoped>
 .board-editor {
   display: grid;
-  gap: 20px;
+  gap: var(--section-gap);
 }
 
 .board-editor__form-grid {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .board-editor__field {
@@ -321,7 +321,7 @@ function handleSubmit() {
 }
 
 .board-editor__attachment-panel {
-  padding: 20px;
+  padding: var(--panel-padding);
 }
 
 .board-editor__attachment-list {
@@ -334,8 +334,8 @@ function handleSubmit() {
 
 .board-editor__attachment-item {
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.16);
-  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
 }
 
 .board-editor__upload-label {
@@ -351,7 +351,7 @@ function handleSubmit() {
 
 @media (max-width: 768px) {
   .board-editor {
-    gap: 16px;
+    gap: var(--section-gap);
   }
 
   .board-editor__textarea {
@@ -393,9 +393,9 @@ function handleSubmit() {
     justify-content: center;
     min-height: 42px;
     padding: 0 14px;
-    border: 1px solid rgba(176, 195, 255, 0.26);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-small);
-    background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
+    background: var(--color-surface);
   }
 }
 

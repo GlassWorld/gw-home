@@ -10,6 +10,7 @@ const router = useRouter()
 const workUnitUuid = computed(() => String(route.params.workUnitUuid ?? ''))
 
 const {
+  getTodoByUuid,
   workUnit,
   todoTree,
   filteredTodos,
@@ -47,6 +48,7 @@ const statusLabelMap: Record<'TODO' | 'IN_PROGRESS' | 'DONE' | 'DELAYED', string
 async function load() {
   try {
     await loadPage()
+    openLinkedTodo()
   } catch {
     router.push('/work/todos')
   }
@@ -65,7 +67,20 @@ function handleOpenDetail(todo: WorkTodo) {
 function handleCloseDetail() {
   isDetailVisible.value = false
   selectedTodo.value = null
+  if (route.query.todo) {
+    const query = { ...route.query }
+    delete query.todo
+    void router.replace({ query })
+  }
 }
+
+// 메일 링크로 접근한 본인 TODO를 기존 트리 상세에서 연다.
+function openLinkedTodo() {
+  if (typeof route.query.todo !== 'string') return
+  const todo = getTodoByUuid(route.query.todo)
+  if (todo) handleOpenDetail(todo)
+}
+watch(() => route.query.todo, openLinkedTodo)
 
 function handleEditFromDetail(todo: WorkTodo) {
   handleCloseDetail()
@@ -102,7 +117,7 @@ onMounted(() => {
         <CommonBaseButton variant="secondary" to="/work/todos">
           목록으로
         </CommonBaseButton>
-        <CommonBaseButton @click="startCreateRootTodo">
+        <CommonBaseButton :disabled="isLoading || isSaving" @click="startCreateRootTodo">
           루트 TODO 추가
         </CommonBaseButton>
       </div>
@@ -131,7 +146,7 @@ onMounted(() => {
       <div class="work-todo-detail-page__panel-header">
         <div>
           <h2 class="section-title">연관 TODO 트리</h2>
-          <p class="section-description">체크박스, 진행률, 상태, 일정 정보를 기준으로 업무 세부 작업을 관리합니다.</p>
+          <p class="section-description">할 일 제목을 눌러 내용·일정을 확인하고 최하위 항목을 완료할 수 있습니다.</p>
         </div>
 
         <div class="work-todo-detail-page__controls">
@@ -199,7 +214,7 @@ onMounted(() => {
 <style scoped>
 .work-todo-detail-page {
   display: grid;
-  gap: 24px;
+  gap: var(--section-gap);
 }
 
 .work-todo-detail-page__hero,
@@ -242,9 +257,9 @@ onMounted(() => {
   display: grid;
   gap: 6px;
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
 }
 
 .work-todo-detail-page__summary span {
@@ -264,7 +279,7 @@ onMounted(() => {
 .work-todo-detail-page__panel-header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--section-gap);
   align-items: flex-start;
 }
 
@@ -284,9 +299,9 @@ onMounted(() => {
   display: grid;
   gap: 12px;
   justify-items: start;
-  border: 1px dashed rgba(147, 210, 255, 0.22);
+  border: 1px dashed var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-surface-muted);
 }
 
 @media (max-width: 960px) {

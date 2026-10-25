@@ -50,7 +50,7 @@ const renderedContent = computed(() => renderMarkdown(props.notice?.content))
 <style scoped>
 .notice-detail-modal__header {
   padding-bottom: 18px;
-  border-bottom: 1px solid rgba(147, 210, 255, 0.14);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .notice-detail-modal__content {
@@ -69,8 +69,8 @@ const renderedContent = computed(() => renderMarkdown(props.notice?.content))
 .notice-detail-modal__content:deep(code) {
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -78,9 +78,9 @@ const renderedContent = computed(() => renderMarkdown(props.notice?.content))
   margin: 12px 0 0;
   padding: 14px;
   overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
 }
 
 .notice-detail-modal__content:deep(pre code) {
@@ -89,7 +89,7 @@ const renderedContent = computed(() => renderMarkdown(props.notice?.content))
 }
 
 .notice-detail-modal__content:deep(a) {
-  color: #8bd0ff;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 

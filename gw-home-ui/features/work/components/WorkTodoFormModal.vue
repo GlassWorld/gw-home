@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { SaveWorkTodoPayload } from '../types/work.types'
+import { useId } from 'vue'
+import type { SaveWorkTodoPayload, WorkUnitOption } from '../types/work.types'
 
 const props = defineProps<{
   visible: boolean
@@ -7,13 +8,18 @@ const props = defineProps<{
   isSubmitting: boolean
   isEditing: boolean
   parentTitle: string
+  workUnitOptions?: WorkUnitOption[]
+  workUnitUuid?: string
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: SaveWorkTodoPayload]
   submit: []
   close: []
+  'update:workUnitUuid': [value: string]
 }>()
+
+const formId = `todo-form-${useId()}`
 
 function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWorkTodoPayload[K]) {
   emit('update:modelValue', {
@@ -27,11 +33,23 @@ function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWor
   <CommonBaseModal
     :visible="visible"
     eyebrow="Work Todo"
-    :title="isEditing ? '세부 작업 수정' : '세부 작업 추가'"
+    :title="isEditing ? '할 일 수정' : '할 일 추가'"
+    :dismissible="!isSubmitting"
     width="min(760px, 92vw)"
     @close="emit('close')"
   >
-    <form class="work-todo-form" @submit.prevent="emit('submit')">
+    <form :id="formId" @submit.prevent="emit('submit')">
+      <fieldset class="work-todo-form" :disabled="isSubmitting">
+      <label v-if="workUnitOptions" class="work-todo-form__field work-todo-form__field--wide">
+        <span>소속 업무</span>
+        <select class="input-field" required :value="workUnitUuid" :disabled="isEditing || !!modelValue.parentTodoUuid"
+          @change="emit('update:workUnitUuid', ($event.target as HTMLSelectElement).value)">
+          <option value="" disabled>업무를 선택하세요</option>
+          <option v-for="unit in workUnitOptions" :key="unit.workUnitUuid" :value="unit.workUnitUuid">
+            {{ unit.title }}{{ unit.useYn === 'N' ? ' (비활성)' : '' }}
+          </option>
+        </select>
+      </label>
       <p v-if="parentTitle" class="work-todo-form__parent">
         상위 TODO: <strong>{{ parentTitle }}</strong>
       </p>
@@ -76,6 +94,7 @@ function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWor
           class="input-field"
           type="date"
           :value="modelValue.dueDate ?? ''"
+          :min="modelValue.startDate || undefined"
           @input="updateField('dueDate', ($event.target as HTMLInputElement).value || null)"
         >
       </label>
@@ -92,14 +111,15 @@ function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWor
           @input="updateField('sortOrder', Number(($event.target as HTMLInputElement).value) || null)"
         >
       </label>
+      </fieldset>
     </form>
 
     <template #actions>
       <CommonBaseButton variant="secondary" type="button" :disabled="isSubmitting" @click="emit('close')">
         취소
       </CommonBaseButton>
-      <CommonBaseButton type="button" :disabled="isSubmitting" @click="emit('submit')">
-        {{ isEditing ? '수정' : '추가' }}
+      <CommonBaseButton type="submit" :form="formId" :disabled="isSubmitting">
+        {{ isSubmitting ? '저장 중…' : isEditing ? '수정' : '추가' }}
       </CommonBaseButton>
     </template>
   </CommonBaseModal>
@@ -107,9 +127,13 @@ function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWor
 
 <style scoped>
 .work-todo-form {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .work-todo-form__parent {
@@ -119,6 +143,7 @@ function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWor
 }
 
 .work-todo-form__field {
+  min-width: 0;
   display: grid;
   gap: 8px;
 }
@@ -137,9 +162,9 @@ function updateField<K extends keyof SaveWorkTodoPayload>(key: K, value: SaveWor
   width: 100%;
   min-height: 120px;
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
   color: var(--color-text);
   resize: vertical;
   font: inherit;

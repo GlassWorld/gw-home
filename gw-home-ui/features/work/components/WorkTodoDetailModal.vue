@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { WorkTodo } from '../types/work.types'
+import { formatTodoCompletion } from '../utils/work-todo'
+import WorkTodoReminderPanel from './WorkTodoReminderPanel.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -36,6 +38,7 @@ const scheduleText = computed(() => {
     :visible="visible"
     eyebrow="Work Todo"
     :title="todo?.title ?? '세부 작업 상세'"
+    :dismissible="!isSaving"
     width="min(760px, 92vw)"
     @close="emit('close')"
   >
@@ -63,6 +66,12 @@ const scheduleText = computed(() => {
         <h3>설명</h3>
         <p>{{ todo.description || '설명 없음' }}</p>
       </section>
+      <section v-if="todo.leaf && todo.completed" class="work-todo-detail-modal__panel">
+        <h3>완료 시각</h3>
+        <p>{{ formatTodoCompletion(todo.completedAt) }}</p>
+      </section>
+
+      <WorkTodoReminderPanel v-if="visible && todo.leaf" :key="todo.todoUuid" :todo-uuid="todo.todoUuid" :completed="todo.completed" :disabled="isSaving" />
 
       <section class="work-todo-detail-modal__panel">
         <h3>트리 정보</h3>
@@ -127,7 +136,7 @@ const scheduleText = computed(() => {
 <style scoped>
 .work-todo-detail-modal {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .work-todo-detail-modal__summary {
@@ -139,14 +148,14 @@ const scheduleText = computed(() => {
 .work-todo-detail-modal__summary div,
 .work-todo-detail-modal__panel {
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.16);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
 }
 
 .work-todo-detail-modal__summary span {
   display: block;
-  color: rgba(147, 210, 255, 0.72);
+  color: var(--color-text-muted);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -166,6 +175,8 @@ const scheduleText = computed(() => {
 }
 
 .work-todo-detail-modal__panel p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   margin: 0;
   color: var(--color-text-muted);
   line-height: 1.6;
@@ -181,7 +192,7 @@ const scheduleText = computed(() => {
 
 .work-todo-detail-modal__meta em {
   font-style: normal;
-  color: rgba(147, 210, 255, 0.72);
+  color: var(--color-text-muted);
   font-weight: 700;
   margin-right: 4px;
 }
@@ -193,7 +204,7 @@ const scheduleText = computed(() => {
   min-height: 32px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(8, 23, 42, 0.42);
+  background: var(--color-surface-muted);
 }
 
 .work-todo-detail-modal__children li {

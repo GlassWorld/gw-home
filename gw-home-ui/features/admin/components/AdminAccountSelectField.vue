@@ -82,10 +82,10 @@ const emit = defineEmits<{
   justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
-  border: 1px solid rgba(147, 210, 255, 0.22);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
-  background: linear-gradient(180deg, rgba(17, 43, 74, 0.98), rgba(8, 23, 42, 0.94));
-  color: rgba(232, 244, 255, 0.96);
+  background: var(--color-surface);
+  color: var(--color-text);
   text-align: left;
 }
 
@@ -93,8 +93,8 @@ const emit = defineEmits<{
   content: '';
   width: 10px;
   height: 10px;
-  border-right: 2px solid rgba(216, 241, 255, 0.88);
-  border-bottom: 2px solid rgba(216, 241, 255, 0.88);
+  border-right: 2px solid var(--color-border-strong);
+  border-bottom: 2px solid var(--color-border-strong);
   transform: translateY(-2px) rotate(45deg);
   flex-shrink: 0;
   transition: transform 0.18s ease;
@@ -118,12 +118,11 @@ const emit = defineEmits<{
   display: grid;
   gap: 6px;
   padding: 10px;
-  border: 1px solid rgba(147, 210, 255, 0.2);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(13, 33, 58, 0.98), rgba(6, 18, 34, 0.98));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
   box-shadow:
-    0 18px 40px rgba(2, 8, 18, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    var(--shadow-soft);
 }
 
 .admin-account-select-field__menu--top {
@@ -135,17 +134,17 @@ const emit = defineEmits<{
   min-height: 40px;
   padding: 0 12px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-small);
   background: transparent;
-  color: rgba(232, 244, 255, 0.94);
+  color: var(--color-text);
   text-align: left;
   transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .admin-account-select-field__option:hover,
 .admin-account-select-field__option--active {
-  border-color: rgba(124, 209, 255, 0.26);
-  background: rgba(110, 193, 255, 0.12);
+  border-color: var(--color-border);
+  background: var(--color-primary-soft);
   transform: translateY(-1px);
 }
 </style>

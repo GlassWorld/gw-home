@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -33,51 +34,56 @@ public class WorkTodoController {
     @GetMapping
     public ApiResponse<WorkTodoTreeResponse> getWorkTodoTree(
             Principal principal,
+            @RequestParam(defaultValue = "Asia/Seoul") String timeZone,
             @PathVariable String workUnitUuid
     ) {
-        return ApiResponse.ok(workTodoService.getWorkTodoTree(getLoginId(principal), workUnitUuid));
+        return ApiResponse.ok(workTodoService.getWorkTodoTree(getLoginId(principal), workUnitUuid, timeZone));
     }
 
     // 로그인 사용자가 업무 TODO를 추가한다.
     @PostMapping
     public ApiResponse<WorkTodoTreeResponse> createWorkTodo(
             Principal principal,
+            @RequestParam(defaultValue = "Asia/Seoul") String timeZone,
             @PathVariable String workUnitUuid,
             @Valid @RequestBody CreateWorkTodoRequest request
     ) {
-        return ApiResponse.ok(workTodoService.createWorkTodo(getLoginId(principal), workUnitUuid, request));
+        return ApiResponse.ok(workTodoService.createWorkTodo(getLoginId(principal), workUnitUuid, request, timeZone));
     }
 
     // 로그인 사용자가 업무 TODO를 수정한다.
     @PutMapping("/{todoUuid}")
     public ApiResponse<WorkTodoTreeResponse> updateWorkTodo(
             Principal principal,
+            @RequestParam(defaultValue = "Asia/Seoul") String timeZone,
             @PathVariable String workUnitUuid,
             @PathVariable String todoUuid,
             @Valid @RequestBody UpdateWorkTodoRequest request
     ) {
-        return ApiResponse.ok(workTodoService.updateWorkTodo(getLoginId(principal), workUnitUuid, todoUuid, request));
+        return ApiResponse.ok(workTodoService.updateWorkTodo(getLoginId(principal), workUnitUuid, todoUuid, request, timeZone));
     }
 
     // 로그인 사용자가 최하위 업무 TODO 완료 여부를 변경한다.
     @PutMapping("/{todoUuid}/completion")
     public ApiResponse<WorkTodoTreeResponse> updateWorkTodoCompletion(
             Principal principal,
+            @RequestParam(defaultValue = "Asia/Seoul") String timeZone,
             @PathVariable String workUnitUuid,
             @PathVariable String todoUuid,
             @Valid @RequestBody UpdateWorkTodoCompletionRequest request
     ) {
-        return ApiResponse.ok(workTodoService.updateWorkTodoCompletion(getLoginId(principal), workUnitUuid, todoUuid, request));
+        return ApiResponse.ok(workTodoService.updateWorkTodoCompletion(getLoginId(principal), workUnitUuid, todoUuid, request, timeZone));
     }
 
     // 로그인 사용자가 업무 TODO를 삭제한다.
     @DeleteMapping("/{todoUuid}")
     public ApiResponse<WorkTodoTreeResponse> deleteWorkTodo(
             Principal principal,
+            @RequestParam(defaultValue = "Asia/Seoul") String timeZone,
             @PathVariable String workUnitUuid,
             @PathVariable String todoUuid
     ) {
-        return ApiResponse.ok(workTodoService.deleteWorkTodo(getLoginId(principal), workUnitUuid, todoUuid));
+        return ApiResponse.ok(workTodoService.deleteWorkTodo(getLoginId(principal), workUnitUuid, todoUuid, timeZone));
     }
 
     private String getLoginId(Principal principal) {

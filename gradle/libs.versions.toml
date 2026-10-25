@@ -11,6 +11,7 @@ java-otp = "0.4.0"
 [libraries]
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-mail = { module = "org.springframework.boot:spring-boot-starter-mail" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-security-crypto = { module = "org.springframework.security:spring-security-crypto" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }

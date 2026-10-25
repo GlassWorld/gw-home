@@ -1,54 +1,37 @@
-# 개편된 문서 기준 기반 work 프런트 리팩토링 정렬 계획
+# work 프런트 구조 정렬 계획 — 리뉴얼에 통합
+
+- 정리일: 2026-10-25
+- 상태: 구조 기준 승계 / 후속 작업은 리뉴얼 계획으로 통합.
+- 검토: [work 구조 재사용 검토](../../review/work/review-work-feature-refactor.md)
+- 실행 기준: [리뉴얼 계획](../common/todo-project-renewal.md)
 
 ## Goal
 
-- 목적: `work` 프런트 리팩토링 결과를 현재 문서 기준에 맞게 정렬해, 페이지 책임 분리 이점을 유지하면서 구조 규칙과 실제 코드 배치를 일치시킨다.
+- 기존 work feature 구조를 유지하면서 모바일 할 일과 보고서 제거 요구를 반영한다.
 
 ## Scope
 
-- 포함:
-  - `gw-home-ui/pages/work/*`
-  - `gw-home-ui/features/work/*`
-  - `gw-home-ui/composables/useDailyReportApi.ts`
-  - `gw-home-ui/composables/useWeeklyReportApi.ts`
-  - `gw-home-ui/composables/useWorkGitApi.ts`
-  - `gw-home-ui/composables/useWorkUnitApi.ts`
-  - `gw-home-ui/types/work.ts`
-  - `docs/frontend/frontend-rules.md`
-  - 관련 review 문서
-- 제외:
-  - work 도메인 백엔드 API 변경
-  - 새로운 기능 추가
-  - `work` 외 다른 프런트 도메인 구조 개편
-  - 공통 UI 전면 재설계
+- 업무·TODO·Git feature 구조와 공용 API 진입점·feature 내부 타입 경계를 유지한다.
+- 보고서 전용 컴포넌트·API·타입은 제거 대상으로 전환한다.
+- 기존 “새 기능·백엔드·공통 UI 개편 제외” 조건은 이 과거 정렬 작업에만 해당하며 상위 리뉴얼을 제한하지 않는다.
 
 ## Current State
 
-- 현재 상태:
-  - `pages/work/*`는 얇은 엔트리 페이지 구조로 잘 정리되어 있다.
-  - 공용 API 진입점은 `composables/`에 두고, feature 내부 구현은 `features/work/api/*`에 두는 방향으로 문서 기준을 맞췄다.
-  - 컴포넌트 파일명은 저장소의 기존 PascalCase 관례를 유지하는 방향으로 문서 기준을 맞췄다.
-  - `DailyReportEditorPage` 중간 래퍼는 제거했고, create/edit 페이지는 `DailyReportWorkspace`를 직접 조합한다.
-  - `DailyReportFormModal`, `DailyReportDetailModal`, `WeeklyReportFormModal`, `WorkUnitForm`, `DailyReportWorkspace`와 workspace 하위 패널까지 `features/work/components`로 이동했다.
-  - 현재 work 관련 UI는 사실상 `features/work/components` 아래로 모였고, `components/work`는 비어 있다.
-- 제약:
-  - 기존 라우트 동작과 사용자 화면 동작을 깨면 안 된다.
-  - 문서와 코드 중 하나를 기준으로 정하면 나머지도 같은 방향으로 맞춰야 한다.
-  - 작업 범위는 “정렬”에 집중하고, 별도 기능 확장은 포함하지 않는다.
+- 업무·TODO·Git UI는 `features/work`에 유지하고 보고서 전용 UI는 3단계에서 제거했다.
+- `pages/work`는 feature UI 진입점이다. 공개·관리자 보고서 페이지와 대시보드의 보고서 연결은 제거했다.
+- `work.types.ts`에는 업무·TODO·Git 타입을 유지하고 보고서 전용 타입을 제거했다.
 
 ## Action Items
 
-1. 문서와 구조의 기준점을 지금처럼 유지한다.
-   - 공용 API 진입점은 `composables/`, feature-local 구현과 타입은 `features/work`에 둔다.
-   - 컴포넌트 파일명은 기존 디렉터리 관례를 유지하고, route 파일은 kebab-case 규칙을 유지한다.
-2. `DailyReportEditorPage`처럼 얇은 중간 래퍼는 계속 점검해 유지 이유가 약한 경우 계층을 줄인다.
-3. 정렬 작업 후 review 문서를 현재 상태 기준으로 갱신하고, 남은 예외가 있으면 명시한다.
-4. `##커밋` 시점에 빈 `components/work` 디렉터리 정리 여부를 함께 판단한다.
+- [x] 이전 구조 정렬 계획을 리뉴얼 계획과 연결한다.
+- [x] 기존 API 진입점과 feature 내부 구현 경계를 유지하며 TODO 화면을 확장한다.
+- [x] 상위 계획 3단계에서 보고서 전용 구현과 재노출 타입을 제거한다.
+- [x] 공통 UI·로직·스타일 분리와 유지 대상 업무·Git 흐름을 검증한다.
 
 ## Done Criteria
 
-- 문서와 실제 API 배치가 서로 같은 규칙을 가리킨다.
-- 파일 네이밍 규칙이 실제 저장소 관례와 충돌하지 않는다.
-- `pages/work/*`는 얇은 composition 역할을 유지한다.
-- `features/work`와 `components/work`의 책임 경계가 설명 가능할 정도로 명확해진다.
-- 후속 작업자가 `docs/frontend/frontend-rules.md`와 실제 코드 구조를 함께 봤을 때 탐색 경로가 충돌하지 않는다.
+- 페이지는 조합 중심이고, 공통화 근거와 feature 경계가 설명 가능하다.
+- 보고서 유지 전제와 새 제거 요구가 충돌하지 않는다.
+- 구현·검증 상태를 상위 리뉴얼 계획에서 관리한다.
+
+- 검증은 상위 리뉴얼 계획의 2·3단계 기록을 따른다. 실제 Git 원격 호출과 운영 DB 적용은 수행하지 않았다.

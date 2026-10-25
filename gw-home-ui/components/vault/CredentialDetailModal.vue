@@ -151,7 +151,7 @@ async function handleDelete() {
 .credential-detail {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--section-gap);
   margin: 0;
   min-width: 0;
 }
@@ -170,7 +170,7 @@ async function handleDelete() {
   flex: none;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(110, 193, 255, 0.12);
+  background: var(--color-primary-soft);
   color: var(--color-accent);
   font-size: 0.78rem;
   font-weight: 700;
@@ -189,11 +189,11 @@ async function handleDelete() {
 
 .credential-detail__item {
   min-width: 0;
-  padding: 16px;
+  padding: var(--card-padding);
   border-radius: var(--radius-medium);
-  background: rgba(7, 21, 39, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
 }
 
 .credential-detail__item--wide {
@@ -230,8 +230,8 @@ async function handleDelete() {
 .credential-detail__memo:deep(code) {
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(147, 210, 255, 0.12);
-  color: #a9dcff;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.92em;
 }
@@ -241,9 +241,9 @@ async function handleDelete() {
   margin: 12px 0 0;
   padding: 14px;
   overflow-x: auto;
-  border-radius: 12px;
-  background: rgba(3, 12, 24, 0.82);
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
 }
 
 .credential-detail__memo:deep(pre code) {
@@ -253,7 +253,7 @@ async function handleDelete() {
 }
 
 .credential-detail__memo:deep(a) {
-  color: #8bd0ff;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
@@ -278,7 +278,7 @@ async function handleDelete() {
   }
 
   .credential-detail__item {
-    padding: 14px;
+    padding: 10px;
   }
 
   .credential-detail__item dt {

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.work.WorkInsightsMapper">
+    <!-- 선택 기간·미지정 일정에 필요한 조상만 추가하며 UNION으로 순환 데이터도 종료한다. -->
+    <select id="selectGanttRows" resultType="WorkGanttRowJvo">
+        WITH RECURSIVE owned_todos AS (
+            <include refid="com.gw.infra.db.mapper.work.WorkTodoMapper.ownedWorkTodoSelect" />
+        ), matching AS (
+            SELECT uuid FROM owned_todos
+            WHERE (strt_dt IS NULL AND due_dt IS NULL)
+               OR (COALESCE(due_dt, strt_dt) &gt;= #{fromDate} AND COALESCE(strt_dt, due_dt) &lt;= #{toDate})
+        ), visible(uuid) AS (
+            SELECT uuid FROM matching
+            UNION
+            SELECT parent.uuid FROM visible child
+            JOIN owned_todos current ON current.uuid = child.uuid
+            JOIN owned_todos parent ON parent.uuid = current.prnt_todo_uuid
+                AND parent.work_unit_uuid = current.work_unit_uuid
+        )
+        SELECT t.*, NOT EXISTS (SELECT 1 FROM matching m WHERE m.uuid = t.uuid) AS context_only
+        FROM owned_todos t JOIN visible v ON v.uuid = t.uuid
+        ORDER BY t.work_unit_ttl, t.work_unit_uuid, t.sort_ord, t.created_at, t.idx
+        LIMIT 2001
+    </select>
+
+    <!-- 업무 전체의 최하위 현황과 알려진 일정 범위를 산출하며 완료 기간은 실적에만 적용한다. -->
+    <select id="selectUnitInsights" resultType="WorkInsightUnitJvo">
+        WITH owned_todos AS (
+            <include refid="com.gw.infra.db.mapper.work.WorkTodoMapper.ownedWorkTodoSelect" />
+        )
+        SELECT work_unit_uuid, work_unit_ttl AS ttl, work_unit_sts AS sts, work_unit_use_yn AS use_yn,
+               MIN(COALESCE(strt_dt, due_dt)) AS strt_dt, MAX(COALESCE(due_dt, strt_dt)) AS due_dt,
+               COUNT(*) FILTER (WHERE strt_dt IS NULL OR due_dt IS NULL) AS partial_count,
+               COUNT(*) FILTER (WHERE leaf) AS total_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'TODAY') AS today_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'UPCOMING') AS upcoming_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'OVERDUE') AS overdue_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'COMPLETED') AS completed_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'UNSCHEDULED') AS unscheduled_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'COMPLETED' AND cmpl_at IS NULL) AS unknown_completion_count,
+               COUNT(*) FILTER (WHERE leaf AND todo_group = 'COMPLETED' AND cmpl_at &gt;= #{fromInstant}
+                   AND cmpl_at &lt; #{beforeInstant}) AS period_completed_count
+        FROM owned_todos
+        GROUP BY work_unit_uuid, work_unit_ttl, work_unit_sts, work_unit_use_yn
+        ORDER BY work_unit_ttl, work_unit_uuid
+    </select>
+
+    <!-- 완료 순간의 현지 달력 날짜를 일·월요일 시작 주·월로 묶고 수정 시각은 사용하지 않는다. -->
+    <select id="selectCompletionBuckets" resultType="WorkCompletionBucketJvo">
+        <include refid="com.gw.infra.db.mapper.work.WorkTodoMapper.myWorkTodoSource" />
+        SELECT CAST(date_trunc(#{bucket}, cmpl_at AT TIME ZONE #{timeZone}) AS DATE) AS bucket_start,
+               COUNT(*) AS completed_count
+        FROM leaf_todos
+        WHERE sts = 'DONE' AND cmpl_at &gt;= #{fromInstant} AND cmpl_at &lt; #{beforeInstant}
+        GROUP BY bucket_start ORDER BY bucket_start
+    </select>
+</mapper>

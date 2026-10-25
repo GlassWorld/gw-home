@@ -1,3 +1,5 @@
+-- 보관 스키마: 주간보고 기능은 종료되었으며 기존 데이터는 보존한다.
+-- 앱은 이 테이블을 읽거나 쓰지 않는다. 물리 삭제·이관은 별도 승인 작업이다.
 CREATE TABLE tb_wrk_wkl_rpt (
     wrk_wkl_rpt_idx BIGSERIAL PRIMARY KEY,
     wrk_wkl_rpt_uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),

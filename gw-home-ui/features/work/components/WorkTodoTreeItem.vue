@@ -40,6 +40,7 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
             type="button"
             class="work-todo-item__toggle"
             :disabled="isSaving"
+            :aria-expanded="!isCollapsed"
             @click.stop="emit('toggleCollapse', todo.todoUuid)"
           >
             {{ isCollapsed ? '펼치기' : '접기' }}
@@ -48,7 +49,7 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
 
           <div class="work-todo-item__title-box">
             <div class="work-todo-item__title-main">
-              <strong>{{ todo.title }}</strong>
+              <button class="work-todo-item__title-button" type="button" :disabled="isSaving" @click.stop="emit('openDetail', todo)">{{ todo.title }}</button>
               <span class="work-todo-item__progress-text">{{ todo.progressRate }}%</span>
             </div>
             <div class="work-todo-item__progress-track" aria-hidden="true">
@@ -88,10 +89,10 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
 .work-todo-item__card {
   display: flex;
   gap: 12px;
-  padding: 12px 16px 12px calc(16px + (var(--todo-depth) * 24px));
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  padding: 12px var(--card-padding) 12px calc(var(--card-padding) + (var(--todo-depth) * var(--panel-padding)));
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-surface-muted);
   cursor: pointer;
 }
 
@@ -114,9 +115,9 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
 .work-todo-item__toggle {
   min-width: 50px;
   padding: 4px 8px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 10px;
-  background: rgba(110, 193, 255, 0.08);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-primary-soft);
   color: var(--color-text);
   cursor: pointer;
 }
@@ -144,7 +145,16 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
   min-width: 0;
 }
 
-.work-todo-item__title-main strong {
+.work-todo-item__title-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 44px;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -161,7 +171,7 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
   position: relative;
   height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-strong);
   overflow: hidden;
 }
 
@@ -170,7 +180,7 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
   inset: 0 auto 0 0;
   width: var(--todo-progress-rate);
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(110, 193, 255, 0.75), rgba(42, 176, 119, 0.82));
+  background: var(--color-success);
 }
 
 .work-todo-item__status {
@@ -185,23 +195,23 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
 }
 
 .work-todo-item__status--done {
-  background: rgba(42, 176, 119, 0.16);
-  color: #6fd8a3;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .work-todo-item__status--in_progress {
-  background: rgba(110, 193, 255, 0.12);
+  background: var(--color-primary-soft);
   color: var(--color-accent);
 }
 
 .work-todo-item__status--todo {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-surface-muted);
   color: var(--color-text-muted);
 }
 
 .work-todo-item__status--delayed {
-  background: rgba(224, 92, 92, 0.16);
-  color: #ff8b8b;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .work-todo-item__children {
@@ -210,6 +220,9 @@ const isCollapsed = computed(() => Boolean(props.collapsedTodoMap[props.todo.tod
 }
 
 @media (max-width: 768px) {
+  .work-todo-item__card { padding-left: calc(12px + clamp(0px, var(--todo-depth) * 10px, 30px)); }
+  .work-todo-item__toggle { min-height: 44px; }
+  .work-todo-item__title-button { white-space: normal; overflow-wrap: anywhere; }
   .work-todo-item__card,
   .work-todo-item__main,
   .work-todo-item__title-row,

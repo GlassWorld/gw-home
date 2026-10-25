@@ -1,0 +1,44 @@
+/* 일정과 통계에서 공통으로 쓰는 필터·숫자 요약·업무 진행률의 반응형 배치다. */
+.work-insights { min-width: 0; }
+.insight-toolbar, .insight-unit-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--section-gap); min-width: 0; }
+.insight-unit-heading > div { min-width: 0; }
+.insight-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.insight-filters { padding: var(--panel-padding); }
+.insight-filter-toggle { cursor: pointer; min-height: 44px; display: list-item; padding: 10px 0; font-weight: 600; }
+.insight-filters[open] .insight-filter-toggle { margin-bottom: 12px; }
+.insight-filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--section-gap); min-width: 0; padding: 0; margin: 0; border: 0; }
+.insight-filter-grid label { display: grid; gap: 6px; min-width: 0; font-size: .85rem; color: var(--color-text-muted); }
+.insight-filter-grid .input-field { min-width: 0; width: 100%; }
+.insight-filter-grid .insight-checkbox { display: flex; align-items: center; gap: 8px; min-height: 44px; align-self: end; }
+.insight-checkbox input { width: 20px; height: 20px; accent-color: var(--color-primary); }
+.insight-filter-grid .insight-actions { grid-column: 1 / -1; }
+.insight-note { margin: 6px 0 0; font-size: .8rem; color: var(--color-text-muted); overflow-wrap: anywhere; }
+.insight-filters > .insight-note { margin-top: 16px; }
+.insight-error { color: var(--color-danger); font-size: .85rem; }
+.insight-warning { background: var(--color-warning-soft); color: var(--color-warning); padding: 16px; border-radius: var(--radius-small); font-size: .85rem; margin: 0; }
+.insight-unit-list { display: grid; gap: var(--section-gap); min-width: 0; }
+.insight-unit-title { display: inline-block; min-height: 32px; font-size: 1.05rem; font-weight: 700; color: var(--color-text); overflow-wrap: anywhere; }
+.insight-unit-progress { min-width: 180px; }
+.insight-unit-progress strong { color: var(--color-primary); }
+.insight-unit-progress progress { display: block; width: 100%; height: 8px; margin: 6px 0; accent-color: var(--color-primary); border: 0; border-radius: 8px; background: var(--color-surface-strong); overflow: hidden; }
+.insight-unit-progress progress::-webkit-progress-bar { background: var(--color-surface-strong); }
+.insight-unit-progress progress::-webkit-progress-value { background: var(--color-primary); }
+.insight-unit-progress progress::-moz-progress-bar { background: var(--color-primary); }
+.insight-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--section-gap); }
+.insight-metric { padding: var(--panel-padding); min-width: 0; }
+.insight-metric > span { color: var(--color-text-muted); font-size: .85rem; }
+.insight-metric strong { display: block; font-size: 2rem; color: var(--color-primary); margin: 8px 0; }
+.insight-metric small { font-size: .9rem; margin-left: 4px; }
+.insight-metric p { font-size: .75rem; color: var(--color-text-muted); margin: 0; overflow-wrap: anywhere; }
+.insight-metric--danger strong { color: var(--color-danger); }
+.insight-current-groups { display: flex; flex-wrap: wrap; gap: 12px; color: var(--color-text-muted); font-size: .85rem; }
+.insight-current-groups span { padding: 8px 12px; background: var(--color-surface-muted); border-radius: var(--radius-small); }
+.insight-table-scroll { overflow-x: auto; max-width: 100%; }
+@media (max-width: 1000px) { .insight-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+  .insight-toolbar, .insight-unit-heading { flex-direction: column; align-items: stretch; gap: var(--section-gap); }
+  .insight-filter-grid { grid-template-columns: 1fr; }
+  .insight-filters, .insight-metric { padding: var(--mobile-panel-padding); }
+  .insight-metric strong { font-size: 1.75rem; }
+  .insight-unit-progress { min-width: 0; }
+}

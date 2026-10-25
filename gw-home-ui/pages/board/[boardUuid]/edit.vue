@@ -68,11 +68,8 @@ async function handleSubmit(payload: SaveBoardPostPayload) {
 
 <template>
   <main class="page-container board-edit-page">
-    <section class="content-panel board-edit-page__panel">
-      <h1 class="section-title">게시글 수정</h1>
-      <p class="section-description">
-        제목, 본문, 첨부파일을 수정할 수 있습니다.
-      </p>
+    <section class="content-panel page-panel-padding-lg">
+      <CommonBasePageHeader title="게시글 수정" eyebrow="Board" description="제목, 본문, 첨부파일을 수정할 수 있습니다." />
 
       <p v-if="errorMessage" class="message-error">
         {{ errorMessage }}
@@ -95,21 +92,3 @@ async function handleSubmit(payload: SaveBoardPostPayload) {
     </section>
   </main>
 </template>
-
-<style scoped>
-.board-edit-page__panel {
-  padding: 28px;
-}
-
-@media (max-width: 768px) {
-  .board-edit-page__panel {
-    padding: 18px;
-  }
-}
-
-@media (max-width: 420px) {
-  .board-edit-page__panel {
-    padding: 14px;
-  }
-}
-</style>

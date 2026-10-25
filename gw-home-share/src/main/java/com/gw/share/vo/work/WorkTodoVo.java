@@ -2,6 +2,7 @@ package com.gw.share.vo.work;
 
 import com.gw.share.vo.common.BaseVo;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -42,6 +43,9 @@ public class WorkTodoVo extends BaseVo {
 
     // 마감일
     private LocalDate dueDt;
+
+    // 최하위 TODO의 직접 완료 시각 (기존 완료일 미상은 null)
+    private OffsetDateTime cmplAt;
 
     // 정렬 순서
     private Integer sortOrd;

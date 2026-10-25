@@ -105,7 +105,7 @@ function getCategoryStyle(categoryColor: string | null) {
   flex: none;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(110, 193, 255, 0.12);
+  background: var(--color-primary-soft);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -136,7 +136,7 @@ function getCategoryStyle(categoryColor: string | null) {
 @media (max-width: 768px) {
   .credential-card {
     gap: 14px;
-    padding: 16px;
+    padding: var(--card-padding);
   }
 
   .credential-card__footer {
@@ -150,7 +150,7 @@ function getCategoryStyle(categoryColor: string | null) {
 
 @media (max-width: 420px) {
   .credential-card {
-    padding: 14px;
+    padding: 10px;
   }
 }
 </style>

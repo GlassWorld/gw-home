@@ -36,26 +36,15 @@ const {
 </script>
 
 <template>
-  <main class="page-container work-git-page">
-    <section class="content-panel work-git-page__hero">
-      <div class="work-git-page__hero-header">
-        <div>
-          <p class="work-git-page__eyebrow">Git Accounts</p>
-          <h1 class="section-title">개인 Git 계정관리</h1>
-          <p class="section-description">
-            사용자 기준으로 Git 계정을 여러 개 등록하고, 각 계정 아래에 프로젝트를 관리합니다.
-          </p>
-        </div>
-
-        <div class="work-git-page__hero-actions">
-          <CommonBaseButton variant="secondary" to="/work">
-            업무관리
-          </CommonBaseButton>
-          <CommonBaseButton @click="openCreateAccountModal">
-            Git 계정 등록
-          </CommonBaseButton>
-        </div>
-      </div>
+  <main class="page-container page-stack work-git-page">
+    <section class="content-panel page-panel-padding-lg work-git-page__hero">
+      <CommonBasePageHeader title="개인 Git 계정관리" eyebrow="Git Accounts"
+        description="사용자 기준으로 Git 계정을 여러 개 등록하고, 각 계정 아래에 프로젝트를 관리합니다.">
+        <template #actions>
+          <CommonBaseButton variant="secondary" to="/work">업무관리</CommonBaseButton>
+          <CommonBaseButton @click="openCreateAccountModal">Git 계정 등록</CommonBaseButton>
+        </template>
+      </CommonBasePageHeader>
 
       <div class="work-git-page__summary">
         <div>
@@ -78,7 +67,7 @@ const {
     </section>
 
     <section class="work-git-page__layout">
-      <section class="content-panel work-git-page__panel">
+      <section class="content-panel page-panel-padding-lg work-git-page__panel">
         <div class="work-git-page__panel-header">
           <div>
             <h2 class="section-title">Git 계정</h2>
@@ -134,7 +123,7 @@ const {
         </section>
       </section>
 
-      <section class="content-panel work-git-page__panel">
+      <section class="content-panel page-panel-padding-lg work-git-page__panel">
         <div class="work-git-page__panel-header">
           <div>
             <h2 class="section-title">Git 프로젝트</h2>
@@ -322,15 +311,8 @@ const {
 </template>
 
 <style scoped>
-.work-git-page {
-  display: grid;
-  gap: 24px;
-}
-
-.work-git-page__hero,
-.work-git-page__panel,
 .work-git-page__empty {
-  padding: 22px;
+  padding: var(--panel-padding);
 }
 
 .work-git-page__hero,
@@ -343,10 +325,9 @@ const {
 .work-git-page__hero,
 .work-git-page__panel {
   display: grid;
-  gap: 18px;
+  gap: var(--section-gap);
 }
 
-.work-git-page__hero-header,
 .work-git-page__panel-header,
 .work-git-page__card-head,
 .work-git-page__card-actions {
@@ -356,7 +337,6 @@ const {
   align-items: flex-start;
 }
 
-.work-git-page__hero-actions,
 .work-git-page__panel-actions,
 .work-git-page__badge-group {
   display: flex;
@@ -375,15 +355,6 @@ const {
   gap: 8px;
 }
 
-.work-git-page__eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .work-git-page__summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -394,9 +365,9 @@ const {
   display: grid;
   gap: 6px;
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
 }
 
 .work-git-page__summary span,
@@ -413,7 +384,7 @@ const {
 .work-git-page__layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  gap: var(--section-gap);
   align-items: start;
 }
 
@@ -425,9 +396,9 @@ const {
 .work-git-page__card {
   display: grid;
   gap: 12px;
-  padding: 16px 18px;
-  border: 1px solid rgba(147, 210, 255, 0.16);
-  background: rgba(255, 255, 255, 0.04);
+  padding: var(--card-padding) var(--card-padding);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
 }
 
 .work-git-page__card--inactive {
@@ -453,18 +424,18 @@ const {
 }
 
 .work-git-page__badge--provider {
-  background: rgba(110, 193, 255, 0.12);
+  background: var(--color-primary-soft);
   color: var(--color-accent);
 }
 
 .work-git-page__badge--active {
-  background: rgba(42, 176, 119, 0.16);
-  color: #6fd8a3;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .work-git-page__badge--inactive {
-  background: rgba(224, 92, 92, 0.16);
-  color: #ff8b8b;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .work-git-page__filter-select {
@@ -476,8 +447,8 @@ const {
   display: grid;
   gap: 12px;
   justify-items: start;
-  border: 1px dashed rgba(147, 210, 255, 0.22);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--color-border);
+  background: var(--color-surface-muted);
 }
 
 .work-git-page__empty h3 {
@@ -487,7 +458,7 @@ const {
 .work-git-page__form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .work-git-page__field {
@@ -512,10 +483,8 @@ const {
 }
 
 @media (max-width: 768px) {
-  .work-git-page__hero-header,
   .work-git-page__panel-header,
   .work-git-page__card-head,
-  .work-git-page__hero-actions,
   .work-git-page__summary,
   .work-git-page__layout,
   .work-git-page__form {

@@ -71,6 +71,8 @@ gw-home/
 
 ## 실행
 
+기존 DB에는 API 시작 전에 [리뉴얼 테이블 생성·적용 안내](docs/backend/database.md#리뉴얼-테이블-생성적용-안내)에 따라 [통합 적용 SQL](gw-home-infra-db/src/main/resources/sql/ddl/work/project-renewal-migrate.sql)을 실행하고 [확인 SQL](gw-home-infra-db/src/main/resources/sql/ddl/work/project-renewal-verify.sql)로 점검한다. 서버 시작만으로 DDL이 자동 반영되지 않는다. 메일 발송을 보류해도 현재 TODO 쓰기에 알림 테이블 3개가 필요하다.
+
 ```bash
 # Backend
 ./gradlew :gw-home-api:bootRun

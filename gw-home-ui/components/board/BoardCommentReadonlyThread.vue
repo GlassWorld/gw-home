@@ -43,10 +43,10 @@ const renderedContent = computed(() => renderMarkdown(props.comment.content))
 .board-comment-readonly {
   display: grid;
   gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.22);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  padding: var(--card-padding);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
 }
 
 .board-comment-readonly--reply {
@@ -70,8 +70,8 @@ const renderedContent = computed(() => renderMarkdown(props.comment.content))
   width: fit-content;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.12);
-  color: #7dd3fc;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-size: 0.76rem;
   font-weight: 700;
 }

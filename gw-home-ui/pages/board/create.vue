@@ -43,11 +43,8 @@ async function handleSubmit(payload: SaveBoardPostPayload) {
 
 <template>
   <main class="page-container board-write-page">
-    <section class="content-panel create-board-page">
-      <h1 class="section-title">게시글 작성</h1>
-      <p class="section-description">
-        마크다운 본문 작성, 이미지 복붙 업로드, 일반 첨부파일 등록을 지원합니다.
-      </p>
+    <section class="content-panel page-panel-padding-lg">
+      <CommonBasePageHeader title="게시글 작성" eyebrow="Board" description="마크다운 본문 작성, 이미지 복붙 업로드, 일반 첨부파일 등록을 지원합니다." />
       <p v-if="errorMessage" class="message-error">
         {{ errorMessage }}
       </p>
@@ -61,25 +58,3 @@ async function handleSubmit(payload: SaveBoardPostPayload) {
     </section>
   </main>
 </template>
-
-<style scoped>
-.create-board-page {
-  padding: 28px;
-}
-
-.board-write-page {
-  display: grid;
-}
-
-@media (max-width: 768px) {
-  .create-board-page {
-    padding: 18px;
-  }
-}
-
-@media (max-width: 420px) {
-  .create-board-page {
-    padding: 14px;
-  }
-}
-</style>

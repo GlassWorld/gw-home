@@ -1,0 +1,72 @@
+/* 페이지가 교체될 때 본문만 짧게 사라지고 아래에서 들어온다. */
+.page-enter-active {
+  transition: opacity var(--motion-standard) ease, transform var(--motion-standard) var(--motion-ease);
+}
+.page-leave-active { transition: opacity var(--motion-fast) ease; pointer-events: none; }
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to { opacity: 0; }
+
+/* 배경과 패널을 함께 전환하되 최상위 요소의 지속 시간으로 종료를 감지한다. */
+.modal-enter-active, .modal-leave-active { transition: opacity var(--motion-standard) ease; }
+.modal-enter-active .base-modal__panel, .modal-leave-active .base-modal__panel {
+  transition: transform var(--motion-standard) var(--motion-ease);
+}
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from .base-modal__panel { transform: translateY(12px) scale(0.98); }
+.modal-leave-to .base-modal__panel { transform: translateY(8px) scale(0.99); }
+.modal-leave-active, .modal-leave-active .base-modal__panel { transition-duration: var(--motion-fast); }
+
+.drawer-enter-active, .drawer-leave-active { transition: opacity var(--motion-drawer) ease; }
+.drawer-enter-active .app-sidebar__panel, .drawer-leave-active .app-sidebar__panel {
+  transition: transform var(--motion-drawer) var(--motion-ease);
+}
+.drawer-enter-from, .drawer-leave-to { opacity: 0; }
+.drawer-enter-from .app-sidebar__panel, .drawer-leave-to .app-sidebar__panel { transform: translateX(-100%); }
+.drawer-leave-active, .drawer-leave-active .app-sidebar__panel { transition-duration: var(--motion-fast); }
+
+/* 위쪽으로 열리는 목록의 위치 transform과 진입 이동을 분리한다. */
+.popover-enter-active, .popover-leave-active {
+  transition: opacity var(--motion-fast) ease, translate var(--motion-fast) var(--motion-ease);
+}
+.popover-enter-from, .popover-leave-to { opacity: 0; translate: 0 -4px; }
+
+.toast-enter-active, .toast-leave-active, .toast-move {
+  transition: opacity var(--motion-standard) ease, transform var(--motion-standard) var(--motion-ease);
+}
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(-8px); }
+.toast-leave-active { position: absolute; width: 100%; }
+.modal-leave-active, .drawer-leave-active, .popover-leave-active, .toast-leave-active { pointer-events: none; }
+
+.app-sidebar__link, .app-sidebar__favorite-button, .searchable-select__option {
+  transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease);
+}
+.searchable-select__indicator { transition: transform var(--motion-fast) var(--motion-ease); }
+.searchable-select.searchable-select--open .searchable-select__indicator { transform: translateY(-50%) rotate(180deg); }
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.base-button, .button-primary, .button-secondary, .button-danger):not(:disabled):not(.base-button--disabled):active {
+    transform: translateY(1px) scale(0.98);
+  }
+  .app-sidebar__favorite-button:not(:disabled):active { transform: scale(0.9); }
+  details[open] > :not(summary) { animation: content-reveal var(--motion-standard) var(--motion-ease); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :is(.base-button, .button-primary, .button-secondary, .button-danger):not(:disabled):not(.base-button--disabled):hover:not(:active) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+  }
+  .app-sidebar__link:hover { transform: translateX(2px); }
+}
+@keyframes content-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-from,
+  .modal-enter-from .base-modal__panel, .modal-leave-to .base-modal__panel,
+  .drawer-enter-from .app-sidebar__panel, .drawer-leave-to .app-sidebar__panel,
+  .toast-enter-from, .toast-leave-to { transform: none; }
+  .popover-enter-from, .popover-leave-to { translate: none; }
+}

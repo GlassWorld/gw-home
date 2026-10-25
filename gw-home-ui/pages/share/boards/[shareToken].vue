@@ -203,7 +203,7 @@ async function handlePasswordSubmit() {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 32px 16px;
+  padding: var(--panel-padding-large) 16px;
   background: transparent;
   box-sizing: border-box;
 }
@@ -211,9 +211,9 @@ async function handlePasswordSubmit() {
 .public-board-share-page__panel {
   width: min(920px, 100%);
   justify-self: center;
-  padding: 28px;
+  padding: var(--panel-padding-large);
   display: grid;
-  gap: 24px;
+  gap: var(--section-gap);
   box-sizing: border-box;
 }
 
@@ -232,7 +232,7 @@ async function handlePasswordSubmit() {
 .public-board-share-page__eyebrow,
 .public-board-share-page__category {
   margin: 0;
-  color: #7dd3fc;
+  color: var(--color-primary);
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -244,7 +244,7 @@ async function handlePasswordSubmit() {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .public-board-share-page__meta {
@@ -264,10 +264,10 @@ async function handlePasswordSubmit() {
 .public-board-share-page__password-section {
   display: grid;
   gap: 14px;
-  padding: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.28);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 .public-board-share-page__attachment-list {
@@ -289,13 +289,13 @@ async function handlePasswordSubmit() {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.3);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 @media (max-width: 768px) {
   .public-board-share-page {
-    padding: 20px 12px;
+    padding: var(--panel-padding) 12px;
   }
 
   .public-board-share-page__panel {

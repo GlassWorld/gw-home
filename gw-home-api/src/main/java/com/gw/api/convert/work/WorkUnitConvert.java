@@ -1,6 +1,5 @@
 package com.gw.api.convert.work;
 
-import com.gw.api.dto.work.DailyReportWorkUnitResponse;
 import com.gw.api.dto.work.WorkGitProjectResponse;
 import com.gw.api.dto.work.WorkUnitOptionResponse;
 import com.gw.api.dto.work.WorkUnitResponse;
@@ -40,21 +39,6 @@ public final class WorkUnitConvert {
                 workUnit.getSts(),
                 workUnit.getUseYn()
         );
-    }
-
-    // 업무 VO 목록을 일일/주간보고 하위 응답으로 변환한다.
-    public static List<DailyReportWorkUnitResponse> toDailyReportWorkUnitResponses(List<WorkUnitVo> workUnits) {
-        if (workUnits == null || workUnits.isEmpty()) {
-            return List.of();
-        }
-
-        return workUnits.stream()
-                .map(workUnit -> new DailyReportWorkUnitResponse(
-                        workUnit.getUuid(),
-                        workUnit.getTtl(),
-                        workUnit.getCtgr()
-                ))
-                .toList();
     }
 
     public static List<WorkGitProjectResponse> toGitProjectResponses(List<WorkGitPrjVo> gitProjects) {

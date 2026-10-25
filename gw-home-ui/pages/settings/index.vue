@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SettingsGoogleSection from '~/features/settings/components/SettingsGoogleSection.vue'
+import WorkNotificationSettingsPanel from '~/features/work/components/WorkNotificationSettingsPanel.vue'
 import SettingsOtpSection from '~/features/settings/components/SettingsOtpSection.vue'
 import SettingsPasswordSection from '~/features/settings/components/SettingsPasswordSection.vue'
 import SettingsProfileSection from '~/features/settings/components/SettingsProfileSection.vue'
@@ -234,15 +235,9 @@ await Promise.all([
 </script>
 
 <template>
-  <main class="page-container settings-page">
+  <main class="page-container page-stack settings-page">
     <section class="settings-page__hero content-panel page-panel-padding-lg page-hero-split">
-      <div>
-        <p class="settings-page__eyebrow">Settings</p>
-        <h1 class="section-title">계정 설정</h1>
-        <p class="section-description">
-          닉네임, 비밀번호, OTP 보안 설정을 한 곳에서 관리할 수 있습니다.
-        </p>
-      </div>
+      <CommonBasePageHeader title="계정 설정" eyebrow="Settings" description="메일 알림, 닉네임, 비밀번호, OTP 보안 설정을 한 곳에서 관리할 수 있습니다." />
 
       <div class="settings-page__summary page-info-card">
         <span>현재 계정</span>
@@ -250,6 +245,8 @@ await Promise.all([
         <p>{{ authStore.currentUser?.loginId }} · {{ authStore.currentUser?.email }}</p>
       </div>
     </section>
+
+    <WorkNotificationSettingsPanel />
 
     <SettingsProfileSection
       :current-nickname="authStore.currentUser?.nickname ?? ''"
@@ -312,22 +309,3 @@ await Promise.all([
     />
   </main>
 </template>
-
-<style scoped>
-.settings-page {
-  display: grid;
-  gap: 24px;
-}
-
-.settings-page__eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-accent);
-  font-weight: 700;
-}
-
-@media (max-width: 768px) {
-  .settings-page {
-    gap: 16px;
-  }
-}
-</style>

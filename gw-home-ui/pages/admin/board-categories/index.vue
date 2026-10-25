@@ -21,14 +21,9 @@ await loadCategoryList()
 </script>
 
 <template>
-  <main class="page-container board-category-admin-page">
+  <main class="page-container page-stack board-category-admin-page">
     <section class="content-panel board-category-admin-page__panel page-panel-padding-md">
-      <div class="board-category-admin-page__header">
-        <div>
-          <p class="board-category-admin-page__eyebrow">Admin</p>
-          <h1 class="section-title">게시글 카테고리 관리</h1>
-        </div>
-      </div>
+      <CommonBasePageHeader title="게시글 카테고리 관리" eyebrow="Admin" />
 
       <form class="board-category-admin-page__form" @submit.prevent="handleSubmit">
         <label class="board-category-admin-page__field board-category-admin-page__field--name">
@@ -78,30 +73,10 @@ await loadCategoryList()
 </template>
 
 <style scoped>
-.board-category-admin-page {
-  display: grid;
-  gap: 24px;
-}
-
-.board-category-admin-page__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.board-category-admin-page__eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .board-category-admin-page__form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 180px auto;
-  gap: 14px 16px;
+  gap: 14px var(--section-gap);
   margin-top: 18px;
   align-items: end;
 }
@@ -131,10 +106,10 @@ await loadCategoryList()
 .board-category-admin-page__item {
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  padding: 10px var(--card-padding);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
 }
 
 .board-category-admin-page__item-summary {

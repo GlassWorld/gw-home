@@ -47,12 +47,11 @@ const emit = defineEmits<{
 
 <style scoped>
 .dashboard-section {
-  padding: 24px;
-  background: linear-gradient(180deg, rgba(11, 24, 46, 0.54) 0%, rgba(9, 20, 38, 0.42) 100%);
-  border-color: rgba(176, 210, 255, 0.14);
+  padding: var(--panel-padding);
+  background: var(--color-surface);
+  border-color: var(--color-border);
   box-shadow:
-    0 16px 34px rgba(3, 12, 28, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    var(--shadow-soft);
   backdrop-filter: blur(18px) saturate(125%);
   -webkit-backdrop-filter: blur(18px) saturate(125%);
 }
@@ -61,7 +60,7 @@ const emit = defineEmits<{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--section-gap);
   margin-bottom: 16px;
 }
 
@@ -84,12 +83,12 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border: 1px solid rgba(166, 214, 255, 0.1);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.018) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  gap: var(--section-gap);
+  padding: 10px var(--card-padding);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -112,12 +111,12 @@ const emit = defineEmits<{
 }
 
 .dashboard-compact-list__item:hover {
-  border-color: rgba(170, 221, 255, 0.18);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.026) 100%);
+  border-color: var(--color-border);
+  background: var(--color-surface);
 }
 
 .dashboard-compact-list__item:focus-visible {
-  outline: 2px solid rgba(110, 193, 255, 0.24);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

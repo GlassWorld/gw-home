@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import type {
   DashboardIssueItem,
-  DashboardRecentReportItem,
   DashboardScheduleItem,
   DashboardUpdateItem
 } from '../types/dashboard-workspace'
 
 defineProps<{
-  reports: DashboardRecentReportItem[]
   issues: DashboardIssueItem[]
   schedules: DashboardScheduleItem[]
   updates: DashboardUpdateItem[]
-  reportErrorMessage: string
+  updateErrorMessage: string
 }>()
 
 const emit = defineEmits<{
@@ -27,40 +25,6 @@ function openUpdate(update: DashboardUpdateItem) {
 
 <template>
   <div class="dashboard-side-panel">
-    <section class="content-panel dashboard-side-panel__section">
-      <div class="dashboard-side-panel__section-header">
-        <div>
-          <p class="dashboard-side-panel__eyebrow">Weekly Reports</p>
-          <h2 class="section-title">최근 주간보고</h2>
-        </div>
-        <CommonBaseButton size="small" variant="secondary" to="/work/weekly-reports">
-          전체 보기
-        </CommonBaseButton>
-      </div>
-
-      <p v-if="reportErrorMessage" class="message-error">
-        {{ reportErrorMessage }}
-      </p>
-
-      <div v-else-if="reports.length" class="dashboard-side-panel__list">
-        <article v-for="report in reports" :key="report.uuid" class="dashboard-side-panel__item">
-          <div class="dashboard-side-panel__item-head">
-            <strong>{{ report.title }}</strong>
-            <span>{{ report.weekLabel }}</span>
-          </div>
-          <p>{{ report.excerpt }}</p>
-          <div class="dashboard-side-panel__item-meta">
-            <span>{{ report.openLabel }}</span>
-            <span>{{ report.publishedLabel }}</span>
-          </div>
-        </article>
-      </div>
-
-      <p v-else class="message-muted">
-        최근 주간보고가 아직 없습니다.
-      </p>
-    </section>
-
     <section class="content-panel dashboard-side-panel__section">
       <div class="dashboard-side-panel__section-header">
         <div>
@@ -123,6 +87,7 @@ function openUpdate(update: DashboardUpdateItem) {
         </div>
       </div>
 
+      <p v-if="updateErrorMessage" class="message-error">{{ updateErrorMessage }}</p>
       <div v-if="updates.length" class="dashboard-side-panel__list">
         <component
           :is="update.noticeUuid ? 'button' : 'div'"
@@ -144,7 +109,7 @@ function openUpdate(update: DashboardUpdateItem) {
         </component>
       </div>
 
-      <p v-else class="message-muted">
+      <p v-else-if="!updateErrorMessage" class="message-muted">
         최근 업데이트가 없습니다.
       </p>
     </section>
@@ -158,9 +123,9 @@ function openUpdate(update: DashboardUpdateItem) {
 }
 
 .dashboard-side-panel__section {
-  padding: 20px;
+  padding: var(--panel-padding);
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .dashboard-side-panel__section-header {
@@ -190,10 +155,10 @@ function openUpdate(update: DashboardUpdateItem) {
 .dashboard-side-panel__update {
   display: grid;
   gap: 10px;
-  padding: 14px;
-  border: 1px solid rgba(147, 210, 255, 0.12);
+  padding: 10px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-surface-muted);
 }
 
 .dashboard-side-panel__update {
@@ -203,7 +168,7 @@ function openUpdate(update: DashboardUpdateItem) {
 
 .dashboard-side-panel__update--button {
   width: 100%;
-  border: 1px solid rgba(147, 210, 255, 0.12);
+  border: 1px solid var(--color-border);
   cursor: pointer;
 }
 
@@ -260,28 +225,28 @@ function openUpdate(update: DashboardUpdateItem) {
 }
 
 .dashboard-side-panel__badge--primary {
-  background: rgba(110, 193, 255, 0.16);
-  color: #9ad8ff;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .dashboard-side-panel__badge--success {
-  background: rgba(84, 214, 160, 0.16);
-  color: #8ef0be;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .dashboard-side-panel__badge--warning {
-  background: rgba(255, 188, 92, 0.14);
-  color: #ffd089;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .dashboard-side-panel__badge--danger {
-  background: rgba(224, 92, 92, 0.14);
-  color: #ffabab;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .dashboard-side-panel__badge--neutral {
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(236, 246, 255, 0.84);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 768px) {
@@ -290,7 +255,7 @@ function openUpdate(update: DashboardUpdateItem) {
   }
 
   .dashboard-side-panel__section {
-    padding: 16px;
+    padding: var(--mobile-panel-padding);
     gap: 14px;
   }
 
@@ -312,10 +277,6 @@ function openUpdate(update: DashboardUpdateItem) {
 }
 
 @media (max-width: 420px) {
-  .dashboard-side-panel__section {
-    padding: 14px;
-  }
-
   .dashboard-side-panel__item-head,
   .dashboard-side-panel__issue-head,
   .dashboard-side-panel__schedule-head {

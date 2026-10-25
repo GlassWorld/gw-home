@@ -18,6 +18,7 @@ public record WorkTodoResponse(
         boolean leaf,
         boolean completed,
         boolean delayed,
+        OffsetDateTime completedAt,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         List<WorkTodoResponse> children

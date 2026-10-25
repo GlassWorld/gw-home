@@ -18,17 +18,13 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="content-panel notice-list-panel">
+  <section class="content-panel page-panel-padding-lg notice-list-panel">
     <div class="notice-list-panel__header">
       <p class="message-muted">총 {{ totalCount }}건</p>
     </div>
 
-    <p v-if="errorMessage" class="message-error">
-      {{ errorMessage }}
-    </p>
-    <p v-else-if="isLoading" class="message-muted">
-      공지사항을 불러오는 중입니다.
-    </p>
+    <CommonBaseState v-if="errorMessage" state="error" :message="errorMessage" />
+    <CommonBaseState v-else-if="isLoading" state="loading" message="공지사항을 불러오는 중입니다." />
     <div v-else-if="notices.length" class="notice-list-panel__list">
       <button
         v-for="notice in notices"
@@ -47,43 +43,25 @@ const emit = defineEmits<{
         </div>
       </button>
     </div>
-    <p v-else class="message-muted">
-      등록된 공지사항이 없습니다.
-    </p>
+    <CommonBaseState v-else state="empty" message="등록된 공지사항이 없습니다." />
 
-    <div class="notice-list-panel__pagination">
-      <CommonBaseButton
-        variant="secondary"
-        :disabled="page <= 1"
-        @click="emit('previous')"
-      >
-        이전
-      </CommonBaseButton>
-      <span>{{ page }} / {{ totalPages || 1 }}</span>
-      <CommonBaseButton
-        variant="secondary"
-        :disabled="page >= totalPages"
-        @click="emit('next')"
-      >
-        다음
-      </CommonBaseButton>
-    </div>
+    <CommonBasePagination :page="page" :total-pages="totalPages" @previous="emit('previous')" @next="emit('next')" />
   </section>
 </template>
 
 <style scoped>
 .notice-list-panel {
-  padding: 28px;
+  display: grid;
+  gap: var(--section-gap);
 }
 
-.notice-list-panel__list,
-.notice-list-panel__pagination {
+.notice-list-panel__list {
   display: grid;
   gap: 14px;
 }
 
 .notice-list-panel__list {
-  margin: 20px 0;
+  min-width: 0;
 }
 
 .notice-list-panel__item {
@@ -92,10 +70,10 @@ const emit = defineEmits<{
   justify-content: space-between;
   gap: 18px;
   width: 100%;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(147, 210, 255, 0.12);
+  padding: var(--card-padding) var(--card-padding);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -106,6 +84,7 @@ const emit = defineEmits<{
 .notice-list-panel__item-meta {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .notice-list-panel__item-main strong {
@@ -124,18 +103,12 @@ const emit = defineEmits<{
 
 .notice-list-panel__item:hover {
   transform: translateY(-1px);
-  border-color: rgba(147, 210, 255, 0.26);
+  border-color: var(--color-border);
 }
 
 .notice-list-panel__item:focus-visible {
-  outline: 2px solid rgba(110, 193, 255, 0.24);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-}
-
-.notice-list-panel__pagination {
-  grid-template-columns: repeat(3, auto);
-  justify-content: center;
-  align-items: center;
 }
 
 @media (max-width: 768px) {

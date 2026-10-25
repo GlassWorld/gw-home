@@ -46,9 +46,9 @@ const emit = defineEmits<{
 .admin-temporary-password-modal__code {
   display: block;
   padding: 16px;
-  border-radius: 16px;
-  background: rgba(7, 18, 32, 0.88);
-  color: rgba(232, 244, 255, 0.96);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 1.05rem;
   word-break: break-all;
 }

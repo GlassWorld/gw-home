@@ -87,30 +87,20 @@ watch(
 </script>
 
 <template>
-  <main class="page-container board-page">
-    <section class="content-panel board-page__search">
-      <div class="board-page__search-header">
-        <div>
-          <h1 class="section-title">게시글 목록</h1>
-          <p class="section-description">키워드 검색과 페이지 이동으로 원하는 글을 빠르게 찾습니다.</p>
-        </div>
-        <div class="board-page__hero-side">
-          <div class="board-page__header-actions">
-            <CommonBaseButton variant="secondary" to="/dashboard">
-              대시보드
-            </CommonBaseButton>
-            <CommonBaseButton to="/board/create">
-              글쓰기
-            </CommonBaseButton>
-          </div>
-          <div class="board-page__summary" role="status" aria-label="게시글 요약">
-            <span>총 <strong>{{ totalCount }}</strong>건</span>
-          </div>
-        </div>
-      </div>
+  <main class="page-container page-stack board-page">
+    <section class="content-panel page-panel-padding-lg">
+      <CommonBasePageHeader title="게시글 목록" eyebrow="Board" description="키워드 검색과 페이지 이동으로 원하는 글을 빠르게 찾습니다.">
+        <template #actions>
+          <CommonBaseButton variant="secondary" to="/dashboard">대시보드</CommonBaseButton>
+          <CommonBaseButton to="/board/create">글쓰기</CommonBaseButton>
+        </template>
+        <template #summary>
+          <p class="board-page__summary" role="status">총 <strong>{{ totalCount }}</strong>건</p>
+        </template>
+      </CommonBasePageHeader>
     </section>
 
-    <section class="content-panel board-page__list-panel">
+    <section class="content-panel page-panel-padding-lg page-stack">
       <form class="board-page__filters" @submit.prevent="handleSearch">
         <label>
           <span>검색 조건</span>
@@ -145,12 +135,8 @@ watch(
         </div>
       </form>
 
-      <p v-if="errorMessage" class="message-error">
-        {{ errorMessage }}
-      </p>
-      <p v-else-if="isLoading" class="message-muted">
-        게시글을 불러오는 중입니다.
-      </p>
+      <CommonBaseState v-if="errorMessage" state="error" :message="errorMessage" action-label="다시 시도" @action="loadBoardList" />
+      <CommonBaseState v-else-if="isLoading" state="loading" message="게시글을 불러오는 중입니다." />
       <div v-else-if="boardList.length" class="board-page__list">
         <BoardListItem
           v-for="board in boardList"
@@ -158,208 +144,24 @@ watch(
           :board="board"
         />
       </div>
-      <p v-else class="message-muted">
-        검색 결과가 없습니다.
-      </p>
+      <CommonBaseState v-else state="empty" message="검색 결과가 없습니다. 검색 조건을 바꿔보세요." />
 
-      <div class="board-page__pagination">
-        <CommonBaseButton
-          variant="secondary"
-          :disabled="page <= 1"
-          @click="movePage(page - 1)"
-        >
-          이전
-        </CommonBaseButton>
-        <span>{{ page }} / {{ totalPages || 1 }}</span>
-        <CommonBaseButton
-          variant="secondary"
-          :disabled="page >= totalPages"
-          @click="movePage(page + 1)"
-        >
-          다음
-        </CommonBaseButton>
-      </div>
+      <CommonBasePagination :page="page" :total-pages="totalPages" :disabled="isLoading"
+        @previous="movePage(page - 1)" @next="movePage(page + 1)" />
     </section>
   </main>
 </template>
 
 <style scoped>
-.board-page {
-  padding: 28px;
-}
-
-.board-page__search,
-.board-page__list-panel {
-  padding: 28px;
-}
-
-.board-page__search {
-  display: grid;
-  gap: 18px;
-  margin-bottom: 24px;
-}
-
-.board-page__search-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.board-page__pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.board-page__hero-side {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.board-page__header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.board-page__summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-}
-
-.board-page__summary strong {
-  color: var(--color-text);
-  font-size: 0.9rem;
-}
-
-.board-page__filters {
-  display: grid;
-  grid-template-columns: minmax(160px, 0.9fr) minmax(280px, 1.6fr) auto;
-  align-items: end;
-  gap: 14px 16px;
-  margin-top: 16px;
-}
-
-.board-page__filters label {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.board-page__filters label span {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.board-page__filter-actions {
-  display: flex;
-  justify-content: flex-end;
-  white-space: nowrap;
-}
-
-.board-page__list {
-  display: grid;
-  gap: 14px;
-  margin: 20px 0;
-}
-
-.board-page__pagination {
-  justify-content: center;
-}
-
-@media (max-width: 768px) {
-  .board-page {
-    padding: 0;
-  }
-
-  .board-page__search,
-  .board-page__list-panel {
-    padding: 18px;
-  }
-
-  .board-page__search {
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
-  .board-page__filters {
-    grid-template-columns: 1fr;
-    margin-top: 10px;
-    gap: 12px;
-  }
-
-  .board-page__search-header,
-  .board-page__pagination {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 14px;
-  }
-
-  .board-page__hero-side {
-    align-items: stretch;
-    justify-content: stretch;
-  }
-
-  .board-page__header-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    width: 100%;
-  }
-
-  .board-page__summary {
-    justify-content: center;
-    width: 100%;
-    min-height: 38px;
-    border-radius: var(--radius-small);
-  }
-
-  .board-page__filter-actions {
-    justify-content: stretch;
-  }
-
-  .board-page__filter-actions > * {
-    width: 100%;
-  }
-
-  .board-page__list {
-    gap: 10px;
-    margin: 14px 0;
-  }
-
-  .board-page__pagination {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-  }
-}
-
-@media (max-width: 420px) {
-  .board-page__search,
-  .board-page__list-panel {
-    padding: 14px;
-  }
-
-  .board-page__header-actions,
-  .board-page__pagination {
-    grid-template-columns: 1fr;
-  }
-
-  .board-page__pagination span {
-    text-align: center;
-  }
+.board-page__summary { margin: 0; color: var(--color-text-muted); text-align: right; font-size: 0.875rem; }
+.board-page__summary strong { color: var(--color-text); }
+.board-page__filters { display: grid; grid-template-columns: minmax(140px, 0.8fr) minmax(0, 1.6fr) auto; align-items: end; gap: var(--space-3); }
+.board-page__filters label { display: grid; min-width: 0; gap: var(--space-2); }
+.board-page__filters label span { color: var(--color-text-muted); font-size: 0.875rem; font-weight: 600; }
+.board-page__list { display: grid; gap: var(--space-3); }
+@media (max-width: 767px) {
+  .board-page__filters { grid-template-columns: minmax(0, 1fr) auto; }
+  .board-page__filters > label:first-child { grid-column: 1 / -1; }
+  .board-page__summary { text-align: left; }
 }
 </style>

@@ -1,3 +1,5 @@
+-- 보관 스키마: 일일보고 기능은 종료되었으며 기존 보고서·업무 연결 데이터는 보존한다.
+-- 앱은 이 테이블을 읽거나 쓰지 않는다. 물리 삭제·이관은 별도 승인 작업이다.
 CREATE TABLE IF NOT EXISTS tb_wrk_dly_rpt (
     wrk_dly_rpt_idx BIGSERIAL PRIMARY KEY,
     wrk_dly_rpt_uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),

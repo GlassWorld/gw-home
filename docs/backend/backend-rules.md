@@ -51,8 +51,8 @@
 예시:
 
 ```java
-// 로그인 사용자의 일일보고 목록을 조회한다.
-public ApiResponse<PageResponse<DailyReportResponse>> getDailyReports(...) {
+// 로그인 사용자의 업무 TODO 트리를 조회한다.
+public ApiResponse<WorkTodoTreeResponse> getWorkTodoTree(...) {
 ```
 
 ```java
@@ -72,16 +72,16 @@ public ApiResponse<Void> deleteNotice(...) {
 예시:
 
 ```java
-// 로그인 사용자의 주간보고를 생성한다.
-public WeeklyReportResponse createWeeklyReport(String loginId, CreateWeeklyReportRequest request) {
-    log.info("createWeeklyReport 시작 - loginId: {}, request: {}", loginId, request);
+// 로그인 사용자의 업무 TODO를 생성한다.
+public WorkTodoTreeResponse createWorkTodo(String loginId, String workUnitUuid, CreateWorkTodoRequest request) {
+    log.info("createWorkTodo 시작 - loginId: {}, workUnitUuid: {}", loginId, workUnitUuid);
     try {
         ...
-        log.info("createWeeklyReport 완료 - loginId: {}, uuid: {}", loginId, response.uuid());
+        log.info("createWorkTodo 완료 - loginId: {}, workUnitUuid: {}", loginId, workUnitUuid);
         return response;
     } catch (BusinessException exception) {
         log.error(
-                "createWeeklyReport 실패 - loginId: {}, 원인: {}, detailMessage: {}",
+                "createWorkTodo 실패 - loginId: {}, 원인: {}, detailMessage: {}",
                 loginId,
                 exception.getMessage(),
                 exception.getDetailMessage(),

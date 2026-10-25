@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { allNavigationItems, maxHeaderFavoriteMenuCount } from '~/constants/navigation-menu'
 
+const props = withDefaults(defineProps<{ navigationVisible?: boolean }>(), { navigationVisible: false })
 const authStore = useAuthStore()
 const navigationFavoriteStore = useNavigationFavoriteStore()
 const { logout } = useAuth()
@@ -20,6 +21,7 @@ const emit = defineEmits<{
   openNavigation: []
 }>()
 
+// 기존 로그아웃 흐름을 유지하고 중복 요청을 막는다.
 async function handleLogout() {
   if (isSubmitting.value) {
     return
@@ -35,10 +37,12 @@ async function handleLogout() {
   }
 }
 
+// 개인 메모 창을 연다.
 function openMemo() {
   isMemoVisible.value = true
 }
 
+// 개인 메모 창을 닫는다.
 function closeMemo() {
   isMemoVisible.value = false
 }
@@ -46,285 +50,62 @@ function closeMemo() {
 
 <template>
   <header class="app-header">
-    <div class="page-container app-header__inner">
+    <div class="app-header__inner">
       <div class="app-header__start">
-        <button
-          type="button"
-          class="app-header__menu-button"
-          aria-label="사이드메뉴 열기"
-          @click="emit('openNavigation')"
-        >
-          <span />
-          <span />
-          <span />
+        <button type="button" class="app-header__menu-button" aria-label="사이드메뉴 열기" aria-controls="workspace-navigation" :aria-expanded="props.navigationVisible" @click="emit('openNavigation')">
+          <span /><span /><span />
         </button>
-
         <NuxtLink class="app-header__brand" to="/dashboard">
+          <span class="app-header__brand-mark" aria-hidden="true">G</span>
           Glass World
         </NuxtLink>
       </div>
-
       <nav v-if="favoriteNavigationItems.length" class="app-header__favorite-navigation" aria-label="즐겨찾기 메뉴">
-        <NuxtLink
-          v-for="item in favoriteNavigationItems"
-          :key="item.to"
-          :to="item.to"
-          class="app-header__favorite-link"
-        >
-          {{ item.label }}
-        </NuxtLink>
+        <NuxtLink v-for="item in favoriteNavigationItems" :key="item.to" :to="item.to" class="app-header__favorite-link">{{ item.label }}</NuxtLink>
       </nav>
-
       <div class="app-header__actions">
         <NuxtLink to="/settings" class="app-header__profile-link">
-          <div class="app-header__profile">
-            <strong>{{ authStore.currentUser?.nickname }}</strong>
-            <span>{{ authStore.currentUser?.loginId }}</span>
-          </div>
+          <strong>{{ authStore.currentUser?.nickname || authStore.currentUser?.loginId }}</strong>
+          <span>{{ authStore.currentUser?.loginId }}</span>
         </NuxtLink>
-
-        <button
-          type="button"
-          class="app-header__icon-button"
-          aria-label="메모 열기"
-          @click="openMemo"
-        >
-          <IconsIconMemo />
-        </button>
-
-        <button
-          type="button"
-          class="app-header__icon-button"
-          aria-label="로그아웃"
-          :disabled="isSubmitting"
-          @click="handleLogout"
-        >
-          <IconsIconLogout />
-        </button>
+        <button type="button" class="app-header__icon-button" aria-label="메모 열기" @click="openMemo"><IconsIconMemo /></button>
+        <button type="button" class="app-header__icon-button" aria-label="로그아웃" :disabled="isSubmitting" @click="handleLogout"><IconsIconLogout /></button>
       </div>
     </div>
-
-    <CommonHeaderMemoModal
-      :visible="isMemoVisible"
-      @close="closeMemo"
-    />
+    <CommonHeaderMemoModal :visible="isMemoVisible" @close="closeMemo" />
   </header>
 </template>
 
 <style scoped>
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(18px) saturate(120%);
-  -webkit-backdrop-filter: blur(18px) saturate(120%);
-  background: linear-gradient(180deg, rgba(8, 20, 36, 0.58) 0%, rgba(8, 20, 36, 0.42) 100%);
-  border-bottom: 1px solid rgba(147, 210, 255, 0.08);
-  box-shadow: 0 8px 24px rgba(5, 14, 28, 0.12);
+.app-header { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.app-header__inner { display: flex; align-items: center; gap: var(--section-gap); min-height: var(--header-height); padding-inline: var(--page-gutter); }
+.app-header__start, .app-header__actions { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.app-header__actions { margin-left: auto; }
+.app-header__brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 1.0625rem; font-weight: 750; letter-spacing: -0.04em; white-space: nowrap; }
+.app-header__brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--color-primary); color: var(--color-on-primary); font-size: 1.125rem; }
+.app-header__menu-button, .app-header__icon-button {
+  display: inline-flex; flex: none; align-items: center; justify-content: center;
+  width: var(--button-height); height: var(--button-height); padding: 0; border: 1px solid var(--color-border);
+  border-radius: var(--radius-small); color: var(--color-text-muted); background: var(--color-surface);
 }
-
-.app-header__inner {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  min-height: 48px;
-}
-
-.app-header__brand {
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.app-header__start,
-.app-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.app-header__menu-button {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border: 1px solid rgba(176, 195, 255, 0.26);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
-  color: rgba(236, 246, 255, 0.94);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -8px 14px rgba(56, 79, 162, 0.2),
-    0 14px 28px rgba(6, 20, 54, 0.28);
-  transition: box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
-}
-
-.app-header__menu-button:hover {
-  border-color: rgba(196, 212, 255, 0.34);
-  background: linear-gradient(180deg, rgba(56, 70, 120, 0.96) 0%, rgba(34, 47, 86, 0.94) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -8px 14px rgba(66, 91, 180, 0.24),
-    0 16px 30px rgba(8, 22, 58, 0.32);
-}
-
-.app-header__menu-button span {
-  width: 16px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-.app-header__profile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-}
-
-.app-header__profile-link {
-  padding: 6px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  transition:
-    background 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.app-header__profile-link:hover {
-  border-color: rgba(176, 195, 255, 0.18);
-  background: linear-gradient(180deg, rgba(30, 41, 78, 0.78) 0%, rgba(20, 29, 56, 0.76) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.app-header__favorite-navigation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  min-width: 0;
-}
-
-.app-header__favorite-link {
-  color: var(--color-text-muted);
-  transition:
-    transform 0.18s ease,
-    color 0.18s ease;
-}
-
-.app-header__favorite-link:hover {
-  transform: translateY(-1px);
-  color: #f7fbff;
-}
-
-.app-header__profile span {
-  font-size: 0.84rem;
-  color: var(--color-text-muted);
-}
-
-.app-header__icon-button {
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(176, 195, 255, 0.26);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(42, 54, 98, 0.92) 0%, rgba(25, 35, 68, 0.9) 100%);
-  color: rgba(236, 246, 255, 0.94);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -8px 14px rgba(56, 79, 162, 0.2),
-    0 14px 28px rgba(6, 20, 54, 0.28);
-  transition:
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease;
-}
-
-.app-header__icon-button:hover:not(:disabled) {
-  border-color: rgba(196, 212, 255, 0.34);
-  background: linear-gradient(180deg, rgba(56, 70, 120, 0.96) 0%, rgba(34, 47, 86, 0.94) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -8px 14px rgba(66, 91, 180, 0.24),
-    0 16px 30px rgba(8, 22, 58, 0.32);
-}
-
-.app-header__icon-button:disabled {
-  cursor: wait;
-  opacity: 0.6;
-}
-
-.app-header__icon-button svg {
-  width: 20px;
-  height: 20px;
-}
-
-@media (min-width: 1100px) {
-  .app-header__menu-button {
-    display: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .app-header__favorite-navigation {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .app-header__inner {
-    gap: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    grid-template-columns: auto auto;
-    justify-content: space-between;
-  }
-
-  .app-header__start,
-  .app-header__actions {
-    min-width: 0;
-    gap: 10px;
-  }
-
-  .app-header__brand {
-    font-size: 0.98rem;
-  }
-
-  .app-header__profile {
-    align-items: center;
-  }
-
-  .app-header__favorite-navigation {
-    display: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .app-header__profile-link {
-    display: none;
-  }
-
-  .app-header__menu-button,
-  .app-header__icon-button {
-    width: 36px;
-    height: 36px;
-  }
-}
-
-@media (max-width: 380px) {
-  .app-header__brand {
-    max-width: 132px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
+.app-header__menu-button { flex-direction: column; gap: 4px; }
+.app-header__menu-button span { width: 16px; height: 2px; border-radius: 2px; background: currentColor; }
+.app-header__icon-button svg { width: 20px; height: 20px; }
+.app-header__menu-button:hover, .app-header__icon-button:hover { background: var(--color-surface-muted); color: var(--color-primary); }
+.app-header__icon-button:disabled { opacity: 0.5; }
+.app-header__profile-link { display: grid; min-width: 0; max-width: 170px; min-height: 44px; align-content: center; padding-inline: 8px; line-height: 1.4; }
+.app-header__profile-link strong, .app-header__profile-link span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.app-header__profile-link strong { font-size: 0.8125rem; }
+.app-header__profile-link span { color: var(--color-text-muted); font-size: 0.75rem; }
+.app-header__favorite-navigation { display: flex; flex: 1; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.app-header__favorite-link { flex: none; display: flex; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: var(--radius-small); color: var(--color-text-muted); font-size: 0.8125rem; }
+.app-header__favorite-link:hover, .app-header__favorite-link.router-link-exact-active { background: var(--color-primary-soft); color: var(--color-primary); }
+@media (min-width: 1100px) { .app-header__menu-button { display: none; } }
+@media (max-width: 1099px) { .app-header__favorite-navigation { display: none; } }
+@media (max-width: 767px) {
+  .app-header__inner { gap: 12px; }
+  .app-header__start, .app-header__actions { gap: 6px; }
+  .app-header__brand { font-size: 0.9375rem; }
+  .app-header__brand-mark, .app-header__profile-link { display: none; }
 }
 </style>

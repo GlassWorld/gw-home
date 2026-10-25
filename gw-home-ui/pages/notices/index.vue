@@ -183,7 +183,7 @@ watch(
 <style scoped>
 .notice-page {
   display: grid;
-  gap: 24px;
+  gap: var(--section-gap);
 }
 
 </style>

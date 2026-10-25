@@ -25,13 +25,24 @@ google:
     client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
 
 work:
+  notifications:
+    enabled: ${WORK_NOTIFICATIONS_ENABLED:false}
+    smtp-auth-mode: ${WORK_SMTP_AUTH_MODE:PASSWORD}
+    smtp-host: ${WORK_SMTP_HOST:}
+    smtp-port: ${WORK_SMTP_PORT:587}
+    smtp-username: ${WORK_SMTP_USERNAME:}
+    smtp-password: ${WORK_SMTP_PASSWORD:}
+    starttls: ${WORK_SMTP_STARTTLS:true}
+    ssl: ${WORK_SMTP_SSL:false}
+    from: ${WORK_MAIL_FROM:}
+    from-name: ${WORK_MAIL_FROM_NAME:}
+    app-url: ${WORK_MAIL_APP_URL:}
+    microsoft-tenant-id: ${WORK_M365_TENANT_ID:}
+    microsoft-client-id: ${WORK_M365_CLIENT_ID:}
+    microsoft-client-secret: ${WORK_M365_CLIENT_SECRET:}
+    poll-delay-ms: ${WORK_MAIL_POLL_DELAY_MS:30000}
   git:
     encryption-key: Z3ctaG9tZS1naXQta2V5IQ==
-
-openai:
-  api-key: ${OPENAI_API_KEY:}
-  primary-model: ${OPENAI_PRIMARY_MODEL:gpt-5.4-mini}
-  fallback-model: ${OPENAI_FALLBACK_MODEL:gpt-5-mini}
 
 server:
   port: 8080

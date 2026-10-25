@@ -1,0 +1,160 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-shell__workspace {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.app-shell__content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.page-container {
+  width: min(1280px, calc(100% - var(--page-gutter) * 2));
+  min-width: 0;
+  margin-inline: auto;
+  padding-block: var(--page-padding-block);
+}
+
+.content-panel {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.page-stack, .page-form-grid, .otp-setup {
+  display: grid;
+  min-width: 0;
+  gap: var(--section-gap);
+}
+
+.page-panel-padding-md { padding: var(--panel-padding); }
+.page-panel-padding-lg { padding: var(--panel-padding-large); }
+
+.page-hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: var(--section-gap);
+}
+
+.page-info-card, .otp-setup-panel {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+  padding: var(--panel-padding);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
+}
+
+.page-info-card span, .page-info-card p { color: var(--color-text-muted); }
+.page-info-card strong { font-size: 1.5rem; }
+.page-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.page-section-header :is(h2, h3, p), .otp-setup-panel h3 { margin: 0; }
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.otp-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.otp-setup-url {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: var(--space-4);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+.otp-setup-qr-image {
+  width: min(100%, 220px);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: #fff;
+}
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.app-footer {
+  padding: var(--space-4) var(--page-gutter) calc(var(--space-6) + env(safe-area-inset-bottom));
+  color: var(--color-text-muted);
+  text-align: center;
+  font-size: 0.75rem;
+}
+.app-footer p { margin: 0; }
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1200;
+  padding: 12px 16px;
+  transform: translateY(-150%);
+  border-radius: var(--radius-small);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.skip-link:focus { transform: translateY(0); }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .page-hero-split, .otp-setup-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .page-panel-padding-md, .page-panel-padding-lg,
+  .page-info-card, .otp-setup-panel { padding: var(--mobile-panel-padding); }
+  .page-section-header { align-items: stretch; flex-direction: column; }
+  .page-actions { justify-content: flex-start; }
+  .page-actions > * { flex: 1 1 auto; }
+}
+
+/* 메일 설정과 TODO 알림에서 동일한 입력·반응형 기준을 사용한다. */
+.form-field { display: grid; min-width: 0; gap: 8px; }
+.form-field > span { color: var(--color-text-muted); font-weight: 600; }
+.notification-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+.notification-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.notification-toggle { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.notification-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-primary); }
+.notification-toggle small { display: block; color: var(--color-text-muted); margin-top: 4px; }
+@media (max-width: 600px) { .notification-grid { grid-template-columns: minmax(0, 1fr); } }

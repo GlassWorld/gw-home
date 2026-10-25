@@ -185,7 +185,7 @@ onMounted(processCallback)
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: var(--panel-padding);
 }
 
 .google-callback-page__panel {

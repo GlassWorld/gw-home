@@ -34,27 +34,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class WorkUnitService {
 
+    // 종료된 보고서 사용순 정렬 요청도 최근 수정순으로 호환한다.
     private static final Map<String, String> SORT_CLAUSE_MAP = Map.of(
             "updated", "wu.use_yn DESC, wu.updated_at DESC, wu.created_at DESC",
-            "recent", "wu.use_yn DESC, COALESCE(wu.last_used_at, wu.updated_at) DESC, wu.updated_at DESC",
-            "frequent", "wu.use_yn DESC, wu.use_cnt DESC, wu.updated_at DESC"
+            "recent", "wu.use_yn DESC, wu.updated_at DESC, wu.created_at DESC",
+            "frequent", "wu.use_yn DESC, wu.updated_at DESC, wu.created_at DESC"
     );
 
     private final WorkUnitMapper workUnitMapper;
     private final WorkGitMapper workGitMapper;
     private final AccountLookupService accountLookupService;
     private final WorkGitCommitClient workGitCommitClient;
+    private final WorkNotificationReservations notificationReservations;
 
     public WorkUnitService(
             WorkUnitMapper workUnitMapper,
             WorkGitMapper workGitMapper,
             AccountLookupService accountLookupService,
-            WorkGitCommitClient workGitCommitClient
+            WorkGitCommitClient workGitCommitClient,
+            WorkNotificationReservations notificationReservations
     ) {
         this.workUnitMapper = workUnitMapper;
         this.workGitMapper = workGitMapper;
         this.accountLookupService = accountLookupService;
         this.workGitCommitClient = workGitCommitClient;
+        this.notificationReservations = notificationReservations;
     }
 
     // 로그인 사용자의 업무 목록을 조회한다.
@@ -209,8 +213,10 @@ public class WorkUnitService {
         log.info("updateWorkUnitUse 시작 - loginId: {}, uuid: {}, useYn: {}", loginId, uuid, useYn);
         try {
             AcctVo account = getAccountByLoginId(loginId);
+            notificationReservations.lock(account.getIdx());
             WorkUnitVo workUnit = getWorkUnit(uuid, account.getIdx());
             workUnitMapper.updateWorkUnitUse(workUnit.getUuid(), account.getIdx(), normalizeUseYn(useYn), loginId);
+            notificationReservations.synchronize(account.getIdx(), loginId);
             WorkUnitResponse response = WorkUnitConvert.toResponse(getWorkUnit(uuid, account.getIdx()));
             log.info("updateWorkUnitUse 완료 - loginId: {}, uuid: {}, useYn: {}", loginId, uuid, response.useYn());
             return response;

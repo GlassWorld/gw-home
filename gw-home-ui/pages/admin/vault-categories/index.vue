@@ -21,14 +21,9 @@ await loadCategoryList()
 </script>
 
 <template>
-  <main class="page-container vault-category-admin-page">
+  <main class="page-container page-stack vault-category-admin-page">
     <section class="content-panel vault-category-admin-page__panel page-panel-padding-md">
-      <div class="vault-category-admin-page__header">
-        <div>
-          <p class="vault-category-admin-page__eyebrow">Admin</p>
-          <h1 class="section-title">Vault 카테고리 관리</h1>
-        </div>
-      </div>
+      <CommonBasePageHeader title="Vault 카테고리 관리" eyebrow="Admin" />
 
       <form class="vault-category-admin-page__form" @submit.prevent="handleSubmit">
         <label class="vault-category-admin-page__field vault-category-admin-page__field--name">
@@ -100,30 +95,10 @@ await loadCategoryList()
 </template>
 
 <style scoped>
-.vault-category-admin-page {
-  display: grid;
-  gap: 24px;
-}
-
-.vault-category-admin-page__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.vault-category-admin-page__eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .vault-category-admin-page__form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto 140px;
-  gap: 14px 16px;
+  gap: 14px var(--section-gap);
   margin-top: 18px;
   align-items: end;
 }
@@ -170,9 +145,9 @@ await loadCategoryList()
   width: 52px;
   height: 40px;
   padding: 4px;
-  border: 1px solid rgba(147, 210, 255, 0.28);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
-  background: rgba(8, 23, 42, 0.72);
+  background: var(--color-surface);
   cursor: pointer;
 }
 
@@ -190,11 +165,11 @@ await loadCategoryList()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  gap: var(--section-gap);
+  padding: 10px var(--card-padding);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-muted);
 }
 
 .vault-category-admin-page__item-summary {

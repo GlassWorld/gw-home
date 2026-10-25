@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.work.WorkNotificationMapper">
+    <!-- 설정·TODO 쓰기·발송이 같은 계정 잠금을 먼저 획득한다. 음수 키로 업무 행 잠금과 구분한다. -->
+    <select id="selectOwnerLock" resultType="long">
+        SELECT CAST(#{owner} AS BIGINT) FROM (SELECT pg_advisory_xact_lock(-CAST(#{owner} AS BIGINT))) locked
+    </select>
+    <!-- 최초 설정은 계정 주소로 만들되 수신 검증과 활성화는 하지 않는다. -->
+    <insert id="insertDefaultSetting">
+        INSERT INTO tb_wrk_ntf_stg(mbr_acct_idx,rcpt_email,created_by)
+        VALUES(#{owner},#{email},#{actor}) ON CONFLICT(mbr_acct_idx) DO NOTHING
+    </insert>
+    <!-- 민감한 확인 해시는 서비스 내부에서만 사용한다. -->
+    <select id="selectSetting" resultType="WrkNtfStgVo">
+        SELECT s.*, wrk_ntf_stg_idx AS idx, wrk_ntf_stg_uuid AS uuid FROM tb_wrk_ntf_stg s
+        WHERE mbr_acct_idx=#{owner} AND del_at IS NULL
+    </select>
+    <!-- 소유 계정 잠금 안에서 검증 상태와 설정을 저장한다. -->
+    <update id="updateSetting">
+        UPDATE tb_wrk_ntf_stg SET rcpt_email=#{s.rcptEmail},vrfd_at=#{s.vrfdAt},vrfy_hash=#{s.vrfyHash},
+        vrfy_expires_at=#{s.vrfyExpiresAt},vrfy_sent_at=#{s.vrfySentAt},vrfy_tries=#{s.vrfyTries},
+        vrfy_window_at=#{s.vrfyWindowAt},vrfy_count=#{s.vrfyCount},dgst_enabled=#{s.dgstEnabled},
+        rmd_enabled=#{s.rmdEnabled},tm_zone=#{s.tmZone},dgst_time=#{s.dgstTime},dgst_cycle=#{s.dgstCycle},
+        next_dgst_at=#{s.nextDgstAt},ver=#{s.ver},updated_by=#{s.updatedBy},updated_at=now()
+        WHERE mbr_acct_idx=#{s.mbrAcctIdx} AND del_at IS NULL
+    </update>
+    <sql id="targetColumns">
+        t.*, t.wrk_todo_idx AS idx,t.wrk_todo_uuid AS uuid,u.work_unit_uuid,u.ttl AS work_unit_ttl,
+        (u.use_yn='Y' AND u.del_at IS NULL) AS active,
+        NOT EXISTS(SELECT 1 FROM tb_wrk_todo c WHERE c.prnt_wrk_todo_idx=t.wrk_todo_idx
+            AND c.work_unit_idx=t.work_unit_idx AND c.mbr_acct_idx=t.mbr_acct_idx AND c.del_at IS NULL) AS leaf
+    </sql>
+    <!-- UUID와 로그인 소유자를 함께 검증한다. -->
+    <select id="selectTarget" resultType="WorkReminderTargetJvo">
+        SELECT <include refid="targetColumns"/> FROM tb_wrk_todo t
+        JOIN tb_work_unit u ON u.work_unit_idx=t.work_unit_idx AND u.mbr_acct_idx=t.mbr_acct_idx
+        WHERE t.wrk_todo_uuid=CAST(#{todoUuid} AS UUID) AND t.mbr_acct_idx=#{owner}
+          AND t.del_at IS NULL AND u.del_at IS NULL
+    </select>
+    <!-- 발송 직전 현재 제목·본문·계층·완료 상태를 다시 조회한다. -->
+    <select id="selectReminderTarget" resultType="WorkReminderTargetJvo">
+        SELECT <include refid="targetColumns"/> FROM tb_wrk_todo_rmd r
+        JOIN tb_wrk_todo t ON t.wrk_todo_idx=r.wrk_todo_idx AND t.mbr_acct_idx=r.mbr_acct_idx
+        JOIN tb_work_unit u ON u.work_unit_idx=t.work_unit_idx AND u.mbr_acct_idx=t.mbr_acct_idx
+        WHERE r.wrk_todo_rmd_idx=#{reminderId} AND r.mbr_acct_idx=#{owner}
+          AND t.del_at IS NULL AND u.del_at IS NULL
+    </select>
+    <!-- 소유 TODO의 현재 예약을 조회한다. -->
+    <select id="selectReminder" resultType="WrkTodoRmdVo">
+        SELECT r.*,wrk_todo_rmd_idx AS idx,wrk_todo_rmd_uuid AS uuid FROM tb_wrk_todo_rmd r
+        WHERE mbr_acct_idx=#{owner} AND wrk_todo_idx=#{todoId} AND del_at IS NULL
+    </select>
+    <!-- 재설정은 버전을 증가시켜 과거 발송 키를 재사용하지 않는다. -->
+    <insert id="insertReminder">
+        INSERT INTO tb_wrk_todo_rmd(mbr_acct_idx,wrk_todo_idx,send_at,strt_dt,due_dt,created_by)
+        VALUES(#{r.mbrAcctIdx},#{r.wrkTodoIdx},#{r.sendAt},#{r.strtDt},#{r.dueDt},#{r.createdBy})
+        ON CONFLICT(wrk_todo_idx) DO UPDATE SET send_at=EXCLUDED.send_at,enabled=TRUE,
+        ver=tb_wrk_todo_rmd.ver+1,strt_dt=EXCLUDED.strt_dt,due_dt=EXCLUDED.due_dt,
+        updated_by=EXCLUDED.created_by,updated_at=now()
+        WHERE tb_wrk_todo_rmd.mbr_acct_idx=EXCLUDED.mbr_acct_idx
+    </insert>
+    <!-- 해제 후 완료 취소만으로 다시 활성화하지 않는다. -->
+    <update id="updateCancelReminder">
+        UPDATE tb_wrk_todo_rmd SET enabled=FALSE,ver=ver+1,updated_by=#{actor},updated_at=now()
+        WHERE mbr_acct_idx=#{owner} AND wrk_todo_idx=#{todoId} AND enabled
+    </update>
+    <!-- 주소·설정 변경 시 기존 예약을 새 설정 버전과 맞춘다. -->
+    <update id="updateReminderVersions">
+        UPDATE tb_wrk_todo_rmd SET enabled=enabled AND NOT #{disable} AND send_at&gt;now(),
+            ver=ver+1,updated_by=#{actor},updated_at=now()
+        WHERE mbr_acct_idx=#{owner} AND enabled
+    </update>
+    <!-- 완료·삭제·부모 전환·업무 비활성화는 동일 쓰기 트랜잭션에서 취소한다. -->
+    <update id="updateInvalidReminders">
+        UPDATE tb_wrk_todo_rmd r SET enabled=FALSE,ver=ver+1,updated_by=#{actor},updated_at=now()
+        WHERE r.mbr_acct_idx=#{owner} AND r.enabled AND NOT EXISTS(
+            SELECT 1 FROM tb_wrk_todo t JOIN tb_work_unit u ON u.work_unit_idx=t.work_unit_idx
+            AND u.mbr_acct_idx=t.mbr_acct_idx WHERE t.wrk_todo_idx=r.wrk_todo_idx AND t.mbr_acct_idx=#{owner}
+            AND t.sts!='DONE' AND t.del_at IS NULL AND u.del_at IS NULL AND u.use_yn='Y'
+            AND NOT EXISTS(SELECT 1 FROM tb_wrk_todo c WHERE c.prnt_wrk_todo_idx=t.wrk_todo_idx
+                AND c.mbr_acct_idx=#{owner} AND c.work_unit_idx=t.work_unit_idx AND c.del_at IS NULL))
+    </update>
+    <!-- 일정 변경은 지정 시각을 임의 이동하지 않고 미래 시각만 새 버전으로 예약한다. -->
+    <update id="updateChangedSchedules">
+        UPDATE tb_wrk_todo_rmd r SET strt_dt=t.strt_dt,due_dt=t.due_dt,ver=r.ver+1,
+            enabled=r.send_at&gt;now(),updated_by=#{actor},updated_at=now()
+        FROM tb_wrk_todo t WHERE r.wrk_todo_idx=t.wrk_todo_idx AND r.mbr_acct_idx=#{owner}
+        AND t.mbr_acct_idx=#{owner} AND r.enabled
+        AND (r.strt_dt IS DISTINCT FROM t.strt_dt OR r.due_dt IS DISTINCT FROM t.due_dt)
+    </update>
+    <!-- 설정 해제·주소 변경·예약 버전 변경은 대기/재시도/미발송 claim을 무효화한다. -->
+    <update id="updateInvalidDeliveries">
+        UPDATE tb_wrk_ntf_dlvr d SET sts='CANCELLED',result_cd='INVALIDATED',updated_at=now()
+        WHERE d.mbr_acct_idx=#{owner} AND d.sts IN ('PENDING','RETRY','CLAIMED') AND NOT EXISTS(
+            SELECT 1 FROM tb_wrk_ntf_stg s JOIN tb_mbr_acct a ON a.mbr_acct_idx=s.mbr_acct_idx
+            WHERE s.mbr_acct_idx=d.mbr_acct_idx AND s.del_at IS NULL AND s.vrfd_at IS NOT NULL
+              AND s.ver=d.stg_ver AND a.del_at IS NULL AND a.acct_stat='ACTIVE'
+              AND ((d.kind='DIGEST' AND s.dgst_enabled) OR (d.kind='REMINDER' AND s.rmd_enabled AND EXISTS(
+                  SELECT 1 FROM tb_wrk_todo_rmd r WHERE r.wrk_todo_rmd_idx=d.wrk_todo_rmd_idx
+                  AND r.mbr_acct_idx=d.mbr_acct_idx AND r.enabled AND r.ver=d.rmd_ver))))
+    </update>
+    <!-- 예약과 설정의 최신 버전으로 한 개의 발송 회차를 생성한다. -->
+    <insert id="insertReminderDeliveries">
+        INSERT INTO tb_wrk_ntf_dlvr(mbr_acct_idx,wrk_todo_rmd_idx,kind,dedup_key,stg_ver,rmd_ver,due_at,next_try_at,created_by)
+        SELECT r.mbr_acct_idx,r.wrk_todo_rmd_idx,'REMINDER','R:'||r.wrk_todo_rmd_uuid||':'||r.ver,
+            s.ver,r.ver,r.send_at,r.send_at,r.created_by FROM tb_wrk_todo_rmd r
+        JOIN tb_wrk_ntf_stg s ON s.mbr_acct_idx=r.mbr_acct_idx
+        WHERE r.mbr_acct_idx=#{owner} AND r.enabled AND s.rmd_enabled AND s.vrfd_at IS NOT NULL
+            AND s.del_at IS NULL AND r.del_at IS NULL
+        ON CONFLICT(mbr_acct_idx,dedup_key) DO NOTHING
+    </insert>
+    <!-- 오래된 예정 시각부터 작은 묶음으로 계획한다. 처리 후 next_dgst_at이 앞으로 이동한다. -->
+    <select id="selectDueSettings" resultType="long">
+        SELECT mbr_acct_idx FROM tb_wrk_ntf_stg WHERE dgst_enabled AND vrfd_at IS NOT NULL
+        AND del_at IS NULL AND next_dgst_at&lt;=now() ORDER BY next_dgst_at,mbr_acct_idx LIMIT 100
+    </select>
+    <!-- 현지 날짜 키는 설정을 바꾸어도 이미 발송된 요약을 중복 생성하지 않는다. -->
+    <insert id="insertDigest">
+        INSERT INTO tb_wrk_ntf_dlvr(mbr_acct_idx,kind,dedup_key,stg_ver,due_at,next_try_at,created_by)
+        VALUES(#{s.mbrAcctIdx},'DIGEST',#{key},#{s.ver},#{dueAt},#{dueAt},#{s.createdBy})
+        ON CONFLICT(mbr_acct_idx,dedup_key) DO UPDATE SET stg_ver=EXCLUDED.stg_ver,due_at=EXCLUDED.due_at,
+            next_try_at=EXCLUDED.next_try_at,sts='PENDING',result_cd=NULL,updated_at=now()
+        WHERE tb_wrk_ntf_dlvr.sts='CANCELLED' AND tb_wrk_ntf_dlvr.attempts=0
+    </insert>
+    <!-- 기존 통합 목록과 동일한 소유권·최하위·오늘 분류를 재사용한다. -->
+    <select id="selectDigestTodos" resultType="WorkTodoListJvo">
+        <include refid="com.gw.infra.db.mapper.work.WorkTodoMapper.myWorkTodoSource"/>
+        SELECT * FROM leaf_todos WHERE todo_group IN ('TODAY','OVERDUE')
+          OR (todo_group='UPCOMING' AND due_dt&lt;=#{req.today}+3)
+        ORDER BY COALESCE(due_dt,strt_dt),idx LIMIT 201
+    </select>
+    <!-- 여러 서버가 동시에 실행해도 한 행은 한 작업자만 확보한다. -->
+    <select id="selectClaimDeliveries" resultType="WrkNtfDlvrVo" affectData="true" flushCache="true">
+        WITH candidates AS (SELECT wrk_ntf_dlvr_idx FROM tb_wrk_ntf_dlvr
+            WHERE sts IN ('PENDING','RETRY') AND next_try_at&lt;=now()
+            ORDER BY next_try_at,wrk_ntf_dlvr_idx LIMIT 1 FOR UPDATE SKIP LOCKED)
+        UPDATE tb_wrk_ntf_dlvr d SET sts='CLAIMED',claim_token=gen_random_uuid(),
+            lease_until=now()+INTERVAL '2 minutes',updated_at=now()
+        FROM candidates c WHERE d.wrk_ntf_dlvr_idx=c.wrk_ntf_dlvr_idx
+        RETURNING d.*,d.wrk_ntf_dlvr_idx AS idx,d.wrk_ntf_dlvr_uuid AS uuid
+    </select>
+    <!-- 확보 토큰 검증에 필요한 상태를 다시 조회한다. -->
+    <select id="selectDelivery" resultType="WrkNtfDlvrVo">
+        SELECT d.*,wrk_ntf_dlvr_idx AS idx,wrk_ntf_dlvr_uuid AS uuid FROM tb_wrk_ntf_dlvr d WHERE wrk_ntf_dlvr_idx=#{id}
+    </select>
+    <!-- SMTP 호출 전에 별도 트랜잭션으로 커밋한다. 만료 claim은 발송할 수 없다. -->
+    <update id="updateStartSending">
+        UPDATE tb_wrk_ntf_dlvr SET sts='SENDING',attempts=attempts+1,lease_until=now()+INTERVAL '10 minutes',updated_at=now()
+        WHERE wrk_ntf_dlvr_idx=#{id} AND claim_token=CAST(#{token} AS UUID) AND sts='CLAIMED' AND lease_until&gt;now()
+    </update>
+    <!-- 실제 외부 호출 결과만 토큰과 발송 상태를 비교하여 기록한다. -->
+    <update id="updateDeliveryResult">
+        UPDATE tb_wrk_ntf_dlvr SET sts=#{status},result_cd=#{code},next_try_at=COALESCE(#{nextTry},next_try_at),
+            sent_at=CASE WHEN #{status}='SENT' THEN now() ELSE sent_at END,lease_until=NULL,updated_at=now()
+        WHERE wrk_ntf_dlvr_idx=#{id} AND claim_token=CAST(#{token} AS UUID) AND sts='SENDING'
+    </update>
+    <!-- 발송 직전 유효하지 않은 회차를 취소한다. -->
+    <update id="updateClaimCancelled">
+        UPDATE tb_wrk_ntf_dlvr SET sts='CANCELLED',result_cd=#{code},updated_at=now()
+        WHERE wrk_ntf_dlvr_idx=#{id} AND claim_token=CAST(#{token} AS UUID) AND sts='CLAIMED'
+    </update>
+    <!-- 외부 호출을 시작하지 않은 만료 claim만 다시 처리한다. -->
+    <update id="updateExpiredClaims">
+        UPDATE tb_wrk_ntf_dlvr SET sts='RETRY',claim_token=NULL,next_try_at=now(),updated_at=now()
+        WHERE sts='CLAIMED' AND lease_until&lt;now()
+    </update>
+    <!-- 접수 결과가 유실된 발송은 자동 재전송하지 않는다. -->
+    <update id="updateUnknownSends">
+        UPDATE tb_wrk_ntf_dlvr SET sts='UNKNOWN',result_cd='PROCESS_INTERRUPTED',updated_at=now()
+        WHERE sts='SENDING' AND lease_until&lt;now()
+    </update>
+    <!-- 지나치게 늦은 알림을 몰아서 보내지 않는다. -->
+    <update id="updateExpiredDeliveries">
+        UPDATE tb_wrk_ntf_dlvr SET sts='FAILED',result_cd='EXPIRED',updated_at=now()
+        WHERE sts IN ('PENDING','RETRY') AND due_at&lt;now()-INTERVAL '24 hours'
+    </update>
+    <!-- 탈퇴·비활성 계정 발송을 방지한다. -->
+    <select id="selectActiveAccount" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM tb_mbr_acct WHERE mbr_acct_idx=#{owner} AND del_at IS NULL AND acct_stat='ACTIVE')
+    </select>
+    <!-- 본인의 발송 결과만 안정적으로 페이징한다. -->
+    <select id="selectHistory" resultType="WrkNtfDlvrVo">
+        SELECT d.*,wrk_ntf_dlvr_idx AS idx,wrk_ntf_dlvr_uuid AS uuid FROM tb_wrk_ntf_dlvr d
+        WHERE mbr_acct_idx=#{owner} ORDER BY created_at DESC,wrk_ntf_dlvr_idx DESC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <!-- 본인 발송 이력의 전체 건수를 센다. -->
+    <select id="selectHistoryCount" resultType="long">
+        SELECT COUNT(*) FROM tb_wrk_ntf_dlvr WHERE mbr_acct_idx=#{owner}
+    </select>
+</mapper>

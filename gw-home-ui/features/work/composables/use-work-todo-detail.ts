@@ -1,6 +1,7 @@
 import type { SaveWorkTodoPayload, WorkTodo, WorkTodoTree, WorkUnit } from '../types/work.types'
 import { useWorkTodoApi } from '../api/work-todo.api'
 import { useWorkUnitApi } from '../api/work-unit.api'
+import { toValue, type MaybeRefOrGetter } from 'vue'
 
 function cloneTodoPayload(payload: SaveWorkTodoPayload): SaveWorkTodoPayload {
   return {
@@ -35,7 +36,7 @@ function flattenTodos(todos: WorkTodo[]): WorkTodo[] {
   return flattened
 }
 
-export function useWorkTodoDetail(workUnitUuid: string) {
+export function useWorkTodoDetail(workUnitUuid: MaybeRefOrGetter<string>, onChanged?: () => Promise<void>) {
   const { fetchWorkUnit } = useWorkUnitApi()
   const { fetchWorkTodoTree, createWorkTodo, updateWorkTodo, updateWorkTodoCompletion, deleteWorkTodo } = useWorkTodoApi()
   const { showToast } = useToast()
@@ -135,8 +136,8 @@ export function useWorkTodoDetail(workUnitUuid: string) {
 
     try {
       const [loadedWorkUnit, loadedTodoTree] = await Promise.all([
-        fetchWorkUnit(workUnitUuid),
-        fetchWorkTodoTree(workUnitUuid)
+        fetchWorkUnit(toValue(workUnitUuid)),
+        fetchWorkTodoTree(toValue(workUnitUuid))
       ])
 
       workUnit.value = loadedWorkUnit
@@ -160,6 +161,15 @@ export function useWorkTodoDetail(workUnitUuid: string) {
       return
     }
 
+    if (!toValue(workUnitUuid)) {
+      showToast('소속 업무를 선택해주세요.', { variant: 'error' })
+      return
+    }
+    if (formState.value.startDate && formState.value.dueDate && formState.value.startDate > formState.value.dueDate) {
+      showToast('마감일은 시작일보다 빠를 수 없습니다.', { variant: 'error' })
+      return
+    }
+
     isSaving.value = true
 
     const payload: SaveWorkTodoPayload = {
@@ -173,11 +183,12 @@ export function useWorkTodoDetail(workUnitUuid: string) {
 
     try {
       todoTree.value = editingTodoUuid.value
-        ? await updateWorkTodo(workUnitUuid, editingTodoUuid.value, payload)
-        : await createWorkTodo(workUnitUuid, payload)
+        ? await updateWorkTodo(toValue(workUnitUuid), editingTodoUuid.value, payload)
+        : await createWorkTodo(toValue(workUnitUuid), payload)
 
       showToast(editingTodoUuid.value ? 'TODO를 수정했습니다.' : 'TODO를 추가했습니다.', { variant: 'success' })
       closeForm()
+      await onChanged?.()
     } catch (error) {
       const fetchError = error as { data?: { message?: string } }
       showToast(fetchError.data?.message ?? 'TODO 저장에 실패했습니다.', { variant: 'error' })
@@ -186,7 +197,7 @@ export function useWorkTodoDetail(workUnitUuid: string) {
     }
   }
 
-  async function handleToggleCompletion(todo: WorkTodo) {
+  async function handleToggleCompletion(todo: WorkTodo, completed = !todo.completed) {
     if (isSaving.value || !todo.leaf) {
       return
     }
@@ -194,8 +205,9 @@ export function useWorkTodoDetail(workUnitUuid: string) {
     isSaving.value = true
 
     try {
-      todoTree.value = await updateWorkTodoCompletion(workUnitUuid, todo.todoUuid, !todo.completed)
-      showToast(todo.completed ? 'TODO를 미완료로 되돌렸습니다.' : 'TODO를 완료 처리했습니다.', { variant: 'success' })
+      todoTree.value = await updateWorkTodoCompletion(toValue(workUnitUuid), todo.todoUuid, completed)
+      showToast(completed ? 'TODO를 완료 처리했습니다.' : 'TODO를 미완료로 되돌렸습니다.', { variant: 'success' })
+      await onChanged?.()
     } catch (error) {
       const fetchError = error as { data?: { message?: string } }
       showToast(fetchError.data?.message ?? 'TODO 완료 상태 변경에 실패했습니다.', { variant: 'error' })
@@ -225,8 +237,9 @@ export function useWorkTodoDetail(workUnitUuid: string) {
     isSaving.value = true
 
     try {
-      todoTree.value = await deleteWorkTodo(workUnitUuid, todo.todoUuid)
+      todoTree.value = await deleteWorkTodo(toValue(workUnitUuid), todo.todoUuid)
       showToast('TODO를 삭제했습니다.', { variant: 'success' })
+      await onChanged?.()
     } catch (error) {
       const fetchError = error as { data?: { message?: string } }
       showToast(fetchError.data?.message ?? 'TODO 삭제에 실패했습니다.', { variant: 'error' })
@@ -236,6 +249,7 @@ export function useWorkTodoDetail(workUnitUuid: string) {
   }
 
   return {
+    getTodoByUuid,
     workUnit,
     todoTree,
     filteredTodos,

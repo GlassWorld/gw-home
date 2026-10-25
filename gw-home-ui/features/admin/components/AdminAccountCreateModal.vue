@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountRole, AdminCreateAccountForm } from '~/types/admin'
+import AdminAccountSelectField from './AdminAccountSelectField.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -69,7 +70,7 @@ const handleRoleSelect = (value: string) => {
 .admin-account-create-modal__form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .admin-account-create-modal__form,

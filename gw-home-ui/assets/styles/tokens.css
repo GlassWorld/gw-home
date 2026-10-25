@@ -1,0 +1,73 @@
+:root {
+  color-scheme: dark;
+  --motion-fast: 140ms;
+  --motion-standard: 220ms;
+  --motion-drawer: 280ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --color-background: #050608;
+  --color-surface: #181e26;
+  --color-surface-muted: #202833;
+  --color-surface-strong: #303c4b;
+  --color-border: #303b49;
+  --color-border-strong: #526174;
+  --color-text: #edf2f8;
+  --color-text-muted: #a7b5c7;
+  --color-primary: #8bb8ff;
+  --color-primary-strong: #aacaff;
+  --color-primary-soft: #203454;
+  --color-accent: var(--color-primary);
+  --color-on-primary: #101a2a;
+  --color-danger: #ff9b9f;
+  --color-danger-soft: #41252c;
+  --color-success: #85d9ad;
+  --color-success-soft: #1c382e;
+  --color-warning: #edc580;
+  --color-warning-soft: #3a3020;
+  --color-overlay: rgb(0 0 0 / 65%);
+  --color-focus: #8bb8ff;
+  --shadow-soft: 0 4px 18px rgb(0 0 0 / 12%);
+  --shadow-raised: 0 16px 48px rgb(0 0 0 / 35%);
+  --radius-small: 4px;
+  --radius-medium: 0px;
+  --radius-large: 0px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --font-display: "Segoe UI", "Noto Sans KR", sans-serif;
+  --font-body: "Segoe UI", "Noto Sans KR", sans-serif;
+  --control-height: 40px;
+  --button-height: 36px;
+  --button-height-small: 30px;
+  --header-height: 64px;
+  --sidebar-width: 248px;
+  --page-gutter: 20px;
+  --page-padding-block: 20px;
+  --section-gap: 16px;
+  --panel-padding: 16px;
+  --panel-padding-large: 20px;
+  --card-padding: 12px;
+  --mobile-panel-padding: 12px 10px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 56px;
+    --page-gutter: 8px;
+    --page-padding-block: 12px;
+    --section-gap: 12px;
+  }
+}
+
+/* 작은 버튼도 터치 환경에서는 누르기 쉬운 높이와 주변 간격을 유지한다. */
+@media (pointer: coarse) {
+  :root {
+    --control-height: 44px;
+    --button-height: 40px;
+    --button-height-small: 36px;
+  }
+}

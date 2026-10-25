@@ -8,7 +8,6 @@ export interface DashboardTaskRow {
   statusTone: DashboardTone
   progressRate: number
   delayedCount: number
-  latestReportDate: string | null
   updatedAt: string
 }
 
@@ -18,15 +17,6 @@ export interface DashboardMetricCard {
   value: string
   hint: string
   tone: DashboardTone
-}
-
-export interface DashboardRecentReportItem {
-  uuid: string
-  title: string
-  weekLabel: string
-  openLabel: string
-  publishedLabel: string
-  excerpt: string
 }
 
 export interface DashboardIssueItem {

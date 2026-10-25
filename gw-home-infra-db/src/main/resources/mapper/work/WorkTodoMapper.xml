@@ -16,6 +16,7 @@
         prgs_rt,
         strt_dt,
         due_dt,
+        cmpl_at,
         sort_ord,
         created_by,
         updated_by,
@@ -23,6 +24,96 @@
         updated_at,
         del_at
     </sql>
+
+    <!-- 같은 업무의 트리 변경을 직렬화하여 leaf 판정과 상위 진행률을 보호한다. -->
+    <select id="selectWorkUnitForUpdate" resultType="long">
+        SELECT work_unit_idx FROM tb_work_unit
+        WHERE work_unit_idx = #{workUnitIdx} AND mbr_acct_idx = #{mbrAcctIdx} AND del_at IS NULL
+        FOR UPDATE
+    </select>
+
+    <!-- 목록·간트·통계가 공유하는 소유자·업무 조건과 날짜 분류 원본이다. -->
+    <sql id="ownedWorkTodoSelect">
+            SELECT t.wrk_todo_idx AS idx, t.wrk_todo_uuid AS uuid, t.ttl, t.dscr, t.sts,
+                   t.strt_dt, t.due_dt, t.cmpl_at, t.prgs_rt, t.sort_ord, t.created_at, t.updated_at,
+                   unit.work_unit_uuid, unit.ttl AS work_unit_ttl, unit.use_yn AS work_unit_use_yn,
+                   unit.sts AS work_unit_sts,
+                   parent.wrk_todo_uuid AS prnt_todo_uuid, parent.ttl AS prnt_todo_ttl,
+                   NOT EXISTS (
+                       SELECT 1 FROM tb_wrk_todo child
+                       WHERE child.prnt_wrk_todo_idx = t.wrk_todo_idx AND child.work_unit_idx = t.work_unit_idx
+                         AND child.mbr_acct_idx = #{req.mbrAcctIdx} AND child.del_at IS NULL
+                   ) AS leaf,
+                   CASE WHEN t.sts = 'DONE' THEN 'COMPLETED'
+                        WHEN t.due_dt &lt; #{req.today} THEN 'OVERDUE'
+                        WHEN t.strt_dt &gt; #{req.today} OR (t.strt_dt IS NULL AND t.due_dt &gt; #{req.today}) THEN 'UPCOMING'
+                        WHEN t.strt_dt IS NULL AND t.due_dt IS NULL THEN 'UNSCHEDULED'
+                        ELSE 'TODAY' END AS todo_group
+            FROM tb_wrk_todo t
+            JOIN tb_work_unit unit ON unit.work_unit_idx = t.work_unit_idx
+                AND unit.mbr_acct_idx = #{req.mbrAcctIdx} AND unit.del_at IS NULL
+            LEFT JOIN tb_wrk_todo parent ON parent.wrk_todo_idx = t.prnt_wrk_todo_idx
+                AND parent.work_unit_idx = t.work_unit_idx AND parent.mbr_acct_idx = #{req.mbrAcctIdx}
+                AND parent.del_at IS NULL
+            WHERE t.mbr_acct_idx = #{req.mbrAcctIdx} AND t.del_at IS NULL
+            <if test="!req.includeInactive">AND unit.use_yn = 'Y'</if>
+            <if test="req.workUnitUuid != null">AND unit.work_unit_uuid = CAST(#{req.workUnitUuid} AS UUID)</if>
+            <if test="req.keyword != null">
+                AND POSITION(LOWER(#{req.keyword}) IN LOWER(t.ttl || ' ' || COALESCE(t.dscr, ''))) &gt; 0
+            </if>
+    </sql>
+
+    <!-- 목록과 요약은 같은 원본에서 최하위 항목과 일정 겹침 조건만 선택한다. -->
+    <sql id="myWorkTodoSource">
+        WITH owned_todos AS (<include refid="com.gw.infra.db.mapper.work.WorkTodoMapper.ownedWorkTodoSelect" />),
+        leaf_todos AS (
+            SELECT * FROM owned_todos WHERE leaf
+            <if test="req.fromDate != null">AND COALESCE(due_dt, strt_dt) &gt;= #{req.fromDate}</if>
+            <if test="req.toDate != null">AND COALESCE(strt_dt, due_dt) &lt;= #{req.toDate}</if>
+        )
+    </sql>
+
+    <!-- 선택한 분류의 전체 건수로 서버 페이징을 계산한다. -->
+    <select id="selectMyWorkTodoCount" resultType="long">
+        <include refid="myWorkTodoSource" />
+        SELECT COUNT(*) FROM leaf_todos
+        <if test="req.group != 'ALL'">WHERE todo_group = #{req.group}</if>
+    </select>
+
+    <!-- 여러 업무의 내 할 일을 일정·생성 시각·고유 키 순으로 안정적으로 조회한다. -->
+    <select id="selectMyWorkTodos" resultType="WorkTodoListJvo">
+        <include refid="myWorkTodoSource" />
+        SELECT * FROM leaf_todos
+        <if test="req.group != 'ALL'">WHERE todo_group = #{req.group}</if>
+        ORDER BY COALESCE(due_dt, strt_dt) ASC NULLS LAST, created_at ASC, idx ASC
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <!-- 분류 선택 외의 동일 필터로 최하위 항목만 요약해 부모·자식 중복을 방지한다. -->
+    <select id="selectMyWorkTodoSummary" resultType="WorkTodoInboxSummaryJvo">
+        <include refid="myWorkTodoSource" />
+        SELECT COUNT(*) AS total_count,
+               COUNT(*) FILTER (WHERE todo_group = 'TODAY') AS today_count,
+               COUNT(*) FILTER (WHERE todo_group = 'UPCOMING') AS upcoming_count,
+               COUNT(*) FILTER (WHERE todo_group = 'OVERDUE') AS overdue_count,
+               COUNT(*) FILTER (WHERE todo_group = 'COMPLETED') AS completed_count,
+               COUNT(*) FILTER (WHERE todo_group = 'UNSCHEDULED') AS unscheduled_count,
+               COUNT(*) FILTER (WHERE todo_group = 'COMPLETED' AND cmpl_at IS NULL) AS unknown_completion_count
+        FROM leaf_todos
+    </select>
+
+    <!-- 직접 완료 전환에만 시각을 기록한다. 반복 완료와 기존 완료일 미상은 보존한다. -->
+    <update id="updateWorkTodoCompletion">
+        UPDATE tb_wrk_todo t
+        SET cmpl_at = CASE WHEN #{completed} THEN CASE WHEN sts = 'DONE' THEN cmpl_at ELSE now() END ELSE NULL END,
+            sts = CASE WHEN #{completed} THEN 'DONE' ELSE 'TODO' END,
+            prgs_rt = CASE WHEN #{completed} THEN 100 ELSE 0 END,
+            updated_by = #{updatedBy}, updated_at = now()
+        WHERE wrk_todo_uuid = CAST(#{uuid} AS UUID) AND work_unit_idx = #{workUnitIdx}
+          AND mbr_acct_idx = #{mbrAcctIdx} AND del_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM tb_wrk_todo child WHERE child.prnt_wrk_todo_idx = t.wrk_todo_idx
+              AND child.work_unit_idx = #{workUnitIdx} AND child.mbr_acct_idx = #{mbrAcctIdx} AND child.del_at IS NULL)
+    </update>
 
     <select id="selectWorkTodoList" resultType="WorkTodoVo">
         SELECT
@@ -114,6 +205,7 @@
         SET
             sts = #{sts},
             prgs_rt = #{prgsRt},
+            cmpl_at = NULL,
             updated_by = #{updatedBy},
             updated_at = now()
         WHERE wrk_todo_idx = #{idx}
@@ -143,6 +235,7 @@
             FROM tb_wrk_todo child
             INNER JOIN todo_subtree subtree ON child.prnt_wrk_todo_idx = subtree.wrk_todo_idx
             WHERE child.mbr_acct_idx = #{mbrAcctIdx}
+              AND child.work_unit_idx = #{workUnitIdx}
               AND child.del_at IS NULL
         )
         UPDATE tb_wrk_todo

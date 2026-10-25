@@ -57,7 +57,7 @@ function handleSubmit() {
 <template>
   <form class="login-form" @submit.prevent="handleSubmit">
     <div class="login-form__group">
-      <label for="login-id">Login ID</label>
+      <label for="login-id">아이디</label>
       <input
         id="login-id"
         v-model="loginId"
@@ -71,7 +71,7 @@ function handleSubmit() {
     </div>
 
     <div class="login-form__group">
-      <label for="password">Password</label>
+      <label for="password">비밀번호</label>
       <input
         id="password"
         v-model="password"
@@ -98,11 +98,11 @@ function handleSubmit() {
       <span>로그인 아이디 저장</span>
     </label>
 
-    <p v-if="props.errorMessage" class="message-error">
+    <p v-if="props.errorMessage" class="message-error" role="alert">
       {{ props.errorMessage }}
     </p>
 
-    <CommonBaseButton class="login-form__submit" block type="submit" :disabled="props.isSubmitting">
+    <CommonBaseButton class="login-form__submit" block type="submit" :loading="props.isSubmitting">
       {{ props.isSubmitting ? '로그인 중...' : '로그인' }}
     </CommonBaseButton>
 
@@ -138,9 +138,10 @@ function handleSubmit() {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: rgba(219, 241, 255, 0.78);
+  color: var(--color-text-muted);
   font-size: 0.92rem;
   width: fit-content;
+  min-height: 44px;
 }
 
 .login-form__checkbox input {
@@ -148,12 +149,12 @@ function handleSubmit() {
   width: 18px;
   height: 18px;
   margin: 0;
-  border: 1px solid rgba(147, 210, 255, 0.5);
+  border: 1px solid var(--color-border-strong);
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
   display: grid;
   place-items: center;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 
 .login-form__checkbox input::after {
@@ -161,7 +162,7 @@ function handleSubmit() {
   width: 8px;
   height: 8px;
   border-radius: 2px;
-  background: linear-gradient(135deg, #8fddff 0%, #4aa8ea 100%);
+  background: var(--color-primary);
   transform: scale(0);
   transition: transform 0.16s ease;
 }
@@ -171,29 +172,27 @@ function handleSubmit() {
 }
 
 .login-form__checkbox input:focus-visible {
-  outline: 2px solid rgba(95, 186, 255, 0.28);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .login-form__group label {
-  color: rgba(196, 214, 255, 0.86);
+  color: var(--color-text-muted);
   font-weight: 700;
-  letter-spacing: 0.04em;
-  font-size: 0.82rem;
-  text-transform: uppercase;
+  font-size: 0.875rem;
 }
 
 .login-form__caps-warning {
   margin: 0;
-  color: #ffd089;
+  color: var(--color-warning);
   font-size: 0.88rem;
   line-height: 1.4;
 }
 
 .login-form :deep(.message-error) {
-  border-color: rgba(255, 161, 161, 0.35);
-  background: rgba(122, 28, 28, 0.26);
-  color: #ffe2e2;
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .login-form :deep(.base-button--disabled) {
@@ -207,7 +206,7 @@ function handleSubmit() {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  color: rgba(219, 241, 255, 0.52);
+  color: var(--color-text-muted);
   font-size: 0.82rem;
 }
 
@@ -215,7 +214,7 @@ function handleSubmit() {
 .login-form__divider::after {
   content: '';
   height: 1px;
-  background: rgba(176, 195, 255, 0.18);
+  background: var(--color-surface-muted);
 }
 
 .login-form__google {

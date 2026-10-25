@@ -64,17 +64,13 @@ await loadAccounts()
 </script>
 
 <template>
-  <main class="page-container admin-accounts-page">
-    <section class="content-panel admin-accounts-page__panel">
-      <div class="admin-accounts-page__header">
-        <div>
-          <p class="admin-accounts-page__eyebrow">Admin</p>
-          <h1 class="section-title">계정 관리</h1>
-        </div>
-        <CommonBaseButton @click="openCreateModal">
-          계정 생성
-        </CommonBaseButton>
-      </div>
+  <main class="page-container page-stack admin-accounts-page">
+    <section class="content-panel page-panel-padding-md admin-accounts-page__panel">
+      <CommonBasePageHeader title="계정 관리" eyebrow="Admin">
+        <template #actions>
+          <CommonBaseButton @click="openCreateModal">계정 생성</CommonBaseButton>
+        </template>
+      </CommonBasePageHeader>
 
       <AdminAccountFilterForm
         :filters="filters"
@@ -91,7 +87,7 @@ await loadAccounts()
       />
     </section>
 
-    <section class="content-panel admin-accounts-page__panel">
+    <section class="content-panel page-panel-padding-md admin-accounts-page__panel">
       <AdminAccountTable
         :account-page="accountPage"
         :is-loading="isLoading"
@@ -152,15 +148,9 @@ await loadAccounts()
 </template>
 
 <style scoped>
-.admin-accounts-page {
-  display: grid;
-  gap: 24px;
-}
-
 .admin-accounts-page__panel {
   position: relative;
   overflow: visible;
-  padding: 22px;
 }
 
 .admin-accounts-page__panel:first-child {
@@ -171,24 +161,7 @@ await loadAccounts()
   z-index: 1;
 }
 
-.admin-accounts-page__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.admin-accounts-page__eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 @media (max-width: 900px) {
-  .admin-accounts-page__header,
   .admin-accounts-page__panel {
     overflow: visible;
   }
@@ -196,24 +169,9 @@ await loadAccounts()
 
 @media (max-width: 768px) {
   .admin-accounts-page {
-    gap: 16px;
+    gap: var(--section-gap);
   }
 
-  .admin-accounts-page__panel {
-    padding: 16px;
-  }
-
-  .admin-accounts-page__header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-}
-
-@media (max-width: 420px) {
-  .admin-accounts-page__panel {
-    padding: 14px;
-  }
 }
 
 :deep(.base-modal__panel) {

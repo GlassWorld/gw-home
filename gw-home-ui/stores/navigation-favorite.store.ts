@@ -1,3 +1,5 @@
+import { allNavigationItems } from '~/constants/navigation-menu'
+
 interface NavigationFavoriteState {
   favoriteMenus: string[]
   isLoaded: boolean
@@ -13,7 +15,8 @@ export const useNavigationFavoriteStore = defineStore('navigationFavorite', {
 
   actions: {
     setFavoriteMenus(favoriteMenus: string[]) {
-      this.favoriteMenus = [...favoriteMenus]
+      const allowedPaths = new Set(allNavigationItems.filter(item => item.favoriteEnabled).map(item => item.to))
+      this.favoriteMenus = favoriteMenus.filter(menu => allowedPaths.has(menu))
       this.isLoaded = true
     },
 

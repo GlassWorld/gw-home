@@ -24,7 +24,7 @@ const emit = defineEmits<{
     eyebrow="Security"
     title="OTP 등록이 필요합니다"
     width="680px"
-    @close="void 0"
+    :dismissible="false"
   >
     <div class="login-otp-setup-modal">
       <div class="login-otp-setup-modal__header">

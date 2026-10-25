@@ -4,8 +4,6 @@ import com.gw.api.convert.work.WorkTodoConvert;
 import com.gw.api.dto.work.CreateWorkTodoRequest;
 import com.gw.api.dto.work.UpdateWorkTodoCompletionRequest;
 import com.gw.api.dto.work.UpdateWorkTodoRequest;
-import com.gw.api.dto.work.WorkTodoResponse;
-import com.gw.api.dto.work.WorkTodoSummaryResponse;
 import com.gw.api.dto.work.WorkTodoTreeResponse;
 import com.gw.api.service.account.AccountLookupService;
 import com.gw.infra.db.mapper.work.WorkTodoMapper;
@@ -13,6 +11,7 @@ import com.gw.infra.db.mapper.work.WorkUnitMapper;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.policy.WorkPolicy;
+import com.gw.share.common.policy.WorkTodoPolicy;
 import com.gw.share.util.DateUtil;
 import com.gw.share.util.StringUtil;
 import com.gw.share.util.ValidationUtil;
@@ -38,36 +37,40 @@ public class WorkTodoService {
     private final WorkTodoMapper workTodoMapper;
     private final WorkUnitMapper workUnitMapper;
     private final AccountLookupService accountLookupService;
+    private final WorkNotificationReservations notificationReservations;
 
     public WorkTodoService(
             WorkTodoMapper workTodoMapper,
             WorkUnitMapper workUnitMapper,
-            AccountLookupService accountLookupService
+            AccountLookupService accountLookupService,
+            WorkNotificationReservations notificationReservations
     ) {
         this.workTodoMapper = workTodoMapper;
         this.workUnitMapper = workUnitMapper;
         this.accountLookupService = accountLookupService;
+        this.notificationReservations = notificationReservations;
     }
 
     // 로그인 사용자의 업무 TODO 트리를 조회한다.
     @Transactional(readOnly = true)
-    public WorkTodoTreeResponse getWorkTodoTree(String loginId, String workUnitUuid) {
+    public WorkTodoTreeResponse getWorkTodoTree(String loginId, String workUnitUuid, String timeZone) {
         log.info("getWorkTodoTree 시작 - loginId: {}, workUnitUuid: {}", loginId, workUnitUuid);
         try {
+            LocalDate today = WorkTodoPolicy.today(timeZone);
             AcctVo account = getAccountByLoginId(loginId);
             WorkUnitVo workUnit = getWorkUnit(workUnitUuid, account.getIdx());
             List<WorkTodoVo> workTodos = loadWorkTodos(workUnit.getIdx(), account.getIdx());
-            WorkTodoTreeResponse response = buildTreeResponse(workUnit.getUuid(), workTodos);
+            WorkTodoTreeResponse response = WorkTodoConvert.toTreeResponse(workUnit.getUuid(), workTodos, today);
             log.info("getWorkTodoTree 완료 - loginId: {}, workUnitUuid: {}, itemCount: {}",
                     loginId, workUnitUuid, response.summary().itemCount());
             return response;
-        } catch (BusinessException exception) {
+        } catch (RuntimeException exception) {
             log.error(
                     "getWorkTodoTree 실패 - loginId: {}, workUnitUuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     workUnitUuid,
                     exception.getMessage(),
-                    exception.getDetailMessage(),
+                    exception instanceof BusinessException businessException ? businessException.getDetailMessage() : exception.getMessage(),
                     exception
             );
             throw exception;
@@ -75,11 +78,13 @@ public class WorkTodoService {
     }
 
     // 로그인 사용자가 업무 TODO를 추가한다.
-    public WorkTodoTreeResponse createWorkTodo(String loginId, String workUnitUuid, CreateWorkTodoRequest request) {
+    public WorkTodoTreeResponse createWorkTodo(String loginId, String workUnitUuid, CreateWorkTodoRequest request, String timeZone) {
         log.info("createWorkTodo 시작 - loginId: {}, workUnitUuid: {}, title: {}", loginId, workUnitUuid, request.title());
         try {
+            LocalDate today = WorkTodoPolicy.today(timeZone);
             AcctVo account = getAccountByLoginId(loginId);
             WorkUnitVo workUnit = getWorkUnit(workUnitUuid, account.getIdx());
+            lockWorkUnit(workUnit.getIdx(), account.getIdx());
             validateDateRange(request.startDate(), request.dueDate());
 
             List<WorkTodoVo> workTodos = loadWorkTodos(workUnit.getIdx(), account.getIdx());
@@ -104,16 +109,16 @@ public class WorkTodoService {
                     .build();
             workTodoMapper.insertWorkTodo(workTodo);
 
-            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId);
+            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId, today);
             log.info("createWorkTodo 완료 - loginId: {}, workUnitUuid: {}, todoIdx: {}", loginId, workUnitUuid, workTodo.getIdx());
             return response;
-        } catch (BusinessException exception) {
+        } catch (RuntimeException exception) {
             log.error(
                     "createWorkTodo 실패 - loginId: {}, workUnitUuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     workUnitUuid,
                     exception.getMessage(),
-                    exception.getDetailMessage(),
+                    exception instanceof BusinessException businessException ? businessException.getDetailMessage() : exception.getMessage(),
                     exception
             );
             throw exception;
@@ -125,12 +130,15 @@ public class WorkTodoService {
             String loginId,
             String workUnitUuid,
             String todoUuid,
-            UpdateWorkTodoRequest request
+            UpdateWorkTodoRequest request,
+            String timeZone
     ) {
         log.info("updateWorkTodo 시작 - loginId: {}, workUnitUuid: {}, todoUuid: {}", loginId, workUnitUuid, todoUuid);
         try {
+            LocalDate today = WorkTodoPolicy.today(timeZone);
             AcctVo account = getAccountByLoginId(loginId);
             WorkUnitVo workUnit = getWorkUnit(workUnitUuid, account.getIdx());
+            lockWorkUnit(workUnit.getIdx(), account.getIdx());
             validateDateRange(request.startDate(), request.dueDate());
 
             List<WorkTodoVo> workTodos = loadWorkTodos(workUnit.getIdx(), account.getIdx());
@@ -155,17 +163,17 @@ public class WorkTodoService {
             targetTodo.setUpdatedBy(loginId);
             workTodoMapper.updateWorkTodo(targetTodo);
 
-            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId);
+            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId, today);
             log.info("updateWorkTodo 완료 - loginId: {}, workUnitUuid: {}, todoUuid: {}", loginId, workUnitUuid, todoUuid);
             return response;
-        } catch (BusinessException exception) {
+        } catch (RuntimeException exception) {
             log.error(
                     "updateWorkTodo 실패 - loginId: {}, workUnitUuid: {}, todoUuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     workUnitUuid,
                     todoUuid,
                     exception.getMessage(),
-                    exception.getDetailMessage(),
+                    exception instanceof BusinessException businessException ? businessException.getDetailMessage() : exception.getMessage(),
                     exception
             );
             throw exception;
@@ -177,13 +185,16 @@ public class WorkTodoService {
             String loginId,
             String workUnitUuid,
             String todoUuid,
-            UpdateWorkTodoCompletionRequest request
+            UpdateWorkTodoCompletionRequest request,
+            String timeZone
     ) {
         log.info("updateWorkTodoCompletion 시작 - loginId: {}, workUnitUuid: {}, todoUuid: {}, completed: {}",
                 loginId, workUnitUuid, todoUuid, request.completed());
         try {
+            LocalDate today = WorkTodoPolicy.today(timeZone);
             AcctVo account = getAccountByLoginId(loginId);
             WorkUnitVo workUnit = getWorkUnit(workUnitUuid, account.getIdx());
+            lockWorkUnit(workUnit.getIdx(), account.getIdx());
             List<WorkTodoVo> workTodos = loadWorkTodos(workUnit.getIdx(), account.getIdx());
             WorkTodoVo targetTodo = getRequiredTodo(todoUuid, workTodos);
 
@@ -193,25 +204,20 @@ public class WorkTodoService {
                     "하위 TODO가 있는 항목은 직접 완료 처리할 수 없습니다."
             );
 
-            workTodoMapper.updateWorkTodoDerivedFields(
-                    targetTodo.getIdx(),
-                    request.completed() ? WorkPolicy.TODO_STATUS_DONE : WorkPolicy.TODO_STATUS_TODO,
-                    request.completed() ? 100 : 0,
-                    loginId
-            );
+            workTodoMapper.updateWorkTodoCompletion(todoUuid, workUnit.getIdx(), account.getIdx(), request.completed(), loginId);
 
-            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId);
+            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId, today);
             log.info("updateWorkTodoCompletion 완료 - loginId: {}, workUnitUuid: {}, todoUuid: {}",
                     loginId, workUnitUuid, todoUuid);
             return response;
-        } catch (BusinessException exception) {
+        } catch (RuntimeException exception) {
             log.error(
                     "updateWorkTodoCompletion 실패 - loginId: {}, workUnitUuid: {}, todoUuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     workUnitUuid,
                     todoUuid,
                     exception.getMessage(),
-                    exception.getDetailMessage(),
+                    exception instanceof BusinessException businessException ? businessException.getDetailMessage() : exception.getMessage(),
                     exception
             );
             throw exception;
@@ -219,28 +225,30 @@ public class WorkTodoService {
     }
 
     // 로그인 사용자가 업무 TODO를 삭제한다.
-    public WorkTodoTreeResponse deleteWorkTodo(String loginId, String workUnitUuid, String todoUuid) {
+    public WorkTodoTreeResponse deleteWorkTodo(String loginId, String workUnitUuid, String todoUuid, String timeZone) {
         log.info("deleteWorkTodo 시작 - loginId: {}, workUnitUuid: {}, todoUuid: {}", loginId, workUnitUuid, todoUuid);
         try {
+            LocalDate today = WorkTodoPolicy.today(timeZone);
             AcctVo account = getAccountByLoginId(loginId);
             WorkUnitVo workUnit = getWorkUnit(workUnitUuid, account.getIdx());
+            lockWorkUnit(workUnit.getIdx(), account.getIdx());
             WorkTodoVo targetTodo = workTodoMapper.selectWorkTodo(todoUuid, workUnit.getIdx(), account.getIdx());
             if (targetTodo == null) {
                 throw new BusinessException(ErrorCode.NOT_FOUND, "업무 TODO를 찾을 수 없습니다.");
             }
 
             workTodoMapper.deleteWorkTodoSubtree(todoUuid, workUnit.getIdx(), account.getIdx(), loginId);
-            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId);
+            WorkTodoTreeResponse response = recalculateAndBuildTree(workUnit.getUuid(), workUnit.getIdx(), account.getIdx(), loginId, today);
             log.info("deleteWorkTodo 완료 - loginId: {}, workUnitUuid: {}, todoUuid: {}", loginId, workUnitUuid, todoUuid);
             return response;
-        } catch (BusinessException exception) {
+        } catch (RuntimeException exception) {
             log.error(
                     "deleteWorkTodo 실패 - loginId: {}, workUnitUuid: {}, todoUuid: {}, 원인: {}, detailMessage: {}",
                     loginId,
                     workUnitUuid,
                     todoUuid,
                     exception.getMessage(),
-                    exception.getDetailMessage(),
+                    exception instanceof BusinessException businessException ? businessException.getDetailMessage() : exception.getMessage(),
                     exception
             );
             throw exception;
@@ -251,18 +259,15 @@ public class WorkTodoService {
             String workUnitUuid,
             Long workUnitIdx,
             Long mbrAcctIdx,
-            String loginId
+            String loginId,
+            LocalDate today
     ) {
         List<WorkTodoVo> latestTodos = loadWorkTodos(workUnitIdx, mbrAcctIdx);
         normalizeSortOrders(latestTodos, loginId);
         List<WorkTodoVo> recalculationTargets = loadWorkTodos(workUnitIdx, mbrAcctIdx);
         recalculateTree(recalculationTargets, loginId);
-        return buildTreeResponse(workUnitUuid, loadWorkTodos(workUnitIdx, mbrAcctIdx));
-    }
-
-    private WorkTodoTreeResponse buildTreeResponse(String workUnitUuid, List<WorkTodoVo> workTodos) {
-        TreeBuildResult treeBuildResult = buildTree(workTodos);
-        return WorkTodoConvert.toTreeResponse(workUnitUuid, treeBuildResult.summary(), treeBuildResult.roots());
+        notificationReservations.synchronize(mbrAcctIdx, loginId);
+        return WorkTodoConvert.toTreeResponse(workUnitUuid, loadWorkTodos(workUnitIdx, mbrAcctIdx), today);
     }
 
     private List<WorkTodoVo> loadWorkTodos(Long workUnitIdx, Long mbrAcctIdx) {
@@ -325,7 +330,7 @@ public class WorkTodoService {
                     ? WorkPolicy.TODO_STATUS_DONE
                     : WorkPolicy.TODO_STATUS_TODO;
             int nextProgressRate = WorkPolicy.TODO_STATUS_DONE.equals(nextStatus) ? 100 : 0;
-            persistDerivedFieldsIfChanged(currentTodo, nextStatus, nextProgressRate, loginId);
+            persistDerivedFieldsIfChanged(currentTodo, nextStatus, nextProgressRate, loginId, false);
             return new ProgressAggregate(1, WorkPolicy.TODO_STATUS_DONE.equals(nextStatus) ? 1 : 0);
         }
 
@@ -343,116 +348,20 @@ public class WorkTodoService {
                 : nextProgressRate == 0
                 ? WorkPolicy.TODO_STATUS_TODO
                 : WorkPolicy.TODO_STATUS_IN_PROGRESS;
-        persistDerivedFieldsIfChanged(currentTodo, nextStatus, nextProgressRate, loginId);
+        persistDerivedFieldsIfChanged(currentTodo, nextStatus, nextProgressRate, loginId, true);
 
         return new ProgressAggregate(leafCount, completedLeafCount);
     }
 
-    private void persistDerivedFieldsIfChanged(WorkTodoVo workTodo, String nextStatus, int nextProgressRate, String loginId) {
+    private void persistDerivedFieldsIfChanged(WorkTodoVo workTodo, String nextStatus, int nextProgressRate, String loginId, boolean parent) {
         boolean statusChanged = !nextStatus.equals(workTodo.getSts());
         boolean progressChanged = !Integer.valueOf(nextProgressRate).equals(workTodo.getPrgsRt());
 
-        if (!statusChanged && !progressChanged) {
+        if (!statusChanged && !progressChanged && !(parent && workTodo.getCmplAt() != null)) {
             return;
         }
 
         workTodoMapper.updateWorkTodoDerivedFields(workTodo.getIdx(), nextStatus, nextProgressRate, loginId);
-    }
-
-    private TreeBuildResult buildTree(List<WorkTodoVo> workTodos) {
-        Map<Long, List<WorkTodoVo>> childrenByParent = new HashMap<>();
-        Map<Long, WorkTodoVo> todoByIdx = new HashMap<>();
-
-        for (WorkTodoVo workTodo : workTodos) {
-            todoByIdx.put(workTodo.getIdx(), workTodo);
-            childrenByParent.computeIfAbsent(workTodo.getPrntWrkTodoIdx(), key -> new ArrayList<>()).add(workTodo);
-        }
-
-        for (List<WorkTodoVo> children : childrenByParent.values()) {
-            children.sort(Comparator
-                    .comparing((WorkTodoVo workTodo) -> safeSortOrder(workTodo.getSortOrd()))
-                    .thenComparing(WorkTodoVo::getCreatedAt)
-                    .thenComparing(WorkTodoVo::getIdx));
-        }
-
-        List<WorkTodoResponse> roots = new ArrayList<>();
-        Counter counter = new Counter();
-        for (WorkTodoVo rootTodo : childrenByParent.getOrDefault(null, List.of())) {
-            roots.add(toResponse(rootTodo, null, 0, childrenByParent, counter));
-        }
-
-        int progressRate = counter.leafCount == 0 ? 0 : Math.round((counter.completedLeafCount * 100f) / counter.leafCount);
-        String summaryStatus = counter.leafCount == 0
-                ? WorkPolicy.TODO_STATUS_TODO
-                : progressRate == 100
-                ? WorkPolicy.TODO_STATUS_DONE
-                : counter.delayedCount > 0
-                ? WorkPolicy.TODO_STATUS_DELAYED
-                : progressRate == 0
-                ? WorkPolicy.TODO_STATUS_TODO
-                : WorkPolicy.TODO_STATUS_IN_PROGRESS;
-
-        return new TreeBuildResult(
-                roots,
-                new WorkTodoSummaryResponse(
-                        summaryStatus,
-                        progressRate,
-                        workTodos.size(),
-                        counter.leafCount,
-                        counter.completedLeafCount,
-                        counter.delayedCount
-                )
-        );
-    }
-
-    private WorkTodoResponse toResponse(
-            WorkTodoVo workTodo,
-            WorkTodoVo parentTodo,
-            int depth,
-            Map<Long, List<WorkTodoVo>> childrenByParent,
-            Counter counter
-    ) {
-        List<WorkTodoVo> childTodos = childrenByParent.getOrDefault(workTodo.getIdx(), List.of());
-        List<WorkTodoResponse> children = new ArrayList<>();
-        for (WorkTodoVo childTodo : childTodos) {
-            children.add(toResponse(childTodo, workTodo, depth + 1, childrenByParent, counter));
-        }
-
-        boolean leaf = childTodos.isEmpty();
-        boolean completed = WorkPolicy.TODO_STATUS_DONE.equals(workTodo.getSts());
-        boolean delayed = !completed
-                && workTodo.getDueDt() != null
-                && workTodo.getDueDt().isBefore(LocalDate.now());
-
-        if (delayed) {
-            counter.delayedCount++;
-        }
-
-        if (leaf) {
-            counter.leafCount++;
-            if (completed) {
-                counter.completedLeafCount++;
-            }
-        }
-
-        return new WorkTodoResponse(
-                workTodo.getUuid(),
-                parentTodo == null ? null : parentTodo.getUuid(),
-                workTodo.getTtl(),
-                workTodo.getDscr(),
-                delayed ? WorkPolicy.TODO_STATUS_DELAYED : workTodo.getSts(),
-                workTodo.getPrgsRt(),
-                workTodo.getStrtDt(),
-                workTodo.getDueDt(),
-                workTodo.getSortOrd(),
-                depth,
-                leaf,
-                completed,
-                delayed,
-                workTodo.getCreatedAt(),
-                workTodo.getUpdatedAt(),
-                children
-        );
     }
 
     private void validateNotDescendantParent(WorkTodoVo targetTodo, WorkTodoVo parentTodo, List<WorkTodoVo> workTodos) {
@@ -540,15 +449,15 @@ public class WorkTodoService {
         return workUnit;
     }
 
+    // 소유 업무 행을 먼저 잠가 완료·추가·이동·삭제 요청의 재계산 경합을 방지한다.
+    private void lockWorkUnit(Long workUnitIdx, Long accountIdx) {
+        notificationReservations.lock(accountIdx);
+        if (workTodoMapper.selectWorkUnitForUpdate(workUnitIdx, accountIdx) == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+    }
+
     private record ProgressAggregate(int leafCount, int completedLeafCount) {
     }
 
-    private record TreeBuildResult(List<WorkTodoResponse> roots, WorkTodoSummaryResponse summary) {
-    }
-
-    private static final class Counter {
-        private int leafCount;
-        private int completedLeafCount;
-        private int delayedCount;
-    }
 }

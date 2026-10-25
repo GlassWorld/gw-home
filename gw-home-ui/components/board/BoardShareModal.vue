@@ -305,16 +305,16 @@ async function handleCopyLink() {
 <style scoped>
 .board-share-modal {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .board-share-modal__section {
   display: grid;
   gap: 12px;
   padding: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.18);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 .board-share-modal__section--disabled {
@@ -336,8 +336,8 @@ async function handleCopyLink() {
 .board-share-modal__status-badge {
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.16);
-  color: #7dd3fc;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -362,8 +362,8 @@ async function handleCopyLink() {
 
 .board-share-modal__link-box {
   padding: 14px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.36);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
   overflow-x: auto;
 }
 

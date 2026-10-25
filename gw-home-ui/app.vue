@@ -21,78 +21,47 @@ watch(
   }
 )
 
-watch(
-  () => [authStore.isAuthenticated, authStore.currentUser?.role],
-  async ([isAuthenticated]) => {
-    if (!isAuthenticated) {
-      navigationFavoriteStore.clearFavoriteMenus()
-      return
-    }
-
-    try {
-      navigationFavoriteStore.setFavoriteMenus(await fetchNavigationFavorites())
-    } catch {
-      navigationFavoriteStore.clearFavoriteMenus()
-    }
-  },
-  { immediate: true }
-)
+// 서버 렌더링과 첫 화면의 메뉴 상태를 일치시키고 계정 변경 후 늦은 응답을 버린다.
+onMounted(() => {
+  watch(
+    () => [authStore.isAuthenticated, authStore.currentUser?.role, authStore.currentUser?.loginId],
+    async ([isAuthenticated], _previous, onCleanup) => {
+      let isCurrent = true
+      onCleanup(() => { isCurrent = false })
+      if (!isAuthenticated) {
+        navigationFavoriteStore.clearFavoriteMenus()
+        return
+      }
+      try {
+        const favorites = await fetchNavigationFavorites()
+        if (isCurrent) navigationFavoriteStore.setFavoriteMenus(favorites)
+      } catch {
+        if (isCurrent) navigationFavoriteStore.clearFavoriteMenus()
+      }
+    },
+    { immediate: true }
+  )
+})
 </script>
 
 <template>
   <div class="app-shell">
-    <CommonAppHeader v-if="shouldShowHeader" @open-navigation="isNavigationVisible = true" />
+    <a class="skip-link" href="#main-content">본문으로 이동</a>
+    <CommonAppHeader v-if="shouldShowHeader" :navigation-visible="isNavigationVisible" @open-navigation="isNavigationVisible = true" />
     <div class="app-shell__workspace">
       <CommonAppSidebarNavigation
         v-if="shouldShowHeader"
         :visible="isNavigationVisible"
         @close="isNavigationVisible = false"
       />
-      <div class="app-shell__content">
-        <NuxtPage />
+      <div id="main-content" class="app-shell__content" tabindex="-1">
+        <NuxtPage :transition="{ name: 'page', mode: 'out-in', onBeforeLeave: disableLeavingElement }" />
       </div>
     </div>
     <CommonToastViewport />
     <CommonDialogProvider />
     <footer v-if="shouldShowFooter" class="app-footer">
-      <div class="page-container app-footer__inner">
-        <p>Copyright 2026 chjsa11</p>
-      </div>
+      <p>Copyright 2026 chjsa11</p>
     </footer>
   </div>
 </template>
-
-<style scoped>
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.app-shell__workspace {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  align-items: flex-start;
-}
-
-.app-shell__content {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  align-items: flex-start;
-  min-width: 0;
-}
-
-.app-footer__inner {
-  padding-top: 0;
-  padding-bottom: 28px;
-}
-
-.app-footer p {
-  margin: 0;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: 0.92rem;
-}
-</style>

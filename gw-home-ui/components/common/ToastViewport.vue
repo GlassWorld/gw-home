@@ -4,17 +4,11 @@ const { toastList, removeToast } = useToast()
 
 <template>
   <Teleport to="body">
-    <div v-if="toastList.length" class="toast-viewport" aria-live="polite" aria-atomic="true">
-      <TransitionGroup name="toast">
-        <div
-          v-for="toast in toastList"
-          :key="toast.id"
-          :class="['toast-viewport__item', `toast-viewport__item--${toast.variant}`]"
-        >
+    <div class="toast-viewport" aria-live="polite" aria-relevant="additions">
+      <TransitionGroup name="toast" @before-leave="disableLeavingElement">
+        <div v-for="toast in toastList" :key="toast.id" :class="['toast-viewport__item', `toast-viewport__item--${toast.variant}`]">
           <span>{{ toast.message }}</span>
-          <button type="button" class="toast-viewport__close" @click="removeToast(toast.id)">
-            X
-          </button>
+          <button type="button" class="toast-viewport__close" aria-label="알림 닫기" @click="removeToast(toast.id)">×</button>
         </div>
       </TransitionGroup>
     </div>
@@ -22,71 +16,11 @@ const { toastList, removeToast } = useToast()
 </template>
 
 <style scoped>
-.toast-viewport {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1100;
-  display: grid;
-  gap: 10px;
-  width: min(360px, calc(100vw - 24px));
-}
-
-.toast-viewport__item {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--radius-medium);
-  border: 1px solid rgba(147, 210, 255, 0.18);
-  background: rgba(7, 21, 39, 0.94);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(14px);
-}
-
-.toast-viewport__item--success {
-  border-color: rgba(29, 107, 99, 0.34);
-  color: #8ee9bf;
-}
-
-.toast-viewport__item--error {
-  border-color: rgba(184, 59, 51, 0.28);
-  color: #ffb3b3;
-}
-
-.toast-viewport__item--info {
-  color: var(--color-text);
-}
-
-.toast-viewport__close {
-  flex: none;
-  min-width: auto;
-  min-height: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  opacity: 0.7;
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.2s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-@media (max-width: 768px) {
-  .toast-viewport {
-    top: 14px;
-    right: 12px;
-    left: 12px;
-    width: auto;
-  }
-}
+.toast-viewport { position: fixed; top: calc(var(--header-height) + 16px); right: max(16px, env(safe-area-inset-right)); z-index: 1100; display: grid; gap: 12px; width: min(380px, calc(100% - 32px)); pointer-events: none; }
+.toast-viewport__item { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px var(--card-padding); border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius-medium); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-raised); pointer-events: auto; }
+.toast-viewport__item > span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.875rem; }
+.toast-viewport__item--success { border-left-color: var(--color-success); }
+.toast-viewport__item--error { border-left-color: var(--color-danger); }
+.toast-viewport__close { flex: none; width: 44px; height: 44px; border: 0; border-radius: var(--radius-small); background: transparent; color: var(--color-text-muted); font-size: 1.5rem; }
+.toast-viewport__close:hover { background: var(--color-surface-muted); }
 </style>

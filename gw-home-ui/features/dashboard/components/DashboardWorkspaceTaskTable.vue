@@ -23,42 +23,35 @@ defineProps<{
       </CommonBaseButton>
     </div>
 
-    <p v-if="errorMessage" class="message-error">
-      {{ errorMessage }}
-    </p>
+    <CommonBaseState v-if="errorMessage" state="error" title="업무 현황을 불러오지 못했습니다." :message="errorMessage" />
+    <CommonBaseState v-else-if="isLoading" state="loading" title="업무 현황을 불러오는 중입니다." message="최근 업무와 TODO 진행률을 정리하고 있습니다." />
 
-    <div v-if="isLoading" class="dashboard-task-table__empty">
-      <strong>업무 현황을 불러오는 중입니다.</strong>
-      <p>최근 업무와 TODO 진행률을 정리하고 있습니다.</p>
-    </div>
-
-    <div v-else-if="rows.length" class="dashboard-task-table__table-wrap">
-      <table class="dashboard-task-table__table">
+    <div v-else-if="rows.length" class="table-scroll">
+      <table class="dashboard-task-table__table" aria-label="업무 현황">
         <thead>
           <tr>
             <th>업무</th>
             <th>상태</th>
             <th>진행률</th>
             <th>지연</th>
-            <th>최근 보고</th>
             <th>최근 수정</th>
             <th aria-label="바로가기" />
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in rows" :key="row.workUnitUuid">
-            <td>
+            <td class="dashboard-task-table__title">
               <div class="dashboard-task-table__task">
                 <strong>{{ row.title }}</strong>
                 <span>{{ row.category || '분류 없음' }}</span>
               </div>
             </td>
-            <td>
+            <td data-label="상태">
               <span class="dashboard-task-table__status" :class="`dashboard-task-table__status--${row.statusTone}`">
                 {{ row.statusLabel }}
               </span>
             </td>
-            <td>
+            <td data-label="진행률">
               <div class="dashboard-task-table__progress">
                 <div class="dashboard-task-table__progress-bar">
                   <span :style="{ width: `${row.progressRate}%` }" />
@@ -66,7 +59,7 @@ defineProps<{
                 <strong>{{ row.progressRate }}%</strong>
               </div>
             </td>
-            <td>
+            <td data-label="지연">
               <span
                 class="dashboard-task-table__delay"
                 :class="{ 'dashboard-task-table__delay--danger': row.delayedCount > 0 }"
@@ -74,8 +67,7 @@ defineProps<{
                 {{ row.delayedCount }}건
               </span>
             </td>
-            <td>{{ row.latestReportDate ? formatDate(row.latestReportDate) : '-' }}</td>
-            <td>{{ formatDate(row.updatedAt) }}</td>
+            <td data-label="최근 수정">{{ formatDate(row.updatedAt) }}</td>
             <td class="dashboard-task-table__action">
               <CommonBaseButton size="small" variant="secondary" :to="`/work/todos/${row.workUnitUuid}`">
                 열기
@@ -86,16 +78,13 @@ defineProps<{
       </table>
     </div>
 
-    <div v-else class="dashboard-task-table__empty">
-      <strong>조건에 맞는 업무가 없습니다.</strong>
-      <p>필터를 바꾸거나 업무관리 화면에서 새 업무를 등록해 주세요.</p>
-    </div>
+    <CommonBaseState v-else state="empty" title="조건에 맞는 업무가 없습니다." message="필터를 바꾸거나 업무관리 화면에서 새 업무를 등록해 주세요." />
   </section>
 </template>
 
 <style scoped>
 .dashboard-task-table {
-  padding: 24px;
+  padding: var(--panel-padding);
   display: grid;
   gap: 18px;
 }
@@ -103,7 +92,7 @@ defineProps<{
 .dashboard-task-table__header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--section-gap);
   align-items: flex-start;
 }
 
@@ -116,10 +105,6 @@ defineProps<{
   text-transform: uppercase;
 }
 
-.dashboard-task-table__table-wrap {
-  overflow-x: auto;
-}
-
 .dashboard-task-table__table {
   width: 100%;
   border-collapse: collapse;
@@ -129,7 +114,7 @@ defineProps<{
 .dashboard-task-table__table th,
 .dashboard-task-table__table td {
   padding: 14px 12px;
-  border-bottom: 1px solid rgba(147, 210, 255, 0.12);
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: middle;
 }
@@ -147,6 +132,7 @@ defineProps<{
 
 .dashboard-task-table__task strong {
   font-size: 0.97rem;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-task-table__task span {
@@ -168,23 +154,23 @@ defineProps<{
 }
 
 .dashboard-task-table__status--primary {
-  background: rgba(110, 193, 255, 0.16);
-  color: #9ad8ff;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .dashboard-task-table__status--success {
-  background: rgba(84, 214, 160, 0.16);
-  color: #8ef0be;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .dashboard-task-table__status--warning {
-  background: rgba(255, 188, 92, 0.14);
-  color: #ffd089;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .dashboard-task-table__status--danger {
-  background: rgba(224, 92, 92, 0.14);
-  color: #ff9b9b;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .dashboard-task-table__progress {
@@ -196,7 +182,7 @@ defineProps<{
   width: min(180px, 100%);
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-strong);
   overflow: hidden;
 }
 
@@ -204,44 +190,30 @@ defineProps<{
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #4aaef2 0%, #63e3d6 100%);
+  background: var(--color-primary);
 }
 
 .dashboard-task-table__delay {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-surface-muted);
   color: var(--color-text-muted);
 }
 
 .dashboard-task-table__delay--danger {
-  background: rgba(224, 92, 92, 0.16);
-  color: #ffaeae;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .dashboard-task-table__action {
   text-align: right;
 }
 
-.dashboard-task-table__empty {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border: 1px dashed rgba(147, 210, 255, 0.18);
-  border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.dashboard-task-table__empty strong,
-.dashboard-task-table__empty p {
-  margin: 0;
-}
-
-.dashboard-task-table__empty p {
-  color: var(--color-text-muted);
+.dashboard-task-table__action :deep(.base-button) {
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
   .dashboard-task-table {
-    padding: 16px;
+    padding: var(--mobile-panel-padding);
     gap: 14px;
   }
 
@@ -254,27 +226,37 @@ defineProps<{
     width: 100%;
   }
 
-  .dashboard-task-table__table-wrap {
-    margin-right: -16px;
-    margin-left: -16px;
-    padding: 0 16px 2px;
+  .dashboard-task-table__table {
+    display: block;
+    min-width: 0;
   }
-
-  .dashboard-task-table__empty {
-    padding: 14px;
+  .dashboard-task-table__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
-}
-
-@media (max-width: 420px) {
-  .dashboard-task-table {
-    padding: 14px;
+  .dashboard-task-table__table tbody { display: grid; }
+  .dashboard-task-table__table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px 0;
+    border: 0;
+    border-radius: 0;
   }
-
-  .dashboard-task-table__table-wrap {
-    margin-right: -14px;
-    margin-left: -14px;
-    padding-right: 14px;
-    padding-left: 14px;
+  .dashboard-task-table__table tr + tr { border-top: 1px solid var(--color-border); }
+  .dashboard-task-table__table td {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    align-content: start;
   }
+  .dashboard-task-table__table td[data-label]::before { content: attr(data-label); color: var(--color-text-muted); font-size: 0.8rem; }
+  .dashboard-task-table__title, .dashboard-task-table__action { grid-column: 1 / -1; }
+  .dashboard-task-table__status, .dashboard-task-table__delay { justify-self: start; }
 }
 </style>

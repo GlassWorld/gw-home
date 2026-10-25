@@ -1,8 +1,5 @@
-import type { PageResponse } from '~/types/api/common'
-
 export type WorkUnitStatus = 'IN_PROGRESS' | 'DONE' | 'ON_HOLD'
-export type WorkUnitSort = 'updated' | 'recent' | 'frequent'
-export type WeeklyReportGenerationType = 'MANUAL' | 'OPENAI' | 'RULE_BASED'
+export type WorkUnitSort = 'updated'
 export type WorkGitProvider = 'GITLAB'
 export type WorkTodoStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'DELAYED'
 
@@ -106,6 +103,7 @@ export interface WorkTodo {
   depth: number
   leaf: boolean
   completed: boolean
+  completedAt: string | null
   delayed: boolean
   createdAt: string
   updatedAt: string
@@ -116,6 +114,49 @@ export interface WorkTodoTree {
   workUnitUuid: string
   summary: WorkTodoSummary
   todos: WorkTodo[]
+}
+
+export type WorkTodoGroup = 'ALL' | 'TODAY' | 'UPCOMING' | 'OVERDUE' | 'COMPLETED' | 'UNSCHEDULED'
+
+export interface WorkTodoListItem {
+  todoUuid: string
+  workUnitUuid: string
+  workUnitTitle: string
+  workUnitActive: boolean
+  parentTodoUuid: string | null
+  parentTitle: string | null
+  title: string
+  description: string | null
+  startDate: string | null
+  dueDate: string | null
+  sortOrder: number
+  completed: boolean
+  completedAt: string | null
+  group: WorkTodoGroup
+}
+
+export interface WorkTodoInboxSummary {
+  totalCount: number
+  todayCount: number
+  upcomingCount: number
+  overdueCount: number
+  completedCount: number
+  unscheduledCount: number
+  unknownCompletionCount: number
+  progressRate: number
+  asOfDate: string
+  timeZone: string
+}
+
+export interface WorkTodoListParams {
+  workUnitUuid?: string
+  keyword?: string
+  group?: WorkTodoGroup
+  includeInactive?: boolean
+  fromDate?: string
+  toDate?: string
+  page?: number
+  size?: number
 }
 
 export interface SaveWorkTodoPayload {
@@ -135,22 +176,6 @@ export interface WorkUnitListParams {
   sort?: WorkUnitSort
 }
 
-export interface DailyReport {
-  uuid: string
-  reportDate: string
-  workUnits: DailyReportWorkUnit[]
-  content: string | null
-  note: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface DailyReportWorkUnit {
-  workUnitUuid: string
-  title: string
-  category: string | null
-}
-
 export interface WorkUnitGitCommit {
   gitConnectionUuid: string
   provider: WorkGitProvider
@@ -162,105 +187,3 @@ export interface WorkUnitGitCommit {
   authoredAt: string
   commitUrl: string
 }
-
-export interface SaveDailyReportPayload {
-  reportDate: string
-  workUnitUuids: string[]
-  note?: string
-  content?: string
-}
-
-export interface UpdateDailyReportPayload {
-  workUnitUuids: string[]
-  note?: string
-  content?: string
-}
-
-export interface DailyReportListParams {
-  memberUuid?: string
-  dateFrom?: string
-  dateTo?: string
-  keyword?: string
-  page?: number
-  size?: number
-}
-
-export interface DailyReportMissing {
-  reportDate: string
-}
-
-export interface AdminDailyReport extends DailyReport {
-  memberUuid: string
-  loginId: string
-  nickname: string | null
-}
-
-export interface AdminDailyReportMissing {
-  memberUuid: string
-  loginId: string
-  nickname: string | null
-  missingDates: string[]
-  missingCount: number
-  lastWrittenDate: string | null
-}
-
-export interface WeeklyReport {
-  uuid: string
-  weekStartDate: string
-  weekEndDate: string
-  title: string
-  content: string
-  openYn: 'Y' | 'N'
-  publishedAt: string | null
-  generationType: WeeklyReportGenerationType
-  createdAt: string
-  updatedAt: string
-}
-
-export interface OpenWeeklyReportMember {
-  memberUuid: string
-  loginId: string
-  nickname: string | null
-  openReportCount: number
-  lastPublishedAt: string | null
-}
-
-export interface OpenWeeklyReport extends WeeklyReport {
-  memberUuid: string
-  loginId: string
-  nickname: string | null
-}
-
-export interface SaveWeeklyReportPayload {
-  weekStartDate: string
-  weekEndDate: string
-  title: string
-  content: string
-  openYn: 'Y' | 'N'
-  generationType: WeeklyReportGenerationType
-}
-
-export interface WeeklyReportDailySource {
-  uuid: string
-  reportDate: string
-  workUnits: DailyReportWorkUnit[]
-  content: string | null
-  note: string | null
-}
-
-export interface WeeklyReportAiDraft {
-  title: string
-  content: string
-  generationType: WeeklyReportGenerationType
-  sourceCount: number
-  modelName: string
-}
-
-export interface WeeklyReportAiDraftPayload {
-  weekStartDate: string
-  weekEndDate: string
-  sourceDailyReports?: WeeklyReportDailySource[]
-}
-
-export type DailyReportPage = PageResponse<DailyReport>
-export type AdminDailyReportPage = PageResponse<AdminDailyReport>

@@ -96,7 +96,7 @@ const emit = defineEmits<{
 .admin-accounts-table__table th,
 .admin-accounts-table__table td {
   padding: 12px 10px;
-  border-bottom: 1px solid rgba(147, 210, 255, 0.12);
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: middle;
 }
@@ -113,18 +113,18 @@ const emit = defineEmits<{
   justify-content: center;
   min-width: 74px;
   padding: 5px 12px;
-  border: 1px solid rgba(124, 209, 255, 0.2);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: rgba(110, 193, 255, 0.12);
-  color: rgba(222, 242, 255, 0.96);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
   font-size: 0.8rem;
   font-weight: 700;
 }
 
 .admin-accounts-table__state-badge--status {
-  background: rgba(148, 235, 184, 0.12);
-  border-color: rgba(148, 235, 184, 0.2);
-  color: rgba(210, 255, 227, 0.96);
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .admin-accounts-table__lock-badge {
@@ -132,15 +132,15 @@ const emit = defineEmits<{
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(110, 193, 255, 0.12);
+  background: var(--color-primary-soft);
   color: var(--color-accent);
   font-size: 0.85rem;
   font-weight: 700;
 }
 
 .admin-accounts-table__lock-badge--locked {
-  background: rgba(255, 143, 143, 0.16);
-  color: #ff9f9f;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .admin-accounts-table__empty {

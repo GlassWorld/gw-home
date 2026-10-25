@@ -561,7 +561,7 @@ function handleCommentDrop(event: DragEvent) {
 
 <style scoped>
 .board-detail-page__panel {
-  padding: 32px;
+  padding: var(--panel-padding-large);
 }
 
 .board-detail-page__header {
@@ -583,8 +583,8 @@ function handleCommentDrop(event: DragEvent) {
   align-items: center;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.14);
-  color: #7dd3fc;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-size: 0.86rem;
   font-weight: 700;
 }
@@ -601,9 +601,9 @@ function handleCommentDrop(event: DragEvent) {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid rgba(147, 210, 255, 0.14);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-surface-muted);
 }
 
 .board-detail-page__meta-label {
@@ -623,7 +623,7 @@ function handleCommentDrop(event: DragEvent) {
 .board-detail-page__comment-panel {
   margin-top: 28px;
   padding-top: 24px;
-  border-top: 1px solid rgba(116, 87, 51, 0.12);
+  border-top: 1px solid var(--color-border);
 }
 
 .board-detail-page__section-header,
@@ -642,7 +642,7 @@ function handleCommentDrop(event: DragEvent) {
 .board-detail-page__tags span {
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(29, 107, 99, 0.12);
+  background: var(--color-success-soft);
   color: var(--color-accent);
 }
 
@@ -663,8 +663,8 @@ function handleCommentDrop(event: DragEvent) {
 
 .board-detail-page__attachment-item {
   padding: 16px;
-  border: 1px solid rgba(147, 210, 255, 0.16);
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
   font-size: 0.92rem;
 }
 
@@ -695,8 +695,8 @@ function handleCommentDrop(event: DragEvent) {
 :deep(.board-markdown pre) {
   overflow-x: auto;
   padding: 14px;
-  border-radius: 12px;
-  background: rgba(7, 16, 38, 0.88);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-muted);
 }
 
 @media (max-width: 768px) {
@@ -706,7 +706,7 @@ function handleCommentDrop(event: DragEvent) {
 
   .board-detail-page__header {
     flex-direction: column;
-    gap: 16px;
+    gap: var(--section-gap);
   }
 
   .board-detail-page__header > div,

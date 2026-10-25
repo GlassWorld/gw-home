@@ -10,6 +10,7 @@ CREATE TABLE tb_wrk_todo (
     prgs_rt            INTEGER      NOT NULL DEFAULT 0,
     strt_dt            DATE,
     due_dt             DATE,
+    cmpl_at            TIMESTAMPTZ,
     sort_ord           INTEGER      NOT NULL DEFAULT 1,
     created_by         VARCHAR(100) NOT NULL,
     updated_by         VARCHAR(100),
@@ -23,6 +24,7 @@ CREATE TABLE tb_wrk_todo (
 CREATE INDEX idx_wrk_todo_work_unit ON tb_wrk_todo (work_unit_idx, del_at);
 CREATE INDEX idx_wrk_todo_owner ON tb_wrk_todo (mbr_acct_idx, del_at);
 CREATE INDEX idx_wrk_todo_parent_sort ON tb_wrk_todo (work_unit_idx, prnt_wrk_todo_idx, sort_ord, del_at);
+CREATE INDEX idx_wrk_todo_owner_schedule ON tb_wrk_todo (mbr_acct_idx, due_dt, strt_dt, wrk_todo_idx) WHERE del_at IS NULL;
 
 COMMENT ON TABLE tb_wrk_todo IS '업무 TODO 트리';
 COMMENT ON COLUMN tb_wrk_todo.wrk_todo_idx IS '업무 TODO PK';
@@ -36,6 +38,7 @@ COMMENT ON COLUMN tb_wrk_todo.sts IS 'TODO 상태';
 COMMENT ON COLUMN tb_wrk_todo.prgs_rt IS '진행률';
 COMMENT ON COLUMN tb_wrk_todo.strt_dt IS '시작일';
 COMMENT ON COLUMN tb_wrk_todo.due_dt IS '마감일';
+COMMENT ON COLUMN tb_wrk_todo.cmpl_at IS '최하위 TODO 직접 완료 시각, 기존 완료일 미상은 NULL';
 COMMENT ON COLUMN tb_wrk_todo.sort_ord IS '정렬 순서';
 COMMENT ON COLUMN tb_wrk_todo.created_by IS '생성자 로그인 ID';
 COMMENT ON COLUMN tb_wrk_todo.updated_by IS '수정자 로그인 ID';

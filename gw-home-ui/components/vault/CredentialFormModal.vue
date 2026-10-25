@@ -187,13 +187,13 @@ watch(
 .vault-modal__form {
   display: grid;
   grid-template-columns: minmax(360px, 1fr) minmax(260px, 320px);
-  gap: 16px;
+  gap: var(--section-gap);
   align-items: start;
 }
 
 .vault-modal__primary-fields {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
   min-width: 0;
 }
 
@@ -203,12 +203,12 @@ watch(
 }
 
 .vault-modal__field span {
-  color: rgba(232, 244, 255, 0.88);
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 
 .vault-modal__required {
-  color: #ff8f8f;
+  color: var(--color-danger);
   font-weight: 700;
 }
 
@@ -224,9 +224,9 @@ watch(
   gap: 8px;
   min-height: 48px;
   padding: 12px;
-  border: 1px solid rgba(147, 210, 255, 0.22);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
-  background: rgba(8, 23, 42, 0.72);
+  background: var(--color-surface-muted);
 }
 
 .vault-modal__field--category {
@@ -237,16 +237,16 @@ watch(
 .vault-modal__category-chip {
   min-height: 34px;
   padding: 0 12px;
-  border: 1px solid rgba(147, 210, 255, 0.22);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: rgba(110, 193, 255, 0.08);
+  background: var(--color-primary-soft);
   color: var(--color-text);
   cursor: pointer;
 }
 
 .vault-modal__category-chip--selected {
-  border-color: rgba(124, 209, 255, 0.92);
-  background: rgba(110, 193, 255, 0.18);
+  border-color: var(--color-border-strong);
+  background: var(--color-primary-soft);
   color: var(--color-accent);
 }
 
@@ -259,33 +259,32 @@ watch(
   width: 100%;
   min-height: 120px;
   padding: 14px 16px;
-  border: 1px solid rgba(147, 210, 255, 0.28);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
-  background: rgba(8, 23, 42, 0.72);
+  background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-soft);
   resize: vertical;
 }
 
 .vault-modal__form :deep(.input-field) {
-  border-color: rgba(147, 210, 255, 0.28);
-  background: rgba(8, 23, 42, 0.72);
+  border-color: var(--color-border);
+  background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-soft);
 }
 
 .vault-modal__form :deep(.input-field::placeholder),
 .vault-modal__textarea::placeholder {
-  color: rgba(147, 210, 255, 0.48);
+  color: var(--color-text-muted);
 }
 
 .vault-modal__form :deep(.input-field:focus),
 .vault-modal__textarea:focus {
-  outline: 2px solid rgba(110, 193, 255, 0.2);
-  border-color: rgba(124, 209, 255, 0.92);
+  outline: 2px solid var(--color-focus);
+  border-color: var(--color-border-strong);
   box-shadow:
-    0 0 0 4px rgba(15, 92, 158, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 0 0 2px var(--color-primary-soft);
 }
 
 .vault-modal__field--wide {
