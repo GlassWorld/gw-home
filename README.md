@@ -75,6 +75,8 @@ gw-home/
 
 일상 할 일은 별도 테이블을 사용하므로 [일상 할 일 적용 안내](docs/backend/database.md#일상-할-일-스키마-추가-2026-10-25)에 따라 [일상 마이그레이션 SQL](gw-home-infra-db/src/main/resources/sql/ddl/life/life-todos-migrate.sql)도 실행한다. 각 SQL의 로컬 검증과 실제 대상 DB 적용 여부는 구분하며, 대상 DB 적용·배포는 아직 수행하지 않았다.
 
+로컬 백엔드 환경값은 저장소 루트 또는 실행 폴더의 `.env.local`에서 읽는다. `.env`와 `.env.local` 등 실제 환경 파일은 Git과 Docker 빌드 컨텍스트에서 제외한다. 공유용 예제는 비밀값 없이 `.env.example`로 관리한다.
+
 ```bash
 # Backend
 ./gradlew :gw-home-api:bootRun

@@ -19,5 +19,6 @@ docs
 **/dist
 
 .env
+.env.local
 .env.*
 *.log
