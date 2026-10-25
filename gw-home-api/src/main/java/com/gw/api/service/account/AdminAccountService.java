@@ -10,7 +10,8 @@ import com.gw.api.dto.account.UpdateRoleRequest;
 import com.gw.api.dto.account.UpdateStatusRequest;
 import com.gw.api.service.profile.ProfileService;
 import com.gw.infra.db.mapper.account.AccountMapper;
-import com.gw.infra.db.support.PageSortSupport;
+import com.gw.share.common.query.PageSortSupport;
+import com.gw.share.util.StringUtil;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.policy.AdminAccountPolicy;
@@ -48,6 +49,7 @@ public class AdminAccountService {
     }
 
     @Transactional(readOnly = true)
+    // 관리자 조건에 맞는 계정 목록과 전체 건수를 조회한다.
     public PageResponse<AdminAccountListResponse> getAccounts(
             String loginId,
             String role,
@@ -57,27 +59,31 @@ public class AdminAccountService {
     ) {
         log.info("getAccounts 시작 - loginId: {}, role: {}, acctStat: {}, page: {}, size: {}",
                 loginId, role, acctStat, page, size);
-        String normalizedLoginId = trimToNull(loginId);
-        String normalizedRole = trimToNull(role);
-        String normalizedAcctStat = trimToNull(acctStat);
-        int normalizedPage = PageSortSupport.normalizePage(page);
-        int normalizedSize = PageSortSupport.normalizeSize(size);
-        int offset = (normalizedPage - 1) * normalizedSize;
+        try {
+            String normalizedLoginId = StringUtil.normalizeBlank(loginId);
+            String normalizedRole = StringUtil.normalizeBlank(role);
+            String normalizedAcctStat = StringUtil.normalizeBlank(acctStat);
+            int normalizedPage = PageSortSupport.normalizePage(page);
+            int normalizedSize = PageSortSupport.normalizeSize(size);
+            long offset = PageSortSupport.calculateOffset(normalizedPage, normalizedSize);
 
-        List<AdminAccountListResponse> content = accountMapper.selectAllAccounts(
-                        normalizedLoginId,
-                        normalizedRole,
-                        normalizedAcctStat,
-                        offset,
-                        normalizedSize
-                ).stream()
-                .map(AdminAccountConvert::toListResponse)
-                .toList();
-        long totalCount = accountMapper.countAllAccounts(normalizedLoginId, normalizedRole, normalizedAcctStat);
-        int totalPages = (int) Math.ceil((double) totalCount / normalizedSize);
+            List<AdminAccountListResponse> content = accountMapper.selectAllAccounts(
+                            normalizedLoginId,
+                            normalizedRole,
+                            normalizedAcctStat,
+                            offset,
+                            normalizedSize
+                    ).stream()
+                    .map(AdminAccountConvert::toListResponse)
+                    .toList();
+            long totalCount = accountMapper.countAllAccounts(normalizedLoginId, normalizedRole, normalizedAcctStat);
 
-        log.info("getAccounts 완료 - 조회건수: {}", totalCount);
-        return new PageResponse<>(content, normalizedPage, normalizedSize, totalCount, totalPages);
+            log.info("getAccounts 완료 - 조회건수: {}", totalCount);
+            return PageResponse.of(content, normalizedPage, normalizedSize, totalCount);
+        } catch (RuntimeException exception) {
+            log.error("getAccounts 실패", exception);
+            throw exception;
+        }
     }
 
     @Transactional(readOnly = true)
@@ -260,15 +266,6 @@ public class AdminAccountService {
             log.error("validateSelfAction 실패 - 원인: 자기 자신의 계정은 변경할 수 없습니다. adminLoginId={}", adminLoginId);
             throw new BusinessException(ErrorCode.FORBIDDEN, message);
         }
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        String trimmedValue = value.trim();
-        return trimmedValue.isEmpty() ? null : trimmedValue;
     }
 
     private String generateTemporaryPassword() {

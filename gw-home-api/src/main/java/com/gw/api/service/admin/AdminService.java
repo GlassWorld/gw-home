@@ -7,7 +7,7 @@ import com.gw.api.dto.admin.AdminMemberListRequest;
 import com.gw.api.dto.admin.AdminMemberResponse;
 import com.gw.api.dto.admin.AdminSummaryResponse;
 import com.gw.infra.db.mapper.admin.AdminMapper;
-import com.gw.infra.db.support.PageSortSupport;
+import com.gw.share.common.query.PageSortSupport;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.query.SortDirection;
@@ -72,9 +72,8 @@ public class AdminService {
                     .map(AdminConvert::toMemberResponse)
                     .toList();
             long totalCount = adminMapper.countMemberList(query);
-            int totalPages = (int) Math.ceil((double) totalCount / query.getSize());
             PageResponse<AdminMemberResponse> response =
-                    new PageResponse<>(content, query.getPage(), query.getSize(), totalCount, totalPages);
+                    PageResponse.of(content, query.getPage(), query.getSize(), totalCount);
             log.info("getMemberList 완료 - totalCount: {}", totalCount);
             return response;
         } catch (BusinessException exception) {
@@ -164,9 +163,8 @@ public class AdminService {
                     .map(AdminConvert::toBoardPostResponse)
                     .toList();
             long totalCount = adminMapper.countBoardPostList(query);
-            int totalPages = (int) Math.ceil((double) totalCount / query.getSize());
             PageResponse<AdminBoardPostResponse> response =
-                    new PageResponse<>(content, query.getPage(), query.getSize(), totalCount, totalPages);
+                    PageResponse.of(content, query.getPage(), query.getSize(), totalCount);
             log.info("getBoardPostList 완료 - totalCount: {}", totalCount);
             return response;
         } catch (BusinessException exception) {

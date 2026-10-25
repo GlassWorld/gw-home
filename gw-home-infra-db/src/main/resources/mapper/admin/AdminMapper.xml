@@ -4,12 +4,42 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gw.infra.db.mapper.admin.AdminMapper">
 
+    <!-- 관리자 회원 목록과 건수의 검색·삭제 조건을 공유한다. -->
+    <sql id="memberListFilters">
+        WHERE 1 = 1
+        <if test="req.deleted == null or !req.deleted">
+            AND ma.del_at IS NULL
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                ma.lgn_id LIKE CONCAT('%', #{req.kwd}, '%')
+                OR ma.email LIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+        <if test="req.role != null and req.role != ''">
+            AND ma.role = #{req.role}
+        </if>
+    </sql>
+
+    <!-- 관리자 게시글 목록과 건수의 검색·삭제 조건을 공유한다. -->
+    <sql id="boardPostListFilters">
+        WHERE 1 = 1
+        <if test="req.deleted == null or !req.deleted">
+            AND bp.del_at IS NULL
+        </if>
+        <if test="req.kwd != null and req.kwd != ''">
+            AND (
+                bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
+                OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
+            )
+        </if>
+    </sql>
+
     <select id="selectMemberList" resultType="AdminMbrJvo">
         SELECT
             ma.mbr_acct_idx AS idx,
             ma.mbr_acct_uuid AS uuid,
             ma.lgn_id,
-            ma.pwd,
             ma.email,
             ma.role,
             mp.nick_nm,
@@ -21,39 +51,15 @@
             ma.del_at
         FROM tb_mbr_acct ma
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = ma.mbr_acct_idx
-        WHERE 1 = 1
-        <if test="req.deleted == null or !req.deleted">
-            AND ma.del_at IS NULL
-        </if>
-        <if test="req.kwd != null and req.kwd != ''">
-            AND (
-                ma.lgn_id LIKE CONCAT('%', #{req.kwd}, '%')
-                OR ma.email LIKE CONCAT('%', #{req.kwd}, '%')
-            )
-        </if>
-        <if test="req.role != null and req.role != ''">
-            AND ma.role = #{req.role}
-        </if>
-        ORDER BY ${req.orderByClause}
+        <include refid="memberListFilters"/>
+        ORDER BY ${req.orderByClause}, ma.mbr_acct_idx DESC
         LIMIT #{req.size} OFFSET #{req.offset}
     </select>
 
     <select id="countMemberList" resultType="long">
         SELECT COUNT(*)
         FROM tb_mbr_acct ma
-        WHERE 1 = 1
-        <if test="req.deleted == null or !req.deleted">
-            AND ma.del_at IS NULL
-        </if>
-        <if test="req.kwd != null and req.kwd != ''">
-            AND (
-                ma.lgn_id LIKE CONCAT('%', #{req.kwd}, '%')
-                OR ma.email LIKE CONCAT('%', #{req.kwd}, '%')
-            )
-        </if>
-        <if test="req.role != null and req.role != ''">
-            AND ma.role = #{req.role}
-        </if>
+        <include refid="memberListFilters"/>
     </select>
 
     <select id="selectMemberByUuid" resultType="AdminMbrJvo">
@@ -61,7 +67,6 @@
             ma.mbr_acct_idx AS idx,
             ma.mbr_acct_uuid AS uuid,
             ma.lgn_id,
-            ma.pwd,
             ma.email,
             ma.role,
             mp.nick_nm,
@@ -117,36 +122,18 @@
             bp.updated_at,
             bp.del_at
         FROM tb_brd_pst bp
-        INNER JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
-        INNER JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = bp.mbr_acct_idx
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_mbr_acct ma ON ma.mbr_acct_idx = bp.mbr_acct_idx
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
-        WHERE 1 = 1
-        <if test="req.deleted == null or !req.deleted">
-            AND bp.del_at IS NULL
-        </if>
-        <if test="req.kwd != null and req.kwd != ''">
-            AND (
-                bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
-                OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
-            )
-        </if>
-        ORDER BY ${req.orderByClause}
+        <include refid="boardPostListFilters"/>
+        ORDER BY ${req.orderByClause}, bp.brd_pst_idx DESC
         LIMIT #{req.size} OFFSET #{req.offset}
     </select>
 
     <select id="countBoardPostList" resultType="long">
         SELECT COUNT(*)
         FROM tb_brd_pst bp
-        WHERE 1 = 1
-        <if test="req.deleted == null or !req.deleted">
-            AND bp.del_at IS NULL
-        </if>
-        <if test="req.kwd != null and req.kwd != ''">
-            AND (
-                bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
-                OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
-            )
-        </if>
+        <include refid="boardPostListFilters"/>
     </select>
 
     <update id="forceDeleteBoardPost">

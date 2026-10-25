@@ -110,32 +110,8 @@
           AND del_at IS NULL
     </select>
 
-    <select id="selectAllAccounts" resultType="AcctVo">
-        SELECT
-            mbr_acct_idx AS idx,
-            mbr_acct_uuid AS uuid,
-            lgn_id,
-            pwd,
-            email,
-            role,
-            acct_stat,
-            lgn_fail_cnt,
-            lck_yn,
-            lck_at,
-            otp_enabled,
-            otp_required,
-            otp_secret,
-            otp_fail_cnt,
-            otp_last_failed_at,
-            google_sub,
-            google_email,
-            google_linked_at,
-            created_by,
-            updated_by,
-            created_at,
-            updated_at,
-            del_at
-        FROM tb_mbr_acct
+    <!-- 계정 목록과 건수의 검색·삭제 조건을 공유한다. -->
+    <sql id="accountListFilters">
         WHERE del_at IS NULL
         <if test="loginId != null and loginId != ''">
             AND lgn_id LIKE CONCAT('%', #{loginId}, '%')
@@ -146,23 +122,30 @@
         <if test="acctStat != null and acctStat != ''">
             AND acct_stat = #{acctStat}
         </if>
-        ORDER BY created_at DESC
+    </sql>
+
+    <!-- 관리자 계정 목록에 필요한 상태 정보만 조회한다. -->
+    <select id="selectAllAccounts" resultType="AcctSmryVo">
+        SELECT
+            mbr_acct_uuid AS uuid,
+            lgn_id,
+            email,
+            role,
+            acct_stat,
+            lck_yn,
+            otp_enabled,
+            otp_required,
+            created_at
+        FROM tb_mbr_acct
+        <include refid="accountListFilters"/>
+        ORDER BY created_at DESC, mbr_acct_idx DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <select id="countAllAccounts" resultType="long">
         SELECT COUNT(*)
         FROM tb_mbr_acct
-        WHERE del_at IS NULL
-        <if test="loginId != null and loginId != ''">
-            AND lgn_id LIKE CONCAT('%', #{loginId}, '%')
-        </if>
-        <if test="role != null and role != ''">
-            AND role = #{role}
-        </if>
-        <if test="acctStat != null and acctStat != ''">
-            AND acct_stat = #{acctStat}
-        </if>
+        <include refid="accountListFilters"/>
     </select>
 
     <select id="selectAccountByGoogleSub" resultType="AcctVo">

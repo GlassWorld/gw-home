@@ -7,16 +7,14 @@ import com.gw.api.dto.notice.NoticeListRequest;
 import com.gw.api.dto.notice.NoticeSummaryResponse;
 import com.gw.api.dto.notice.UpdateNoticeRequest;
 import com.gw.infra.db.mapper.notice.NoticeMapper;
-import com.gw.infra.db.support.PageSortSupport;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
-import com.gw.share.common.query.SortDirection;
 import com.gw.share.common.response.PageResponse;
+import com.gw.share.common.query.PageSortSupport;
 import com.gw.share.jvo.notice.NtcJvo;
 import com.gw.share.vo.notice.NtcListSrchVo;
 import com.gw.share.vo.notice.NtcVo;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class NoticeService {
-
-    private static final Map<String, String> NOTICE_SORT_FIELD_MAP = Map.of(
-            "createdAt", "created_at",
-            "viewCount", "view_cnt",
-            "title", "ttl"
-    );
 
     private final NoticeMapper noticeMapper;
 
@@ -43,29 +35,38 @@ public class NoticeService {
     public PageResponse<NoticeSummaryResponse> getNoticeList(NoticeListRequest request) {
         log.info("공지사항 목록 조회를 시작합니다. page={}, size={}, keyword={}",
                 request.page(), request.size(), request.keyword());
-        NtcListSrchVo query = buildSearchVo(request);
-        List<NoticeSummaryResponse> content = noticeMapper.selectNoticeList(query).stream()
-                .map(NoticeConvert::toSummaryResponse)
-                .toList();
-        long totalCount = noticeMapper.countNoticeList(query);
-        int totalPages = (int) Math.ceil((double) totalCount / query.getSize());
-        PageResponse<NoticeSummaryResponse> response =
-                new PageResponse<>(content, query.getPage(), query.getSize(), totalCount, totalPages);
-        log.info("공지사항 목록 조회를 완료했습니다. page={}, size={}, totalCount={}",
-                query.getPage(), query.getSize(), totalCount);
-        return response;
+        try {
+            NtcListSrchVo query = NoticeConvert.toSearchVo(request);
+            List<NoticeSummaryResponse> content = noticeMapper.selectNoticeList(query).stream()
+                    .map(NoticeConvert::toSummaryResponse)
+                    .toList();
+            long totalCount = noticeMapper.countNoticeList(query);
+            PageResponse<NoticeSummaryResponse> response =
+                    PageResponse.of(content, query.getPage(), query.getSize(), totalCount);
+            log.info("공지사항 목록 조회를 완료했습니다. page={}, size={}, totalCount={}",
+                    query.getPage(), query.getSize(), totalCount);
+            return response;
+        } catch (RuntimeException exception) {
+            log.error("공지사항 목록 조회에 실패했습니다.", exception);
+            throw exception;
+        }
     }
 
     /** 대시보드 공지사항 목록을 조회한다. */
     @Transactional(readOnly = true)
     public List<NoticeSummaryResponse> getDashboardNotices(int limit) {
-        int normalizedLimit = limit < 1 ? 5 : limit;
+        int normalizedLimit = limit < 1 ? 5 : PageSortSupport.normalizeSize(limit);
         log.info("대시보드 공지사항 조회를 시작합니다. limit={}", normalizedLimit);
-        List<NoticeSummaryResponse> noticeList = noticeMapper.selectDashboardNoticeList(normalizedLimit).stream()
-                .map(NoticeConvert::toSummaryResponse)
-                .toList();
-        log.info("대시보드 공지사항 조회를 완료했습니다. count={}", noticeList.size());
-        return noticeList;
+        try {
+            List<NoticeSummaryResponse> noticeList = noticeMapper.selectDashboardNoticeList(normalizedLimit).stream()
+                    .map(NoticeConvert::toSummaryResponse)
+                    .toList();
+            log.info("대시보드 공지사항 조회를 완료했습니다. count={}", noticeList.size());
+            return noticeList;
+        } catch (RuntimeException exception) {
+            log.error("대시보드 공지사항 조회에 실패했습니다. limit={}", normalizedLimit, exception);
+            throw exception;
+        }
     }
 
     /** 공지사항 상세를 조회한다. */
@@ -73,12 +74,14 @@ public class NoticeService {
         log.info("공지사항 상세 조회를 시작합니다. noticeUuid={}", noticeUuid);
 
         try {
+            if (noticeMapper.incrementViewCount(noticeUuid) == 0) {
+                throw new BusinessException(ErrorCode.NOT_FOUND, "공지사항을 찾을 수 없습니다.");
+            }
             NtcJvo notice = getNoticeByUuid(noticeUuid);
-            noticeMapper.incrementViewCount(noticeUuid);
-            NoticeDetailResponse response = NoticeConvert.toDetailResponse(getNoticeByUuid(noticeUuid));
+            NoticeDetailResponse response = NoticeConvert.toDetailResponse(notice);
             log.info("공지사항 상세 조회를 완료했습니다. noticeUuid={}, noticeIdx={}", noticeUuid, notice.getIdx());
             return response;
-        } catch (BusinessException exception) {
+        } catch (RuntimeException exception) {
             log.warn("공지사항 상세 조회에 실패했습니다. noticeUuid={}, error={}", noticeUuid, exception.getMessage());
             throw exception;
         }
@@ -108,11 +111,7 @@ public class NoticeService {
     public NoticeDetailResponse createNotice(String loginId, CreateNoticeRequest request) {
         log.info("공지사항 등록을 시작합니다. loginId={}, title={}", loginId, request.title());
         try {
-            NtcVo notice = NtcVo.builder()
-                    .ttl(request.title())
-                    .cntnt(request.content())
-                    .createdBy(loginId)
-                    .build();
+            NtcVo notice = NoticeConvert.toCreateVo(loginId, request);
 
             noticeMapper.insertNotice(notice);
             NoticeDetailResponse response = NoticeConvert.toDetailResponse(getNoticeByIdx(notice.getIdx()));
@@ -130,17 +129,7 @@ public class NoticeService {
         log.info("공지사항 수정을 시작합니다. loginId={}, noticeUuid={}", loginId, noticeUuid);
         try {
             NtcJvo savedNotice = getNoticeByUuid(noticeUuid);
-            NtcVo notice = NtcVo.builder()
-                    .idx(savedNotice.getIdx())
-                    .uuid(savedNotice.getUuid())
-                    .ttl(request.title())
-                    .cntnt(request.content())
-                    .viewCnt(savedNotice.getViewCnt())
-                    .createdBy(savedNotice.getCreatedBy())
-                    .createdAt(savedNotice.getCreatedAt())
-                    .updatedBy(loginId)
-                    .updatedAt(savedNotice.getUpdatedAt())
-                    .build();
+            NtcVo notice = NoticeConvert.toUpdateVo(loginId, request, savedNotice);
 
             int updatedCount = noticeMapper.updateNotice(notice);
 
@@ -176,34 +165,6 @@ public class NoticeService {
                     loginId, noticeUuid, exception.getMessage());
             throw exception;
         }
-    }
-
-    private NtcListSrchVo buildSearchVo(NoticeListRequest request) {
-        return NtcListSrchVo.builder()
-                .kwd(trimToNull(request.keyword()))
-                .page(PageSortSupport.normalizePage(request.page()))
-                .size(PageSortSupport.normalizeSize(request.size()))
-                .sortBy(request.sortBy())
-                .sortDirection(SortDirection.from(request.sortDirection(), SortDirection.DESC).name())
-                .orderByClause(
-                        PageSortSupport.resolveOrderByClause(
-                                request.sortBy(),
-                                request.sortDirection(),
-                                NOTICE_SORT_FIELD_MAP,
-                                "createdAt",
-                                SortDirection.DESC
-                        )
-                )
-                .build();
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        String trimmedValue = value.trim();
-        return trimmedValue.isEmpty() ? null : trimmedValue;
     }
 
     private NtcJvo getNoticeByUuid(String noticeUuid) {

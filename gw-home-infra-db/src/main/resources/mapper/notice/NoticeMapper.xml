@@ -4,94 +4,83 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gw.infra.db.mapper.notice.NoticeMapper">
 
+    <!-- 공지 상세 조회 컬럼을 공유한다. -->
+    <sql id="noticeDetailSelect">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            cntnt,
+            view_cnt,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at,
+            del_at
+        FROM tb_ntc
+    </sql>
+
+    <!-- 공지 목록과 대시보드의 요약 컬럼을 공유한다. -->
+    <sql id="noticeSummarySelect">
+        SELECT
+            ntc_idx AS idx,
+            ntc_uuid AS uuid,
+            ttl,
+            view_cnt,
+            created_by,
+            created_at
+        FROM tb_ntc
+    </sql>
+
+    <!-- 공지 목록과 전체 건수에 동일한 검색·삭제 조건을 적용한다. -->
+    <sql id="noticeListFilters">
+        WHERE del_at IS NULL
+        <if test="req.kwd != null and req.kwd != ''">
+            AND ttl LIKE CONCAT('%', #{req.kwd}, '%')
+        </if>
+    </sql>
+
+    <!-- 외부 UUID로 공지 상세를 조회한다. -->
     <select id="selectNoticeByUuid" resultType="NtcJvo">
-        SELECT
-            ntc_idx AS idx,
-            ntc_uuid AS uuid,
-            ttl,
-            cntnt,
-            view_cnt,
-            created_by,
-            updated_by,
-            created_at,
-            updated_at,
-            del_at
-        FROM tb_ntc
+        <include refid="noticeDetailSelect"/>
         WHERE ntc_uuid = CAST(#{uuid} AS UUID)
           AND del_at IS NULL
     </select>
 
+    <!-- 관리자용 공지 상세를 조회한다. -->
     <select id="selectNoticeForAdminByUuid" resultType="NtcJvo">
-        SELECT
-            ntc_idx AS idx,
-            ntc_uuid AS uuid,
-            ttl,
-            cntnt,
-            view_cnt,
-            created_by,
-            updated_by,
-            created_at,
-            updated_at,
-            del_at
-        FROM tb_ntc
+        <include refid="noticeDetailSelect"/>
         WHERE ntc_uuid = CAST(#{uuid} AS UUID)
           AND del_at IS NULL
     </select>
 
+    <!-- 내부 식별자로 저장된 공지 상세를 조회한다. -->
     <select id="selectNoticeByIdx" resultType="NtcJvo">
-        SELECT
-            ntc_idx AS idx,
-            ntc_uuid AS uuid,
-            ttl,
-            cntnt,
-            view_cnt,
-            created_by,
-            updated_by,
-            created_at,
-            updated_at,
-            del_at
-        FROM tb_ntc
+        <include refid="noticeDetailSelect"/>
         WHERE ntc_idx = #{idx}
           AND del_at IS NULL
     </select>
 
+    <!-- 공지 검색 결과를 페이징 조회한다. -->
     <select id="selectNoticeList" resultType="NtcSmryJvo">
-        SELECT
-            ntc_idx AS idx,
-            ntc_uuid AS uuid,
-            ttl,
-            view_cnt,
-            created_by,
-            created_at
-        FROM tb_ntc
-        WHERE del_at IS NULL
-        <if test="req.kwd != null and req.kwd != ''">
-            AND ttl LIKE CONCAT('%', #{req.kwd}, '%')
-        </if>
-        ORDER BY ${req.orderByClause}
+        <include refid="noticeSummarySelect"/>
+        <include refid="noticeListFilters"/>
+        ORDER BY ${req.orderByClause}, ntc_idx DESC
         LIMIT #{req.size} OFFSET #{req.offset}
     </select>
 
+    <!-- 동일한 공지 검색 조건의 전체 건수를 조회한다. -->
     <select id="countNoticeList" resultType="long">
         SELECT COUNT(*)
         FROM tb_ntc
-        WHERE del_at IS NULL
-        <if test="req.kwd != null and req.kwd != ''">
-            AND ttl LIKE CONCAT('%', #{req.kwd}, '%')
-        </if>
+        <include refid="noticeListFilters"/>
     </select>
 
+    <!-- 대시보드의 최신 공지 목록을 조회한다. -->
     <select id="selectDashboardNoticeList" resultType="NtcSmryJvo">
-        SELECT
-            ntc_idx AS idx,
-            ntc_uuid AS uuid,
-            ttl,
-            view_cnt,
-            created_by,
-            created_at
-        FROM tb_ntc
+        <include refid="noticeSummarySelect"/>
         WHERE del_at IS NULL
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, ntc_idx DESC
         LIMIT #{limit}
     </select>
 

@@ -1,5 +1,7 @@
 package com.gw.api.dto.board;
 
+import com.gw.share.common.query.PageSortSupport;
+
 public record BoardPostListRequest(
         String categoryUuid,
         String searchType,
@@ -10,10 +12,10 @@ public record BoardPostListRequest(
         String sortDirection
 ) {
     public int pageOrDefault() {
-        return page == null || page < 1 ? 1 : page;
+        return PageSortSupport.normalizePage(page);
     }
 
     public int sizeOrDefault() {
-        return size == null || size < 1 ? 20 : size;
+        return PageSortSupport.normalizeSize(size);
     }
 }

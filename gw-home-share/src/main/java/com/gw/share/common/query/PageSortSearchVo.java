@@ -26,7 +26,8 @@ public class PageSortSearchVo {
 
     private String orderByClause;
 
-    public int getOffset() {
-        return (Math.max(page, 1) - 1) * size;
+    // 공통 페이징 규칙으로 조회 시작 위치를 계산한다.
+    public long getOffset() {
+        return PageSortSupport.calculateOffset(page, size);
     }
 }

@@ -1,6 +1,7 @@
 package com.gw.infra.db.mapper.account;
 
 import com.gw.share.vo.account.AcctVo;
+import com.gw.share.vo.account.AcctSmryVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,11 +18,11 @@ public interface AccountMapper {
 
     AcctVo selectAccountByGoogleSub(@Param("googleSub") String googleSub);
 
-    java.util.List<AcctVo> selectAllAccounts(
+    java.util.List<AcctSmryVo> selectAllAccounts(
             @Param("loginId") String loginId,
             @Param("role") String role,
             @Param("acctStat") String acctStat,
-            @Param("offset") int offset,
+            @Param("offset") long offset,
             @Param("limit") int limit
     );
 

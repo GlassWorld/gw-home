@@ -12,22 +12,23 @@ import com.gw.api.service.account.AccountLookupService;
 import com.gw.api.service.tag.TagService;
 import com.gw.infra.db.mapper.board.BoardMapper;
 import com.gw.infra.db.mapper.file.FileMapper;
-import com.gw.infra.db.support.PageSortSupport;
 import com.gw.share.common.exception.BusinessException;
 import com.gw.share.common.exception.ErrorCode;
 import com.gw.share.common.policy.RolePolicy;
-import com.gw.share.common.query.SortDirection;
 import com.gw.share.common.response.PageResponse;
 import com.gw.share.jvo.board.BrdPstJvo;
 import com.gw.share.vo.account.AcctVo;
 import com.gw.share.vo.board.BrdCtgrVo;
-import com.gw.share.vo.board.BrdPstFileVo;
 import com.gw.share.vo.board.BrdPstListSrchVo;
 import com.gw.share.vo.board.BrdPstVo;
 import com.gw.share.vo.file.FileVo;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,12 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Slf4j
 public class BoardService {
-
-    private static final Map<String, String> BRD_PST_SORT_FIELD_MAP = Map.of(
-            "createdAt", "bp.created_at",
-            "viewCnt", "bp.view_cnt",
-            "ttl", "bp.ttl"
-    );
 
     private final BoardMapper boardMapper;
     private final FileMapper fileMapper;
@@ -64,34 +59,21 @@ public class BoardService {
     // 게시글 목록을 조회한다.
     public PageResponse<BoardPostSummaryResponse> getBoardPostList(BoardPostListRequest request) {
         log.info("getBoardPostList 시작 - request: {}", request);
-        BrdPstListSrchVo query = BrdPstListSrchVo.builder()
-                .ctgrUuid(request.categoryUuid())
-                .srchType(request.searchType())
-                .kwd(request.keyword())
-                .page(PageSortSupport.normalizePage(request.page()))
-                .size(PageSortSupport.normalizeSize(request.size()))
-                .sortBy(request.sortBy())
-                .sortDirection(SortDirection.from(request.sortDirection(), SortDirection.DESC).name())
-                .orderByClause(
-                        PageSortSupport.resolveOrderByClause(
-                                request.sortBy(),
-                                request.sortDirection(),
-                                BRD_PST_SORT_FIELD_MAP,
-                                "createdAt",
-                                SortDirection.DESC
-                        )
-                )
-                .build();
+        try {
+            BrdPstListSrchVo query = BoardConvert.toSearchVo(request);
 
-        List<BoardPostSummaryResponse> content = boardMapper.selectBoardPostList(query)
-                .stream()
-                .map(BoardConvert::toSummaryResponse)
-                .toList();
-        long totalCount = boardMapper.countBoardPostList(query);
-        int totalPages = (int) Math.ceil((double) totalCount / query.getSize());
-        PageResponse<BoardPostSummaryResponse> response = new PageResponse<>(content, query.getPage(), query.getSize(), totalCount, totalPages);
-        log.info("getBoardPostList 완료 - totalCount: {}", totalCount);
-        return response;
+            List<BoardPostSummaryResponse> content = boardMapper.selectBoardPostList(query)
+                    .stream()
+                    .map(BoardConvert::toSummaryResponse)
+                    .toList();
+            long totalCount = boardMapper.countBoardPostList(query);
+            PageResponse<BoardPostSummaryResponse> response = PageResponse.of(content, query.getPage(), query.getSize(), totalCount);
+            log.info("getBoardPostList 완료 - totalCount: {}", totalCount);
+            return response;
+        } catch (RuntimeException exception) {
+            log.error("getBoardPostList 실패", exception);
+            throw exception;
+        }
     }
 
     @Transactional(readOnly = true)
@@ -108,75 +90,91 @@ public class BoardService {
     // 게시글 상세를 조회한다.
     public BoardPostResponse getBoardPost(String boardPostUuid) {
         log.info("getBoardPost 시작 - boardPostUuid: {}", boardPostUuid);
-        BrdPstJvo boardPost = getBrdPstJvo(boardPostUuid);
-        boardMapper.incrementViewCount(boardPostUuid);
-        BrdPstJvo refreshedBoardPost = getBrdPstJvo(boardPostUuid);
-        BoardPostResponse response = BoardConvert.toResponse(
-                refreshedBoardPost,
-                getBoardAttachments(refreshedBoardPost.getIdx()),
-                tagService.getTagsByBrdPstUuid(boardPostUuid)
-        );
-        log.info("getBoardPost 완료 - boardPostUuid: {}", boardPostUuid);
-        return response;
+        try {
+            if (boardMapper.incrementViewCount(boardPostUuid) == 0) {
+                throw new BusinessException(ErrorCode.NOT_FOUND, "게시글을 찾을 수 없습니다.");
+            }
+            BrdPstJvo boardPost = getBrdPstJvo(boardPostUuid);
+            BoardPostResponse response = BoardConvert.toResponse(
+                    boardPost,
+                    getBoardAttachments(boardPost.getIdx()),
+                    tagService.getTagsByBrdPstUuid(boardPostUuid)
+            );
+            log.info("getBoardPost 완료 - boardPostUuid: {}", boardPostUuid);
+            return response;
+        } catch (RuntimeException exception) {
+            log.error("getBoardPost 실패 - boardPostUuid: {}", boardPostUuid, exception);
+            throw exception;
+        }
     }
 
     // 로그인 사용자의 게시글을 생성한다.
     public BoardPostResponse createBoardPost(String loginId, CreateBoardPostRequest request) {
         log.info("createBoardPost 시작 - loginId: {}, categoryUuid: {}", loginId, request.categoryUuid());
-        AcctVo account = getAccountByLoginId(loginId);
-        BrdCtgrVo category = getOptionalCtgrByUuid(request.categoryUuid());
+        try {
+            AcctVo account = getAccountByLoginId(loginId);
+            BrdCtgrVo category = getOptionalCtgrByUuid(request.categoryUuid());
 
-        BrdPstVo boardPost = BrdPstVo.builder()
-                .brdCtgrIdx(category == null ? null : category.getIdx())
-                .mbrAcctIdx(account.getIdx())
-                .ttl(request.title())
-                .cntnt(request.content())
-                .createdBy(loginId)
-                .build();
+            BrdPstVo boardPost = BrdPstVo.builder()
+                    .brdCtgrIdx(category == null ? null : category.getIdx())
+                    .mbrAcctIdx(account.getIdx())
+                    .ttl(request.title())
+                    .cntnt(request.content())
+                    .createdBy(loginId)
+                    .build();
 
-        boardMapper.insertBoardPost(boardPost);
-        replaceBoardAttachments(boardPost.getIdx(), request.attachmentFileUuids(), loginId);
-        BrdPstJvo savedBoardPost = boardMapper.selectBoardPostByIdx(boardPost.getIdx());
-        BoardPostResponse response = BoardConvert.toResponse(
-                savedBoardPost,
-                getBoardAttachments(savedBoardPost.getIdx()),
-                tagService.getTagsByBrdPstUuid(savedBoardPost.getUuid())
-        );
-        log.info("createBoardPost 완료 - loginId: {}, boardPostUuid: {}", loginId, response.boardPostUuid());
-        return response;
+            boardMapper.insertBoardPost(boardPost);
+            replaceBoardAttachments(boardPost.getIdx(), request.attachmentFileUuids(), loginId);
+            BrdPstJvo savedBoardPost = boardMapper.selectBoardPostByIdx(boardPost.getIdx());
+            BoardPostResponse response = BoardConvert.toResponse(
+                    savedBoardPost,
+                    getBoardAttachments(savedBoardPost.getIdx()),
+                    tagService.getTagsByBrdPstUuid(savedBoardPost.getUuid())
+            );
+            log.info("createBoardPost 완료 - loginId: {}, boardPostUuid: {}", loginId, response.boardPostUuid());
+            return response;
+        } catch (RuntimeException exception) {
+            log.error("createBoardPost 실패 - loginId: {}", loginId, exception);
+            throw exception;
+        }
     }
 
     // 로그인 사용자의 게시글을 수정한다.
     public BoardPostResponse updateBoardPost(String loginId, String boardPostUuid, UpdateBoardPostRequest request) {
         log.info("updateBoardPost 시작 - loginId: {}, boardPostUuid: {}", loginId, boardPostUuid);
-        AcctVo account = getAccountByLoginId(loginId);
-        BrdPstJvo boardPost = getBrdPstJvo(boardPostUuid);
-        validateManagePermission(account, boardPost);
+        try {
+            AcctVo account = getAccountByLoginId(loginId);
+            BrdPstJvo boardPost = getBrdPstJvo(boardPostUuid);
+            validateManagePermission(account, boardPost);
 
-        BrdCtgrVo category = getOptionalCtgrByUuid(request.categoryUuid());
-        BrdPstVo boardPostVo = BrdPstVo.builder()
-                .uuid(boardPost.getUuid())
-                .brdCtgrIdx(category == null ? null : category.getIdx())
-                .mbrAcctIdx(boardPost.getMbrAcctIdx())
-                .ttl(request.title())
-                .cntnt(request.content())
-                .viewCnt(boardPost.getViewCnt())
-                .createdBy(boardPost.getCreatedBy())
-                .updatedBy(loginId)
-                .createdAt(boardPost.getCreatedAt())
-                .updatedAt(boardPost.getUpdatedAt())
-                .build();
-        boardMapper.updateBoardPost(boardPostVo);
-        replaceBoardAttachments(boardPost.getIdx(), request.attachmentFileUuids(), loginId);
+            BrdCtgrVo category = getOptionalCtgrByUuid(request.categoryUuid());
+            BrdPstVo boardPostVo = BrdPstVo.builder()
+                    .uuid(boardPost.getUuid())
+                    .brdCtgrIdx(category == null ? null : category.getIdx())
+                    .mbrAcctIdx(boardPost.getMbrAcctIdx())
+                    .ttl(request.title())
+                    .cntnt(request.content())
+                    .viewCnt(boardPost.getViewCnt())
+                    .createdBy(boardPost.getCreatedBy())
+                    .updatedBy(loginId)
+                    .createdAt(boardPost.getCreatedAt())
+                    .updatedAt(boardPost.getUpdatedAt())
+                    .build();
+            boardMapper.updateBoardPost(boardPostVo);
+            replaceBoardAttachments(boardPost.getIdx(), request.attachmentFileUuids(), loginId);
 
-        BrdPstJvo updatedBoardPost = getBrdPstJvo(boardPostUuid);
-        BoardPostResponse response = BoardConvert.toResponse(
-                updatedBoardPost,
-                getBoardAttachments(updatedBoardPost.getIdx()),
-                tagService.getTagsByBrdPstUuid(boardPostUuid)
-        );
-        log.info("updateBoardPost 완료 - loginId: {}, boardPostUuid: {}", loginId, boardPostUuid);
-        return response;
+            BrdPstJvo updatedBoardPost = getBrdPstJvo(boardPostUuid);
+            BoardPostResponse response = BoardConvert.toResponse(
+                    updatedBoardPost,
+                    getBoardAttachments(updatedBoardPost.getIdx()),
+                    tagService.getTagsByBrdPstUuid(boardPostUuid)
+            );
+            log.info("updateBoardPost 완료 - loginId: {}, boardPostUuid: {}", loginId, boardPostUuid);
+            return response;
+        } catch (RuntimeException exception) {
+            log.error("updateBoardPost 실패 - loginId: {}", loginId, exception);
+            throw exception;
+        }
     }
 
     // 로그인 사용자의 게시글을 삭제한다.
@@ -230,54 +228,57 @@ public class BoardService {
     }
 
     private void replaceBoardAttachments(Long boardPostIdx, List<String> attachmentFileUuids, String loginId) {
-        boardMapper.deleteBoardAttachments(boardPostIdx);
-
-        if (attachmentFileUuids == null || attachmentFileUuids.isEmpty()) {
+        List<String> uniqueUuids = normalizeAttachmentUuids(attachmentFileUuids);
+        if (uniqueUuids.isEmpty()) {
+            boardMapper.deleteBoardAttachments(boardPostIdx);
             return;
         }
-
-        List<String> uniqueAttachmentFileUuids = new ArrayList<>();
-
-        for (String attachmentFileUuid : attachmentFileUuids) {
-            if (attachmentFileUuid != null && !attachmentFileUuid.isBlank() && !uniqueAttachmentFileUuids.contains(attachmentFileUuid)) {
-                uniqueAttachmentFileUuids.add(attachmentFileUuid);
+        Map<String, FileVo> filesByUuid = fileMapper.selectFilesByUuids(uniqueUuids).stream()
+                .collect(Collectors.toMap(FileVo::getUuid, Function.identity()));
+        List<FileVo> orderedFiles = new ArrayList<>();
+        for (String uuid : uniqueUuids) {
+            FileVo file = filesByUuid.get(uuid);
+            if (file == null || file.getDelAt() != null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND, "파일을 찾을 수 없습니다.");
             }
-        }
-
-        int sortOrder = 0;
-
-        for (String attachmentFileUuid : uniqueAttachmentFileUuids) {
-            FileVo file = getFileByUuid(attachmentFileUuid);
 
             if (!loginId.equals(file.getCreatedBy())) {
                 log.error(
                         "replaceBoardAttachments 실패 - 원인: 본인이 업로드한 파일만 첨부할 수 있습니다. loginId={}, fileUuid={}",
                         loginId,
-                        attachmentFileUuid
+                        uuid
                 );
                 throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 업로드한 파일만 첨부할 수 있습니다.");
             }
 
-            BrdPstFileVo boardAttachment = BrdPstFileVo.builder()
-                    .brdPstIdx(boardPostIdx)
-                    .fileIdx(file.getIdx())
-                    .fileRole("ATTACHMENT")
-                    .sortOrd(sortOrder++)
-                    .createdBy(loginId)
-                    .build();
-            boardMapper.insertBoardAttachment(boardAttachment);
+            orderedFiles.add(file);
         }
+        // 모든 파일의 존재와 소유권이 확인된 뒤 같은 트랜잭션에서 연결을 교체한다.
+        boardMapper.deleteBoardAttachments(boardPostIdx);
+        boardMapper.insertBoardAttachments(BoardConvert.toAttachmentVos(boardPostIdx, orderedFiles, loginId));
     }
 
-    private FileVo getFileByUuid(String fileUuid) {
-        FileVo file = fileMapper.selectFileByUuid(fileUuid);
-
-        if (file == null || file.getDelAt() != null) {
-            log.error("getFileByUuid 실패 - 원인: 파일을 찾을 수 없습니다. fileUuid={}", fileUuid);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "파일을 찾을 수 없습니다.");
+    // 빈 항목을 제외하고 UUID 대소문자와 중복을 정리하되 최초 요청 순서는 유지한다.
+    private List<String> normalizeAttachmentUuids(List<String> uuids) {
+        if (uuids == null) {
+            return List.of();
         }
-
-        return file;
+        var uniqueUuids = new LinkedHashSet<String>();
+        for (String uuid : uuids) {
+            if (uuid == null || uuid.isBlank()) {
+                continue;
+            }
+            try {
+                String normalized = UUID.fromString(uuid).toString();
+                if (!normalized.equalsIgnoreCase(uuid)) {
+                    throw new IllegalArgumentException();
+                }
+                uniqueUuids.add(normalized);
+            } catch (IllegalArgumentException exception) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "첨부파일 UUID 형식이 올바르지 않습니다.");
+            }
+        }
+        return List.copyOf(uniqueUuids);
     }
 
     private void validateManagePermission(AcctVo account, BrdPstJvo boardPost) {

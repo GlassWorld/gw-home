@@ -32,7 +32,7 @@ public interface BoardMapper {
 
     List<BrdPstFileJvo> selectBoardAttachments(@Param("brdPstIdx") Long brdPstIdx);
 
-    void insertBoardAttachment(BrdPstFileVo boardAttachment);
+    void insertBoardAttachments(@Param("attachments") List<BrdPstFileVo> attachments);
 
     int deleteBoardAttachments(@Param("brdPstIdx") Long brdPstIdx);
 

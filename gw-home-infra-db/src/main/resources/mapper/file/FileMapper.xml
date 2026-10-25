@@ -26,7 +26,8 @@
         )
     </insert>
 
-    <select id="selectFileByUuid" resultType="FileVo">
+    <!-- 파일 조회의 공통 컬럼을 정의한다. -->
+    <sql id="fileSelect">
         SELECT
             file_idx AS idx,
             file_uuid AS uuid,
@@ -41,24 +42,30 @@
             created_at,
             del_at
         FROM tb_file
+    </sql>
+
+    <!-- 첨부 검증에 필요한 삭제되지 않은 파일들을 일괄 조회한다. -->
+    <select id="selectFilesByUuids" resultType="FileVo">
+        <include refid="fileSelect"/>
+        WHERE del_at IS NULL
+        <choose>
+            <when test="uuids != null and !uuids.isEmpty()">
+                AND file_uuid IN
+                <foreach collection="uuids" item="uuid" open="(" separator="," close=")">
+                    CAST(#{uuid} AS UUID)
+                </foreach>
+            </when>
+            <otherwise>AND 1 = 0</otherwise>
+        </choose>
+    </select>
+
+    <select id="selectFileByUuid" resultType="FileVo">
+        <include refid="fileSelect"/>
         WHERE file_uuid = CAST(#{uuid} AS UUID)
     </select>
 
     <select id="selectFileByIdx" resultType="FileVo">
-        SELECT
-            file_idx AS idx,
-            file_uuid AS uuid,
-            orgnl_nm,
-            strg_nm,
-            file_path,
-            file_url,
-            mime_type,
-            file_size,
-            upldr_type,
-            created_by,
-            created_at,
-            del_at
-        FROM tb_file
+        <include refid="fileSelect"/>
         WHERE file_idx = #{idx}
     </select>
 

@@ -4,7 +4,24 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gw.infra.db.mapper.board.BoardMapper">
 
-    <select id="selectBoardPostByUuid" resultType="BrdPstJvo">
+    <!-- 게시글의 좋아요와 삭제되지 않은 댓글 건수를 조회한다. -->
+    <sql id="boardPostCounts">
+            (
+                SELECT COUNT(*)
+                FROM tb_fav f
+                WHERE f.trgt_type = 'BOARD_POST'
+                  AND f.trgt_idx = bp.brd_pst_idx
+            ) AS fav_cnt,
+            (
+                SELECT COUNT(*)
+                FROM tb_brd_cmt c
+                WHERE c.brd_pst_idx = bp.brd_pst_idx
+                  AND c.del_at IS NULL
+            ) AS cmt_cnt,
+    </sql>
+
+    <!-- 게시글 상세 조회의 컬럼과 연관 정보를 공유한다. -->
+    <sql id="boardPostDetailSelect">
         SELECT
             bp.brd_pst_idx AS idx,
             bp.brd_pst_uuid AS uuid,
@@ -16,18 +33,7 @@
             bp.cntnt,
             bp.view_cnt,
             mp.nick_nm AS athr_nick_nm,
-            (
-                SELECT COUNT(*)
-                FROM tb_fav f
-                WHERE f.trgt_type = 'BOARD_POST'
-                  AND f.trgt_idx = bp.brd_pst_idx
-            ) AS fav_cnt,
-            (
-                SELECT COUNT(*)
-                FROM tb_brd_cmt c
-                WHERE c.brd_pst_idx = bp.brd_pst_idx
-                  AND c.del_at IS NULL
-            ) AS cmt_cnt,
+            <include refid="boardPostCounts"/>
             bp.created_by,
             bp.updated_by,
             bp.created_at,
@@ -35,100 +41,10 @@
         FROM tb_brd_pst bp
         LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
         LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
-        WHERE bp.brd_pst_uuid = CAST(#{uuid} AS UUID)
-          AND bp.del_at IS NULL
-    </select>
+    </sql>
 
-    <select id="selectBoardPostByIdx" resultType="BrdPstJvo">
-        SELECT
-            bp.brd_pst_idx AS idx,
-            bp.brd_pst_uuid AS uuid,
-            bp.brd_ctgr_idx,
-            bc.brd_ctgr_uuid,
-            bp.mbr_acct_idx,
-            bc.nm AS ctgr_nm,
-            bp.ttl,
-            bp.cntnt,
-            bp.view_cnt,
-            mp.nick_nm AS athr_nick_nm,
-            (
-                SELECT COUNT(*)
-                FROM tb_fav f
-                WHERE f.trgt_type = 'BOARD_POST'
-                  AND f.trgt_idx = bp.brd_pst_idx
-            ) AS fav_cnt,
-            (
-                SELECT COUNT(*)
-                FROM tb_brd_cmt c
-                WHERE c.brd_pst_idx = bp.brd_pst_idx
-                  AND c.del_at IS NULL
-            ) AS cmt_cnt,
-            bp.created_by,
-            bp.updated_by,
-            bp.created_at,
-            bp.updated_at
-        FROM tb_brd_pst bp
-        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
-        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
-        WHERE bp.brd_pst_idx = #{idx}
-          AND bp.del_at IS NULL
-    </select>
-
-    <select id="selectBoardPostList" resultType="BrdPstSmryJvo">
-        SELECT
-            bp.brd_pst_uuid AS uuid,
-            bc.nm AS ctgr_nm,
-            bp.ttl,
-            bp.view_cnt,
-            mp.nick_nm AS athr_nick_nm,
-            (
-                SELECT COUNT(*)
-                FROM tb_fav f
-                WHERE f.trgt_type = 'BOARD_POST'
-                  AND f.trgt_idx = bp.brd_pst_idx
-            ) AS fav_cnt,
-            (
-                SELECT COUNT(*)
-                FROM tb_brd_cmt c
-                WHERE c.brd_pst_idx = bp.brd_pst_idx
-                  AND c.del_at IS NULL
-            ) AS cmt_cnt,
-            bp.created_at
-        FROM tb_brd_pst bp
-        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
-        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
-        WHERE bp.del_at IS NULL
-        <if test="req.ctgrUuid != null and req.ctgrUuid != ''">
-            AND bc.brd_ctgr_uuid = CAST(#{req.ctgrUuid} AS UUID)
-        </if>
-        <if test="req.kwd != null and req.kwd != ''">
-            <choose>
-                <when test="req.srchType == 'content'">
-                    AND bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
-                </when>
-                <when test="req.srchType == 'author'">
-                    AND mp.nick_nm LIKE CONCAT('%', #{req.kwd}, '%')
-                </when>
-                <when test="req.srchType == 'all'">
-                    AND (
-                        bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
-                        OR bp.cntnt LIKE CONCAT('%', #{req.kwd}, '%')
-                        OR mp.nick_nm LIKE CONCAT('%', #{req.kwd}, '%')
-                    )
-                </when>
-                <otherwise>
-                    AND bp.ttl LIKE CONCAT('%', #{req.kwd}, '%')
-                </otherwise>
-            </choose>
-        </if>
-        ORDER BY ${req.orderByClause}
-        LIMIT #{req.size} OFFSET #{req.offset}
-    </select>
-
-    <select id="countBoardPostList" resultType="long">
-        SELECT COUNT(*)
-        FROM tb_brd_pst bp
-        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+    <!-- 목록과 전체 건수에 동일한 삭제·카테고리·검색 조건을 적용한다. -->
+    <sql id="boardPostFilters">
         WHERE bp.del_at IS NULL
         <if test="req.ctgrUuid != null and req.ctgrUuid != ''">
             AND bc.brd_ctgr_uuid = CAST(#{req.ctgrUuid} AS UUID)
@@ -163,6 +79,46 @@
                 </otherwise>
             </choose>
         </if>
+    </sql>
+
+    <!-- 외부 UUID로 게시글 상세를 조회한다. -->
+    <select id="selectBoardPostByUuid" resultType="BrdPstJvo">
+        <include refid="boardPostDetailSelect"/>
+        WHERE bp.brd_pst_uuid = CAST(#{uuid} AS UUID)
+          AND bp.del_at IS NULL
+    </select>
+
+    <!-- 내부 식별자로 저장된 게시글 상세를 조회한다. -->
+    <select id="selectBoardPostByIdx" resultType="BrdPstJvo">
+        <include refid="boardPostDetailSelect"/>
+        WHERE bp.brd_pst_idx = #{idx}
+          AND bp.del_at IS NULL
+    </select>
+
+    <!-- 검색 조건에 맞는 게시글 목록을 페이징 조회한다. -->
+    <select id="selectBoardPostList" resultType="BrdPstSmryJvo">
+        SELECT
+            bp.brd_pst_uuid AS uuid,
+            bc.nm AS ctgr_nm,
+            bp.ttl,
+            bp.view_cnt,
+            mp.nick_nm AS athr_nick_nm,
+            <include refid="boardPostCounts"/>
+            bp.created_at
+        FROM tb_brd_pst bp
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        LEFT JOIN tb_mbr_prfl mp ON mp.mbr_acct_idx = bp.mbr_acct_idx
+        <include refid="boardPostFilters"/>
+        ORDER BY ${req.orderByClause}, bp.brd_pst_idx DESC
+        LIMIT #{req.size} OFFSET #{req.offset}
+    </select>
+
+    <!-- 동일한 검색 조건에 맞는 게시글 전체 건수를 조회한다. -->
+    <select id="countBoardPostList" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_brd_pst bp
+        LEFT JOIN tb_brd_ctgr bc ON bc.brd_ctgr_idx = bp.brd_ctgr_idx
+        <include refid="boardPostFilters"/>
     </select>
 
     <insert id="insertBoardPost" parameterType="BrdPstVo" useGeneratedKeys="true" keyProperty="idx">
@@ -233,20 +189,15 @@
         ORDER BY bpf.sort_ord ASC, bpf.created_at ASC
     </select>
 
-    <insert id="insertBoardAttachment" parameterType="BrdPstFileVo" useGeneratedKeys="true" keyProperty="idx">
+    <!-- 검증된 첨부파일 연결을 요청 순서대로 한 번에 저장한다. -->
+    <insert id="insertBoardAttachments">
         INSERT INTO tb_brd_pst_file (
-            brd_pst_idx,
-            file_idx,
-            file_role,
-            sort_ord,
-            created_by
-        ) VALUES (
-            #{brdPstIdx},
-            #{fileIdx},
-            #{fileRole},
-            #{sortOrd},
-            #{createdBy}
-        )
+            brd_pst_idx, file_idx, file_role, sort_ord, created_by
+        ) VALUES
+        <foreach collection="attachments" item="attachment" separator=",">
+            (#{attachment.brdPstIdx}, #{attachment.fileIdx}, #{attachment.fileRole},
+             #{attachment.sortOrd}, #{attachment.createdBy})
+        </foreach>
     </insert>
 
     <update id="deleteBoardAttachments">

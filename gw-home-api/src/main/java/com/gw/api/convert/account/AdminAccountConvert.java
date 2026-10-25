@@ -4,6 +4,7 @@ import com.gw.api.dto.account.AdminAccountDetailResponse;
 import com.gw.api.dto.account.AdminAccountListResponse;
 import com.gw.api.dto.account.AdminPasswordResetResponse;
 import com.gw.share.vo.account.AcctVo;
+import com.gw.share.vo.account.AcctSmryVo;
 
 public final class AdminAccountConvert {
 
@@ -11,7 +12,7 @@ public final class AdminAccountConvert {
     }
 
     // 관리자 계정 목록 조회 결과를 응답으로 변환한다.
-    public static AdminAccountListResponse toListResponse(AcctVo account) {
+    public static AdminAccountListResponse toListResponse(AcctSmryVo account) {
         return new AdminAccountListResponse(
                 account.getUuid(),
                 account.getLgnId(),
