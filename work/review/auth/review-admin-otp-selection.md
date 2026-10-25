@@ -1,5 +1,16 @@
 # 관리자 OTP 선택 기능 검토
 
+- 정리일: 2026-10-25
+- 상태: 구현 커밋 반영 완료. 아래 본문은 구현 전 검토·계획으로 보존하며 신규 구현 지시로 사용하지 않는다.
+- 구현 근거: `f84be45`.
+- 관련 문서: [실행 계획](../../todo/auth/todo-admin-otp-selection.md)
+
+## 현재 구현과 검증 범위
+
+- otpRequired 정책과 otpEnabled 등록 상태를 분리했고, 관리자 설정과 로그인 분기가 구현되어 있다.
+- 대상 DB의 otp_required 적용 여부와 실제 계정 로그인은 이번 문서 정리에서 검증하지 않았다.
+- 이번 변경은 작업 이력 정리이며 해당 기능의 새 코드·정책 변경은 포함하지 않는다.
+
 ## Scope
 
 - 대상:
@@ -18,7 +29,7 @@
 - 전체 판단:
   - Full-stack + HEAVY 작업이다. 관리자 화면, 관리자 API, 로그인 정책, 계정 모델이 함께 변경된다.
 
-## Findings or Scores
+## Findings or Scores — 구현 전 검토
 
 - 항목:
   - 로그인 정책과 OTP 등록 상태가 한 필드에 결합되어 있다.
@@ -48,7 +59,7 @@
 - 영향:
   - "OTP 사용 여부를 관리자가 선택"을 계정 정책으로 해석하면 DDL 변경이 필요하다.
 
-## Recommended Next Actions
+## Recommended Next Actions — 구현 전 권고
 
 1. OTP 정책과 OTP 등록 상태를 분리한다. 예: `otp_required` 또는 동등한 정책 필드를 계정에 추가한다.
 2. 로그인 로직을 `otp_required=false -> 일반 로그인 성공`, `otp_required=true + otp_enabled=false -> OTP_SETUP_REQUIRED`, `otp_required=true + otp_enabled=true -> OTP_REQUIRED`로 재정의한다.
