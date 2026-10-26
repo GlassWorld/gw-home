@@ -87,7 +87,7 @@ const fixture = http.createServer(async (request, response) => {
   let serverLog = '';
   try {
     await new Promise((resolve, reject) => fixture.once('error', reject).listen(19097, '127.0.0.1', resolve));
-    server = spawn(process.execPath, [path.join(root, 'gw-home-api/build/verification/life-output/server/index.mjs')], {
+    server = spawn(process.execPath, [path.join(root, `gw-home-api/build/verification/${process.env.LIFE_UI_OUTPUT || 'life-output'}/server/index.mjs`)], {
       cwd: path.join(root, 'gw-home-ui'), windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, NITRO_HOST: '127.0.0.1', NITRO_PORT: '19098', PORT: '19098', NUXT_PUBLIC_API_BASE: 'http://127.0.0.1:19097' }
     });
@@ -102,7 +102,7 @@ const fixture = http.createServer(async (request, response) => {
     const page = await context.newPage();
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     const noOverflow = async () => { const result = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth })); assert(result.scroll <= result.width, JSON.stringify(result)); };
-    const load = async () => { await page.goto('http://127.0.0.1:19098/life/todos'); await page.locator('.life-todos__card').first().waitFor(); };
+    const load = async () => { await page.goto('http://127.0.0.1:19098/life/todos?group=ALL'); await page.locator('.life-todos__card').first().waitFor(); };
     const dialog = () => page.getByRole('dialog');
     const card = title => page.locator('.life-todos__card').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
     for (const width of [360, 390, 768, 1440]) {

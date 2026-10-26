@@ -184,3 +184,11 @@ node gw-home-api/src/test/resources/work/renewal-schema.cjs gw-home-api/build/ve
 - 정상 적용 후 재실행해도 기존 데이터는 유지된다. IF NOT EXISTS가 기존의 잘못된 정의를 수리하지는 않는다. 앱 롤백 시 새 테이블과 데이터는 남겨둔다.
 - **실제 DB에는 아직 적용하지 않았다.** 서버 재시작만으로 SQL이 실행되지 않는다. SQL 적용 후 API·UI를 배포해야 일상 메뉴를 사용할 수 있다.
 - 로컬 검증: `node gw-home-api/src/test/resources/life/life-todo-sql.cjs <PGlite 패키지 경로>`를 실행한다. 실제 MyBatis 바인딩 SQL은 `LifeTodoMapperContractTest`가 `gw-home-api/build/life-todo-sql.json`으로 내보낸다.
+
+## 매일 체크 데이터 (2026-10-27)
+
+- `tb_lf_daily`: 소유 계정, 제목, 시작일(`start_dt`), 마지막 체크 가능 날짜(`end_dt`). 종료일 NULL은 반복 중이다. 종료는 오늘까지 포함하며 과거 기록을 삭제하지 않는다.
+- `tb_lf_daily_check`: 항목·계정·현지 날짜(`check_dt`)별 완료 기록. `(lf_daily_idx, check_dt)` 유일키와 항목/소유 계정 복합 FK로 중복과 다른 사용자 연결을 방지한다. 완료 취소는 `del_at`, 재완료는 같은 행 복구로 처리한다.
+- 날짜는 DATE, 감사 시각은 TIMESTAMPTZ다. 소유자는 인증 계정으로 결정하고 기록 변경·종료는 계정 행 잠금으로 직렬화한다.
+- 기준 DDL: `gw-home-infra-db/src/main/resources/sql/ddl/life/tb_lf_daily.sql`. 기존 home DB에는 `life-daily-migrate.sql` 전체를 실행한 후 API·UI를 배포한다. 계정 테이블이 선행되어야 한다.
+- 운영 DB에는 아직 적용하지 않았다. 서버 재시작만으로 테이블이 생성되지 않는다. `docs/all-ddl.sql`은 빈 스키마용 참고 스냅샷이다.

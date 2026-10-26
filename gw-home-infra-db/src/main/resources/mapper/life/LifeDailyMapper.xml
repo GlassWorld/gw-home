@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gw.infra.db.mapper.life.LifeDailyMapper">
+    <!-- 항목 종료와 체크 저장을 같은 계정 잠금으로 직렬화한다. -->
+    <select id="lockOwner" resultType="long">
+        SELECT mbr_acct_idx FROM tb_mbr_acct WHERE mbr_acct_idx = #{owner} AND del_at IS NULL FOR UPDATE
+    </select>
+    <!-- 월과 겹치는 항목을 종료된 과거 항목까지 조회한다. -->
+    <select id="selectItems" resultType="LifeDailyVo">
+        SELECT lf_daily_uuid AS uuid, mbr_acct_idx, ttl, start_dt, end_dt
+        FROM tb_lf_daily WHERE mbr_acct_idx = #{owner} AND del_at IS NULL
+          AND start_dt &lt;= #{end} AND (end_dt IS NULL OR end_dt &gt;= #{start})
+        ORDER BY created_at, lf_daily_idx
+    </select>
+    <!-- 소유한 항목의 유효한 월간 완료 기록만 반환한다. -->
+    <select id="selectChecks" resultType="LifeDailyCheckJvo">
+        SELECT t.lf_daily_uuid AS item_uuid, c.check_dt
+        FROM tb_lf_daily_check c JOIN tb_lf_daily t ON t.lf_daily_idx = c.lf_daily_idx AND t.mbr_acct_idx = c.mbr_acct_idx
+        WHERE t.mbr_acct_idx = #{owner} AND t.del_at IS NULL AND c.del_at IS NULL
+          AND c.check_dt BETWEEN #{start} AND #{end} AND c.check_dt &gt;= t.start_dt
+          AND (t.end_dt IS NULL OR c.check_dt &lt;= t.end_dt)
+        ORDER BY c.check_dt, t.lf_daily_idx
+    </select>
+    <!-- 소유권이 일치하는 항목의 시작·종료 날짜를 검사한다. -->
+    <select id="selectItem" resultType="LifeDailyVo">
+        SELECT lf_daily_uuid AS uuid, mbr_acct_idx, ttl, start_dt, end_dt
+        FROM tb_lf_daily WHERE mbr_acct_idx = #{owner} AND lf_daily_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL
+    </select>
+    <!-- 제목만 입력받아 오늘부터 반복할 항목을 저장한다. -->
+    <insert id="insertItem">
+        INSERT INTO tb_lf_daily (lf_daily_uuid, mbr_acct_idx, ttl, start_dt, created_by, updated_by)
+        VALUES (CAST(#{uuid} AS uuid), #{mbrAcctIdx}, #{ttl}, #{startDt}, #{createdBy}, #{updatedBy})
+    </insert>
+    <!-- 종료되지 않은 본인 항목의 제목을 수정한다. -->
+    <update id="updateTitle">
+        UPDATE tb_lf_daily SET ttl = #{title}, updated_by = #{loginId}, updated_at = now()
+        WHERE mbr_acct_idx = #{owner} AND lf_daily_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL AND end_dt IS NULL
+    </update>
+    <!-- 오늘까지의 기록을 보존하고 내일부터 반복을 종료한다. -->
+    <update id="endItem">
+        UPDATE tb_lf_daily SET end_dt = #{today}, updated_by = #{loginId}, updated_at = now()
+        WHERE mbr_acct_idx = #{owner} AND lf_daily_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL AND end_dt IS NULL
+    </update>
+    <!-- 동일 항목·날짜의 요청은 한 행으로 합치고 취소는 소프트 삭제한다. -->
+    <insert id="saveCheck">
+        INSERT INTO tb_lf_daily_check (lf_daily_idx, mbr_acct_idx, check_dt, created_by, updated_by, del_at)
+        SELECT lf_daily_idx, mbr_acct_idx, #{date}, #{loginId}, #{loginId}, CASE WHEN #{completed} THEN NULL ELSE now() END
+        FROM tb_lf_daily WHERE mbr_acct_idx = #{owner} AND lf_daily_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL
+          AND start_dt &lt;= #{date} AND (end_dt IS NULL OR end_dt &gt;= #{date})
+        ON CONFLICT (lf_daily_idx, check_dt) DO UPDATE
+        SET del_at = EXCLUDED.del_at, updated_by = EXCLUDED.updated_by, updated_at = now()
+    </insert>
+</mapper>

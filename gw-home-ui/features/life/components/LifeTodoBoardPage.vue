@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import LifeTodoFormModal from './LifeTodoFormModal.vue'
 import LifeCategoryModal from './LifeCategoryModal.vue'
+import LifeDailyChecklist from './LifeDailyChecklist.vue'
 import { useLifeTodos } from '../composables/use-life-todos'
 import { lifeTodoGroups } from '../types/life-todo.types'
+
+const route = useRoute()
+const dailyView = ref(!route.query.group)
 
 const { group, filters, page, result, summary, categories, isLoading, isSaving, isBusy, isCategoriesLoading,
   errorMessage, categoriesError, formError, formVisible, categoriesVisible, editingUuid, deleteTarget, form,
@@ -12,11 +16,18 @@ const { group, filters, page, result, summary, categories, isLoading, isSaving, 
 <template>
   <main class="page-container page-stack life-todos">
     <CommonBasePageHeader title="일상 할 일" eyebrow="Everyday" description="생활 속 작은 할 일을 가볍게 적고 하나씩 마무리하세요.">
-      <template #actions>
+      <template v-if="!dailyView" #actions>
         <CommonBaseButton variant="secondary" :disabled="isBusy" @click="categoriesVisible = true">카테고리 관리</CommonBaseButton>
         <CommonBaseButton :disabled="isBusy" @click="openForm()">+ 일상 할 일 추가</CommonBaseButton>
       </template>
     </CommonBasePageHeader>
+
+    <nav class="life-todos__groups" aria-label="일상 보기">
+      <button :aria-pressed="dailyView" @click="dailyView = true">매일 체크</button>
+      <button :aria-pressed="!dailyView" @click="dailyView = false">일반 할 일</button>
+    </nav>
+    <LifeDailyChecklist v-if="dailyView" />
+    <template v-else>
 
     <section v-if="summary" class="content-panel page-panel-padding-md life-todos__overview" aria-label="일상 완료 현황">
       <div><span>오늘 남은 일</span><strong>{{ summary.todayCount }}<small>건</small></strong></div>
@@ -65,6 +76,7 @@ const { group, filters, page, result, summary, categories, isLoading, isSaving, 
     <CommonBaseState v-else state="empty" title="표시할 일상 할 일이 없습니다." message="새 할 일을 추가하거나 검색·분류 조건을 바꿔보세요." />
     <CommonBasePagination v-if="result && result.totalPages > 1" :page="page" :total-pages="result.totalPages" :disabled="isBusy" @previous="changePage(page - 1)" @next="changePage(page + 1)" />
 
+    </template>
     <LifeTodoFormModal v-model="form" :visible="formVisible" :categories="categories" :is-editing="!!editingUuid" :is-saving="isSaving" :error-message="formError" @close="closeForm" @submit="saveTodo" />
     <LifeCategoryModal v-if="categoriesVisible" @close="categoriesVisible = false" @changed="categoriesChanged" />
     <CommonBaseModal :visible="!!deleteTarget" title="일상 할 일 삭제" width="480px" :dismissible="!isSaving" @close="deleteTarget = null">
