@@ -230,4 +230,23 @@ export function useBoard() {
 - Summary: `total_count`, `today_count`, `upcoming_count`, `overdue_count`, `completed_count`, `unscheduled_count`, `progress_rate`, `as_of_date`. 현재 유효 항목의 완료율이며 기간별 완료 이력이 아니다.
 - Category: `category_uuid`, `name`. 이름 1~50자, 양끝 공백 정리, 동일 계정에서 대소문자 무시 중복은 409. 다른 계정은 같은 이름을 사용할 수 있다.
 - 다른 소유자/삭제 항목·카테고리의 상세·변경·연결은 404, 잘못된 UUID·시간대·필터·JSON·날짜는 400. 타인 카테고리로 목록을 필터하면 본인 조건과 일치하는 항목이 없어 빈 결과를 반환한다.
-- 일상 API와 업무 TODO API는 저장·조회·집계가 분리되어 있다. 반복 루틴과 일상 알림 API는 이번 범위에 없다.
+- 일반 일상 API와 업무 TODO API는 저장·조회·집계가 분리되어 있다. 매일 반복 체크는 아래 별도 API를 사용하며 일상 알림 API는 제공하지 않는다.
+
+## 매일 체크 API (2026-10-27)
+
+모든 경로는 인증이 필요하며 소유자는 Principal에서 결정한다. 본인 항목이 아니면 404, 잘못된 월·UUID·날짜·시간대·입력은 400이다. `timeZone` 쿼리는 기본 `Asia/Seoul`이며 화면은 기기 시간대를 전달한다.
+
+| 메서드·경로 | 입력 | 응답 data |
+|---|---|---|
+| GET `/api/v1/life-daily` | `month=YYYY-MM`, `timeZone` | `{ month, today, time_zone, items, checks }` |
+| POST `/api/v1/life-daily` | `{ title }`, `timeZone` | Item |
+| PUT `/api/v1/life-daily/{uuid}` | `{ title }` | Item |
+| PUT `/api/v1/life-daily/{uuid}/end` | `timeZone` | null |
+| PUT `/api/v1/life-daily/{uuid}/checks/{date}` | `{ completed: boolean }`, `timeZone` | null |
+
+- Item: `{ item_uuid, title, start_date, end_date }`. Check: `{ item_uuid, date }`. 내부 PK는 노출하지 않는다.
+- 제목은 1~200자이며 공백을 정리한다. 생성 시작일은 서버가 해당 시간대의 오늘로 정한다.
+- 월 조회는 0001~9999년의 정확한 YYYY-MM 형식이다. 월과 반복 기간이 겹치는 항목 및 완료 기록을 동일 트랜잭션 스냅샷으로 반환한다.
+- 체크 날짜는 YYYY-MM-DD이며 시작일~종료일(양 끝 포함) 내 과거·오늘만 허용한다. 미체크는 미완료이며 동일 상태 재전송은 중복 행을 만들지 않는다.
+- 종료 요청은 오늘을 마지막 유효 날짜로 기록한다. 반복 종료 재요청은 기존 종료일을 유지한다. 종료 항목의 제목 변경은 거부하지만 유효 기간의 과거 체크는 수정 가능하다.
+- 날짜별 체크는 일반 일상 할 일 및 업무 완료 집계와 독립적이다.
