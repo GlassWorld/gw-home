@@ -36,6 +36,11 @@
         UPDATE tb_lf_daily SET ttl = #{title}, updated_by = #{loginId}, updated_at = now()
         WHERE mbr_acct_idx = #{owner} AND lf_daily_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL AND end_dt IS NULL
     </update>
+    <!-- 본인 항목을 소프트 삭제하여 연결된 체크 기록도 조회에서 제외한다. -->
+    <update id="deleteItem">
+        UPDATE tb_lf_daily SET del_at = now(), updated_by = #{loginId}, updated_at = now()
+        WHERE mbr_acct_idx = #{owner} AND lf_daily_uuid = CAST(#{uuid} AS uuid) AND del_at IS NULL
+    </update>
     <!-- 오늘까지의 기록을 보존하고 내일부터 반복을 종료한다. -->
     <update id="endItem">
         UPDATE tb_lf_daily SET end_dt = #{today}, updated_by = #{loginId}, updated_at = now()

@@ -14,6 +14,7 @@ public interface LifeDailyMapper {
     List<LifeDailyCheckJvo> selectChecks(@Param("owner") Long owner, @Param("start") LocalDate start, @Param("end") LocalDate end);
     LifeDailyVo selectItem(@Param("owner") Long owner, @Param("uuid") String uuid);
     int insertItem(LifeDailyVo item);
+    int deleteItem(@Param("owner") Long owner, @Param("uuid") String uuid, @Param("loginId") String loginId);
     int updateTitle(@Param("owner") Long owner, @Param("uuid") String uuid, @Param("title") String title, @Param("loginId") String loginId);
     int endItem(@Param("owner") Long owner, @Param("uuid") String uuid, @Param("today") LocalDate today, @Param("loginId") String loginId);
     int saveCheck(@Param("owner") Long owner, @Param("uuid") String uuid, @Param("date") LocalDate date,

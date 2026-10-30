@@ -12,7 +12,7 @@ class LifeDailyMapperContractTest {
     @Test void exportActualSqlForDatabaseVerification() throws Exception {
         var configuration = new MyBatisConfig().sqlSessionFactory(mock(DataSource.class)).getConfiguration();
         Map<String, Object> exported = new TreeMap<>();
-        for (String method : List.of("lockOwner", "selectItems", "selectChecks", "selectItem", "insertItem", "updateTitle", "endItem", "saveCheck")) {
+        for (String method : List.of("lockOwner", "selectItems", "selectChecks", "selectItem", "insertItem", "updateTitle", "endItem", "deleteItem", "saveCheck")) {
             var statement = configuration.getMappedStatement("com.gw.infra.db.mapper.life.LifeDailyMapper." + method).getBoundSql(new HashMap<>());
             exported.put(method, Map.of("sql", statement.getSql(), "bindings", statement.getParameterMappings().stream().map(binding -> binding.getProperty()).toList()));
         }

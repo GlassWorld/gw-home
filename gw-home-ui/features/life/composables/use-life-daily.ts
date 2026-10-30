@@ -22,7 +22,7 @@ export function useLifeDaily() {
   const title = ref('')
   const editingItem = ref<LifeDailyItem | null>(null)
   const editingTitle = ref('')
-  const endTarget = ref<LifeDailyItem | null>(null)
+  const deleteTarget = ref<LifeDailyItem | null>(null)
   const busy = computed(() => isLoading.value || isSaving.value)
   let sequence = 0
 
@@ -114,16 +114,16 @@ export function useLifeDaily() {
     finally { isSaving.value = false }
   }
 
-  async function endItem() {
-    if (busy.value || !endTarget.value) return
+  async function deleteItem() {
+    if (busy.value || !deleteTarget.value) return
     isSaving.value = true
     saveError.value = ''
     try {
-      await api.endItem(endTarget.value.itemUuid)
-      endTarget.value = null
-      showToast('내일부터 반복하지 않습니다. 과거 기록은 유지됩니다.')
+      await api.deleteItem(deleteTarget.value.itemUuid)
+      deleteTarget.value = null
+      showToast('항목과 체크 기록을 삭제했습니다.')
       await refresh()
-    } catch (error) { saveError.value = lifeTodoErrorMessage(error, '반복을 종료하지 못했습니다.') }
+    } catch (error) { saveError.value = lifeTodoErrorMessage(error, '항목을 삭제하지 못했습니다.') }
     finally { isSaving.value = false }
   }
 
@@ -131,5 +131,5 @@ export function useLifeDaily() {
   onMounted(refresh)
   onBeforeUnmount(() => { sequence++ })
   return { today, selectedDate, month, result, days, selectedItems, completedCount, isCompleted, isLoading, isSaving, busy,
-    errorMessage, saveError, title, editingItem, editingTitle, endTarget, refresh, moveMonth, goToday, toggle, saveItem, endItem, openEdit }
+    errorMessage, saveError, title, editingItem, editingTitle, deleteTarget, refresh, moveMonth, goToday, toggle, saveItem, deleteItem, openEdit }
 }

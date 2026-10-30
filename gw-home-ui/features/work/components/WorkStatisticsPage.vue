@@ -18,7 +18,7 @@ const { filters, statistics, workUnits, loading, errorMessage, validationMessage
     <CommonBaseState v-if="loading" state="loading" message="완료 현황을 불러오는 중입니다." />
     <CommonBaseState v-else-if="errorMessage" state="error" :message="errorMessage" action-label="다시 조회" @action="refresh" />
     <template v-else-if="statistics">
-      <p class="insight-note" role="status">완료 기간 {{ statistics.period.fromDate }} ~ {{ statistics.period.toDate }} · {{ statistics.period.timeZone }} · {{ statistics.period.includeInactive ? '비활성 업무 포함' : '활성 업무만' }} · 현재 현황 기준 {{ statistics.period.asOfDate }}</p>
+      <p class="insight-note" role="status">완료 기간 {{ statistics.period.fromDate }} ~ {{ statistics.period.toDate }}<span v-if="statistics.period.timeZone !== 'Asia/Seoul'"> · {{ statistics.period.timeZone }}</span> · {{ statistics.period.includeInactive ? '비활성 업무 포함' : '활성 업무만' }} · 현재 현황 기준 {{ statistics.period.asOfDate }}</p>
       <WorkStatisticsView :data="statistics" />
     </template>
   </main>

@@ -46,6 +46,13 @@ public class LifeDailyController {
         return ApiResponse.ok(service.updateItem(loginId(principal), uuid, request));
     }
 
+    // 본인 항목과 체크 기록을 캘린더에서 삭제하도록 요청한다.
+    @DeleteMapping("/{uuid}")
+    public ApiResponse<Void> deleteItem(Principal principal, @PathVariable String uuid) {
+        service.deleteItem(loginId(principal), uuid);
+        return ApiResponse.ok(null);
+    }
+
     // 기록을 보존하는 반복 종료를 요청한다.
     @PutMapping("/{uuid}/end")
     public ApiResponse<Void> endItem(Principal principal, @PathVariable String uuid,

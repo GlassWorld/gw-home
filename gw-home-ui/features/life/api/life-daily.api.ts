@@ -21,7 +21,7 @@ export function useLifeDailyApi() {
       checks: data.checks.map(check => ({ itemUuid: check.item_uuid, date: check.date })) }
   }
 
-  async function save(path: string, method: 'POST' | 'PUT', body?: { title: string } | { completed: boolean }) {
+  async function save(path: string, method: 'POST' | 'PUT' | 'DELETE', body?: { title: string } | { completed: boolean }) {
     const response = await authorizedFetch<ApiResponse<unknown>>(`${base}${path}`, { method, query: { timeZone }, body })
     if (!response.success) throw new Error(response.message || '저장하지 못했습니다.')
   }
@@ -29,6 +29,6 @@ export function useLifeDailyApi() {
   return { fetchMonth,
     createItem: (title: string) => save('', 'POST', { title }),
     renameItem: (uuid: string, title: string) => save(`/${uuid}`, 'PUT', { title }),
-    endItem: (uuid: string) => save(`/${uuid}/end`, 'PUT'),
+    deleteItem: (uuid: string) => save(`/${uuid}`, 'DELETE'),
     saveCheck: (uuid: string, date: string, completed: boolean) => save(`/${uuid}/checks/${date}`, 'PUT', { completed }) }
 }

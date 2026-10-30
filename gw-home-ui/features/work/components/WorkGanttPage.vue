@@ -27,7 +27,7 @@ onMounted(() => { view.value = window.matchMedia('(min-width: 768px)').matches ?
     <CommonBaseState v-if="loading" state="loading" message="일정을 불러오는 중입니다." />
     <CommonBaseState v-else-if="errorMessage" state="error" :message="errorMessage" action-label="다시 조회" @action="refresh" />
     <template v-else-if="gantt">
-      <p class="insight-note" role="status">조회 {{ gantt.period.fromDate }} ~ {{ gantt.period.toDate }} · {{ gantt.period.timeZone }} · {{ gantt.period.includeInactive ? '비활성 업무 포함' : '활성 업무만' }} · 오늘 {{ gantt.period.asOfDate }}</p>
+      <p class="insight-note" role="status">조회 {{ gantt.period.fromDate }} ~ {{ gantt.period.toDate }}<span v-if="gantt.period.timeZone !== 'Asia/Seoul'"> · {{ gantt.period.timeZone }}</span> · {{ gantt.period.includeInactive ? '비활성 업무 포함' : '활성 업무만' }} · 오늘 {{ gantt.period.asOfDate }}</p>
       <WorkGanttView v-if="gantt.rows.length" :data="gantt" :view="view" />
       <CommonBaseState v-else state="empty" title="표시할 일정이 없습니다." message="기간이나 업무 필터를 바꾸거나 업무 할 일에서 일정을 등록해주세요." />
       <p class="insight-note">업무 일정·진행률은 해당 업무 전체 TODO 기준입니다. 상위 항목의 막대는 직접 지정한 일정이며, 기간 밖의 조상은 계층 표시로 남습니다. 항목을 선택하면 기존 상세 화면으로 이동합니다.</p>

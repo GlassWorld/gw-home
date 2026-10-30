@@ -64,9 +64,23 @@ class LifeDailyServiceTest {
         assertThrows(BusinessException.class, () -> service.updateItem("me", KEY, new SaveItem("제목")));
         assertThrows(BusinessException.class, () -> service.endItem("me", KEY, "UTC"));
         assertThrows(BusinessException.class, () -> service.saveCheck("me", KEY, LocalDate.of(2024, 2, 1), new Completion(true), "UTC"));
+        assertThrows(BusinessException.class, () -> service.deleteItem("me", KEY));
+        verify(mapper, never()).deleteItem(anyLong(), anyString(), anyString());
         verify(mapper, never()).saveCheck(anyLong(), anyString(), any(), anyBoolean(), anyString());
         verify(mapper, never()).endItem(anyLong(), anyString(), any(), anyString());
         verify(mapper, never()).updateTitle(anyLong(), anyString(), anyString(), anyString());
+    }
+
+    @Test void deleteAllowsActiveAndEndedItemsAndRejectsMissingWrites() {
+        writer(); var item = item();
+        when(mapper.selectItem(7L, KEY)).thenReturn(item);
+        when(mapper.deleteItem(7L, KEY, "me")).thenReturn(1);
+        service.deleteItem("me", KEY);
+        item.setEndDt(LocalDate.of(2024, 2, 29));
+        service.deleteItem("me", KEY);
+        verify(mapper, times(2)).deleteItem(7L, KEY, "me");
+        when(mapper.deleteItem(7L, KEY, "me")).thenReturn(0);
+        assertThrows(BusinessException.class, () -> service.deleteItem("me", KEY));
     }
 
     @Test void endedItemsKeepPastChecksButRejectDatesOutsideTheirPeriod() {

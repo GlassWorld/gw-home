@@ -107,9 +107,9 @@ const fixture = http.createServer((req,res) => {
     assert.equal(latestQuery.fromDate,'2026-10-01');
     await page.getByText('완료 건수 표로 보기',{exact:true}).click(); assert(await page.locator('table tbody tr').count()>0);
     await noOverflow();
-    await page.getByLabel('시간대').fill('Invalid/Zone'); await page.getByRole('button',{name:'조회',exact:true}).click();
-    await page.getByRole('alert').filter({hasText:'올바른 시간대'}).waitFor();
-    console.log('PASS filter binding, table and invalid timezone');
+    assert.equal(await page.getByLabel('시간대', {exact:true}).count(), 0);
+    assert.equal(latestQuery.timeZone, 'Asia/Seoul');
+    console.log('PASS filter binding, table and default timezone');
     state='empty'; await page.goto('http://127.0.0.1:19096/work/gantt'); await page.getByText('표시할 일정이 없습니다.',{exact:true}).waitFor();
     state='error'; await page.reload(); await page.getByRole('alert').filter({hasText:'일시적으로'}).waitFor();
     state='normal'; await page.getByRole('button',{name:'다시 조회',exact:true}).click(); await page.locator('.gantt-unit').waitFor();

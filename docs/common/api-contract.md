@@ -241,6 +241,7 @@ export function useBoard() {
 | GET `/api/v1/life-daily` | `month=YYYY-MM`, `timeZone` | `{ month, today, time_zone, items, checks }` |
 | POST `/api/v1/life-daily` | `{ title }`, `timeZone` | Item |
 | PUT `/api/v1/life-daily/{uuid}` | `{ title }` | Item |
+| DELETE `/api/v1/life-daily/{uuid}` | 없음 | null |
 | PUT `/api/v1/life-daily/{uuid}/end` | `timeZone` | null |
 | PUT `/api/v1/life-daily/{uuid}/checks/{date}` | `{ completed: boolean }`, `timeZone` | null |
 
@@ -248,5 +249,6 @@ export function useBoard() {
 - 제목은 1~200자이며 공백을 정리한다. 생성 시작일은 서버가 해당 시간대의 오늘로 정한다.
 - 월 조회는 0001~9999년의 정확한 YYYY-MM 형식이다. 월과 반복 기간이 겹치는 항목 및 완료 기록을 동일 트랜잭션 스냅샷으로 반환한다.
 - 체크 날짜는 YYYY-MM-DD이며 시작일~종료일(양 끝 포함) 내 과거·오늘만 허용한다. 미체크는 미완료이며 동일 상태 재전송은 중복 행을 만들지 않는다.
-- 종료 요청은 오늘을 마지막 유효 날짜로 기록한다. 반복 종료 재요청은 기존 종료일을 유지한다. 종료 항목의 제목 변경은 거부하지만 유효 기간의 과거 체크는 수정 가능하다.
+- 삭제는 본인 항목의 `del_at`을 기록해 모든 날짜의 목록·체크 조회와 집계에서 즉시 제외한다. 종료 항목도 삭제 가능하며 이미 삭제됐거나 타인 소유이면 NOT_FOUND다. 물리 데이터는 보존한다.
+- 종료 API는 기존 클라이언트 호환용이며 현재 화면에서는 사용하지 않는다. 종료 요청은 오늘을 마지막 유효 날짜로 기록한다. 반복 종료 재요청은 기존 종료일을 유지한다. 종료 항목의 제목 변경은 거부하지만 유효 기간의 과거 체크는 수정 가능하다.
 - 날짜별 체크는 일반 일상 할 일 및 업무 완료 집계와 독립적이다.

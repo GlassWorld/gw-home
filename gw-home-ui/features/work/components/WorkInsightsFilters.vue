@@ -11,7 +11,7 @@ function updateExpanded(event: Event) { expanded.value = (event.target as HTMLDe
 
 <template>
   <details class="content-panel insight-filters" :open="expanded" @toggle="updateExpanded">
-    <summary class="insight-filter-toggle">조회 조건 · 업무 / 기간 / 시간대</summary>
+    <summary class="insight-filter-toggle">조회 조건 · 업무 / 기간<span v-if="filters.timeZone !== 'Asia/Seoul'"> / 시간대</span></summary>
     <form @submit.prevent="$emit('apply')">
     <fieldset :disabled="loading" class="insight-filter-grid">
       <label><span>업무</span><select v-model="filters.workUnitUuid" class="input-field">
@@ -25,7 +25,7 @@ function updateExpanded(event: Event) { expanded.value = (event.target as HTMLDe
       <label v-if="mode === 'statistics'"><span>완료 추이 단위</span><select v-model="filters.bucket" class="input-field">
         <option value="day">일별</option><option value="week">주별 · 월요일 시작</option><option value="month">월별</option>
       </select></label>
-      <label><span>시간대</span><input v-model="filters.timeZone" class="input-field" list="work-insight-time-zones" maxlength="80" required placeholder="Asia/Seoul"></label>
+      <label v-if="filters.timeZone !== 'Asia/Seoul'"><span>시간대</span><input v-model="filters.timeZone" class="input-field" list="work-insight-time-zones" maxlength="80" required placeholder="Asia/Seoul"></label>
       <label class="insight-checkbox"><input v-model="filters.includeInactive" type="checkbox">비활성 업무 포함</label>
       <div class="insight-actions">
         <CommonBaseButton v-for="days in (mode === 'gantt' ? [7, 14, 30] : [7, 30, 90])" :key="days" variant="secondary" size="small" @click="$emit('preset', days)">
