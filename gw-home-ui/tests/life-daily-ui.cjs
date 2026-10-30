@@ -32,6 +32,7 @@ function dataFor(request, url, body) {
   if (request.method === 'POST') { items.push({ item_uuid: randomUUID(), title: body.title, start_date: today, end_date: null }); return null; }
   const parts = pathname.split('/');
   const item = items.find(item => item.item_uuid === parts[4]);
+  if (request.method === 'DELETE') { items = items.filter(value => value !== item); checks = checks.filter(check => check.item_uuid !== item.item_uuid); return null; }
   if (parts[5] === 'checks') {
     checks = checks.filter(check => check.item_uuid !== item.item_uuid || check.date !== parts[6]);
     if (body.completed) checks.push({ item_uuid: item.item_uuid, date: parts[6] });
@@ -42,7 +43,7 @@ function dataFor(request, url, body) {
 const fixture = http.createServer(async (request, response) => {
   response.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:19108');
   response.setHeader('Access-Control-Allow-Headers', 'authorization,content-type');
-  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   response.setHeader('Content-Type', 'application/json');
   if (request.method === 'OPTIONS') { response.writeHead(204); return response.end(); }
   const url = new URL(request.url, 'http://127.0.0.1:19107');
@@ -73,6 +74,8 @@ const fixture = http.createServer(async (request, response) => {
     for (const width of [360, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 844 });
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      const row = await checkbox().locator('..').boundingBox();
+      assert(row.height <= 52, `compact row at ${width}px: ${row.height}`);
       await page.screenshot({ path: path.join(output, `daily-${width}.png`), fullPage: true });
     }
     console.log('PASS calendar and long checklist at 360/390/768/1440px');
@@ -93,6 +96,8 @@ const fixture = http.createServer(async (request, response) => {
     await select('2026-10-28'); assert(await checkbox().isDisabled());
     await page.getByRole('button', { name: '오늘', exact: true }).click(); await waitReady();
     console.log('PASS failure preserves checkbox and future dates cannot be checked');
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await page.getByText('운동 종류 빠른 추가', { exact: true }).count(), 0);
     await page.getByLabel('매일 할 일', { exact: true }).fill('산책 20분');
     failWrite = true; await page.getByRole('button', { name: '추가', exact: true }).click(); await waitReady();
     assert.equal(await page.getByLabel('매일 할 일', { exact: true }).inputValue(), '산책 20분');
@@ -105,11 +110,22 @@ const fixture = http.createServer(async (request, response) => {
     await page.setViewportSize({ width: 390, height: 430 });
     await page.screenshot({ path: path.join(output, 'daily-edit-390x430.png'), fullPage: true });
     await dialog.getByRole('button', { name: '저장', exact: true }).click(); await dialog.waitFor({ state: 'hidden' }); await waitReady();
-    await page.getByRole('button', { name: '저녁 산책 반복 종료', exact: true }).click();
-    await dialog.getByRole('button', { name: '반복 종료', exact: true }).click(); await dialog.waitFor({ state: 'hidden' }); await waitReady();
-    await page.getByRole('checkbox', { name: '저녁 산책', exact: true }).click(); await waitReady();
-    await select('2026-10-28'); assert.equal(await page.getByRole('checkbox', { name: '저녁 산책', exact: true }).count(), 0);
-    console.log('PASS title-only create, failure input retention, rename and end preserves today');
+    await page.getByRole('button', { name: '저녁 산책 목록에서 삭제', exact: true }).click();
+    failWrite = true;
+    await dialog.getByRole('button', { name: '삭제', exact: true }).click(); await waitReady();
+    await dialog.getByText('검증용 요청 실패', { exact: true }).waitFor();
+    assert.equal(await page.locator('.daily-checklist__check[aria-label="저녁 산책"]').count(), 1);
+    failWrite = false;
+    await dialog.getByRole('button', { name: '삭제', exact: true }).click(); await dialog.waitFor({ state: 'hidden' }); await waitReady();
+    assert.equal(await page.getByRole('checkbox', { name: '저녁 산책', exact: true }).count(), 0);
+    await page.reload(); await waitReady();
+    assert.equal(await page.getByRole('checkbox', { name: '저녁 산책', exact: true }).count(), 0);
+    await select('2026-10-26'); await waitReady();
+    await page.getByRole('button', { name: '물 마시기 목록에서 삭제', exact: true }).click();
+    await dialog.getByRole('button', { name: '삭제', exact: true }).click(); await dialog.waitFor({ state: 'hidden' }); await waitReady();
+    assert.equal(await checkbox().count(), 0);
+    await select(today); assert.equal(await checkbox().count(), 0);
+    console.log('PASS text create, compact actions, deletion failure recovery and persisted removal across dates');
     await page.setViewportSize({ width: 1440, height: 900 });
     delayMonth = '2026-09'; await page.getByRole('button', { name: '이전 달', exact: true }).click();
     await page.getByRole('button', { name: '다음 달', exact: true }).click(); await waitReady();

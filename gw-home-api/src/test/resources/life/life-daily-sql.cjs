@@ -52,6 +52,15 @@ const uuid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     assert.equal((await run('selectChecks')).rows.length, 1);
     console.log('PASS leap day, start/end boundary and preserved editable history');
     await assert.rejects(database.query("INSERT INTO tb_lf_daily_check(lf_daily_idx,mbr_acct_idx,check_dt,created_by) VALUES(1,8,'2024-02-28','other')"));
+    assert.equal((await run('deleteItem', { owner: 8 })).affectedRows, 0);
+    assert.equal((await run('deleteItem')).affectedRows, 1);
+    assert.equal((await run('selectItems')).rows.length, 0);
+    assert.equal((await run('selectChecks')).rows.length, 0);
+    assert.equal((await run('selectItem')).rows.length, 0);
+    assert.equal((await run('saveCheck')).affectedRows, 0);
+    assert.equal((await run('deleteItem')).affectedRows, 0);
+    assert.equal((await database.query('SELECT count(*)::int AS count FROM tb_lf_daily_check')).rows[0].count, 2);
+    console.log('PASS soft delete removes ended item and history from all reads without physical deletion');
     console.log('PASS ownership foreign key, migration repeatability and DDL sync');
   } finally { await database.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

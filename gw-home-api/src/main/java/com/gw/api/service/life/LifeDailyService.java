@@ -68,6 +68,18 @@ public class LifeDailyService {
         });
     }
 
+    // 본인 항목을 소프트 삭제하여 모든 날짜의 목록과 체크 집계에서 제외한다.
+    @Transactional
+    public void deleteItem(String loginId, String uuid) {
+        logged("deleteLifeDaily", loginId, () -> {
+            String key = requiredUuid(uuid);
+            Long owner = lockOwner(loginId);
+            owned(owner, key);
+            requireChanged(mapper.deleteItem(owner, key, loginId));
+            return null;
+        });
+    }
+
     // 과거 기록과 오늘 체크를 유지하며 내일부터 반복을 종료한다.
     @Transactional
     public void endItem(String loginId, String uuid, String timeZone) {

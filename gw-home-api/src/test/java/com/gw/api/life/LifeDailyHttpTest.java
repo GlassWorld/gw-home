@@ -29,6 +29,7 @@ class LifeDailyHttpTest {
         for (String path : List.of("/item", "/item/end", "/item/checks/2024-02-29")) {
             mvc.perform(put("/api/v1/life-daily" + path)).andExpect(status().isForbidden());
         }
+        mvc.perform(delete("/api/v1/life-daily/item")).andExpect(status().isForbidden());
         verifyNoInteractions(service);
     }
 
@@ -43,6 +44,12 @@ class LifeDailyHttpTest {
         mvc.perform(post("/api/v1/life-daily").header("Authorization", token()).contentType("application/json").content("{\"title\":\"물\",\"owner\":999}"))
                 .andExpect(status().isOk());
         verify(service).createItem("tester", new SaveItem("물"), "Asia/Seoul");
+    }
+
+    @Test void deleteUsesAuthenticatedPrincipal() throws Exception {
+        mvc.perform(delete("/api/v1/life-daily/item").header("Authorization", token()).param("owner", "999"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        verify(service).deleteItem("tester", "item");
     }
 
     @Test void invalidJsonDatesAndMissingCompletionAreBadRequests() throws Exception {
